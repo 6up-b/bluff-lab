@@ -79,7 +79,7 @@ def choose_world(worlds: list[dict]) -> tuple[dict | None, dict]:
 
 
 def choose_decision(w: dict) -> tuple[dict | None, dict]:
-    rds = A.respond_decisions(w["events"])
+    rds = A.respond_decisions(A.ensure_events(w)["events"])
     tt = A.seat_with_role(w, "telltale") or A.seat_with_role(w, "telltale_overt") or "p3"
     scored = []
     for d in rds:
@@ -411,8 +411,8 @@ def pick_demo(run: str = "r01", out: str = "show/bundle", root: str = "runs") ->
     rdir = Path(root) / run
     outd = Path(out)
     outd.mkdir(parents=True, exist_ok=True)
-    res = A.analyze(run=run, root=root)
     worlds = A.load_worlds(rdir)
+    res = A.analyze(run=run, root=root, worlds=worlds)
     w, winfo = choose_world(worlds)
     if w is None:
         raise SystemExit(f"pick-demo: {winfo['note']} under {rdir}")

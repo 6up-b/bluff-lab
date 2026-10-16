@@ -123,14 +123,32 @@ def load_world(d: Path) -> dict | None:
             "done": any(e["type"] == "world_end" for e in evs)}
 
 
-def load_worlds(root: Path) -> list[dict]:
-    out = []
-    for d in world_dirs(root):
-        w = load_world(d)
-        if w:
-            w["m"] = world_metrics(w)
-            out.append(w)
-    return out
+def _load_one(d: Path) -> dict | None:
+    w = load_world(d)
+    if not w:
+        return None
+    w["m"] = world_metrics(w)
+    w["m"]["game_list"] = sorted({e["game"] for e in w["events"] if e["type"] == "game_end"})
+    del w["events"]                      # keep memory flat for thousands of worlds; ensure_events() reloads
+    return w
+
+
+def ensure_events(w: dict) -> dict:
+    if "events" not in w:
+        w["events"] = read_events(Path(w["dir"]) / "events.jsonl")
+    return w
+
+
+def load_worlds(root: Path, workers: int | None = None) -> list[dict]:
+    dirs = world_dirs(root)
+    if len(dirs) < 50:
+        out = [_load_one(d) for d in dirs]
+    else:
+        import os
+        from concurrent.futures import ProcessPoolExecutor
+        with ProcessPoolExecutor(max_workers=workers or min(8, os.cpu_count() or 4)) as ex:
+            out = list(ex.map(_load_one, dirs, chunksize=16))
+    return [w for w in out if w]
 
 
 def seat_with_role(w: dict, role: str) -> str | None:
@@ -235,6 +253,18 @@ def tell_discovery(w: dict, tt: str | None) -> tuple[int | None, int]:
     `logreg.tell_coef = [coef, lo, hi]` first excludes 0 on the positive side."""
     n_rev = 0
     lr = str(w["agent"]).startswith("logreg")
+    mf = Path(w["dir"]) / "memory" / "p1.json"
+    if lr and mf.exists():               # the agent's own record (game-end), covers every opponent
+        try:
+            L = (json.loads(mf.read_text()).get("logreg") or {})
+            gs = [v.get("discovery_game") for k, v in L.items() if (tt is None or k == tt) and v.get("discovery_game") is not None]
+            g = min(gs) if gs else None
+            if g is None:
+                return None, 0
+            n = sum(1 for e in w["events"] if e["type"] == "reveal" and tt and e["payload"]["claimant"] == tt and e["game"] <= g)
+            return g, n
+        except Exception:
+            pass
     for e in w["events"]:
         if e["type"] == "reveal" and tt and e["payload"]["claimant"] == tt:
             n_rev += 1
@@ -446,7 +476,7 @@ def decision_flips(worlds: list[dict], table: str = "telltale", agent: str = "pr
                  and (rule is None or w["rule"] == rule)], key=lambda w: w["seed"])[:max_worlds]
     n = fl = errs = 0
     for w in ws:
-        for d in respond_decisions(w["events"]):
+        for d in respond_decisions(ensure_events(w)["events"]):
             if d["ev"]["game"] < LATE_FROM:
                 continue
             try:
@@ -456,6 +486,7 @@ def decision_flips(worlds: list[dict], table: str = "telltale", agent: str = "pr
                 continue
             n += 1
             fl += int(bool(r.get("flipped")))
+        w.pop("events", None)
     return {"n": n, "flipped": fl, "worlds": len(ws), "errors": errs, "variant": "as_of:0",
             "games": f"{LATE_FROM}–20", "respond_rule": rule}
 
@@ -464,7 +495,7 @@ def longcon(worlds: list[dict], agents=("counter", "bayes", "profiler"), rule: s
     lc = [w for w in base_worlds(worlds) if w["table"] == "longcon" and (rule is None or w["rule"] == rule)]
     if not lc:
         return {"games": [], "n_worlds": 0, "respond_rule": rule}
-    games = sorted({e["game"] for w in lc for e in w["events"] if e["type"] == "game_end"})
+    games = sorted({g for w in lc for g in w["m"].get("game_list", [])})
     honesty = [dict(game=g, **boot(w["m"]["honesty_by_game"].get(g) for w in lc)) for g in games]
     out_agents, rtd, ec, ll = {}, {}, {}, {}
     for a in agents:
@@ -694,9 +725,9 @@ def summary_md(res: dict) -> str:
     return "\n".join(L)
 
 
-def analyze(run: str = "r01", root: str | Path = "runs") -> dict:
+def analyze(run: str = "r01", root: str | Path = "runs", worlds: list[dict] | None = None) -> dict:
     rdir = Path(root) / run
-    worlds = load_worlds(rdir)
+    worlds = load_worlds(rdir) if worlds is None else worlds
     groups = aggregate(worlds)
     rules = sorted({w["rule"] for w in worlds}) or ["threshold"]
     primary = "threshold" if "threshold" in rules else rules[0]
