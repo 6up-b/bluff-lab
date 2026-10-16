@@ -727,8 +727,7 @@ function renderTrust() {
   const stat = Object.keys(ec).concat(Object.keys(rtd)).filter((v, i, a) => a.indexOf(v) === i).map((a) => `
     <div class="kv" style="font-size:28px;padding:12px 0;border-top:1px solid var(--rule)"><b style="color:${COL[a] || "var(--bone)"}">${esc(a)}</b>
       <span style="display:block;font-size:22px;color:var(--bone-dim)">${ec[a] && ec[a].n ? `${esc(L.exploitation_label || "exploitation cost")}: ${fN(ec[a].mean)}${ec[a].lo !== null && ec[a].lo !== undefined ? ` (${fN(ec[a].lo)}–${fN(ec[a].hi)})` : ""}` : ""}${rtd[a] ? `<br>rounds to detection, median ${fN(rtd[a].median)} (detected in ${esc(rtd[a].detected ?? rtd[a].n)} of ${esc(rtd[a].worlds ?? "?")} worlds)` : ""}</span></div>`).join("");
-  const twist = L.twist?.holds ? `<div style="font-family:var(--voice);font-style:italic;font-size:38px;line-height:1.2;margin-top:24px">Naive memory was more exploitable than no memory.</div>
-     <div class="foot">${esc(L.twist.metric || "bayes − counter")}: ${fN(L.twist.diff?.mean)} (${fN(L.twist.diff?.lo)}–${fN(L.twist.diff?.hi)})</div>` : "";
+  const twist = "";   // the "naive memory more exploitable" line is not shown: lc02 at scale does not support it
   el.innerHTML = head + `<p class="sub">${sl} plays honest, then turns. Every memory of it is true; the attack is assuming people don't change.</p>
     <div style="display:grid;grid-template-columns:${w}px 1fr;gap:48px"><div class="chart">${svg(w, h, s)}<div class="legend">${leg}</div></div>
     <div style="margin-top:26px">${stat}${twist}<div class="foot">n = ${esc(L.n_worlds ?? "?")} longcon worlds. ${esc(L.estimate_note || "")}</div></div></div>`;
@@ -951,7 +950,9 @@ function renderBoundary() {
     return `<div class="hyp"><b>${esc(h.name || "")}</b>${esc(h.text || "")}<span>${ok(h.holds, h.status)}${h.mean != null ? ` <span class="ci">Δ ${f(h.mean)}${h.lo != null ? `, CI ${f(h.lo)} to ${f(h.hi)}` : ""}${h.n !== undefined ? `, n ${esc(h.n)}` : ""}</span>` : ""}</span></div>`; }).join("");
   el.innerHTML = head + `<p class="sub">Pre-registered (${esc(Bd.prereg || "PREREG.md")}), run ${esc(Bd.run || "")}, ${esc(Bd.info || "raw")} observations, paired 95% CIs. Holds only if the CI excludes 0 in the predicted direction.</p>
     <table class="grid lc2 cmap"><thead><tr><th>Cue type</th><th>Winner</th><th>Δ (95% CI)</th><th>Metric</th><th>Pre-registered claim</th></tr></thead><tbody>${rows}</tbody></table>
-    ${hyp ? `<div class="hyps">${hyp}</div>` : ""}<div class="foot" style="margin-top:8px">${esc(M.note || "")}</div>`;
+    ${hyp ? `<div class="hyps">${hyp}</div>` : ""}${(() => { const n = String(M.note || ""); const k = n.indexOf("Deviation:");
+      return k < 0 ? `<div class="foot" style="margin-top:8px">${esc(n)}</div>`
+        : `<div class="deviation"><b>Deviation from the pre-registration.</b> ${esc((t => t.charAt(0).toUpperCase() + t.slice(1))(n.slice(k + 10).trim()))}</div><div class="foot" style="margin-top:6px">${esc(n.slice(0, k).trim())}</div>`; })()}`;
   where(`Capability map, ${esc(Bd.run || "")}`);
 }
 
