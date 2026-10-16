@@ -673,7 +673,7 @@ function renderTrust() {
   const X = (g) => x0 + (x1 - x0) * (g - gmin) / Math.max(1, gmax - gmin);
   const Y = (v) => yB - (yB - yT) * v;
   let s = axisY(x0, x1, Y, [0, .25, .5, .75, 1], (t) => pct(t));
-  for (const g of G) if (g % 2 === 0 || g === gmin) s += `<text x="${X(g)}" y="${yB + 34}" fill="var(--bone-faint)" font-size="20" text-anchor="middle">${g}</text>`;
+  for (const g of G) if (g % 2 === 0 || (g === gmin && !G.includes(gmin + 1))) s += `<text x="${X(g)}" y="${yB + 34}" fill="var(--bone-faint)" font-size="20" text-anchor="middle">${g}</text>`;
   s += `<text x="${(x0 + x1) / 2}" y="${yB + 64}" fill="var(--bone-dim)" font-size="22" text-anchor="middle">game</text>`;
   const g0 = L.g0?.median ?? L.g0?.value;
   if (g0 !== null && g0 !== undefined) s += `<line x1="${X(g0)}" x2="${X(g0)}" y1="${yT}" y2="${yB}" stroke="var(--bluff)" stroke-width="2" stroke-dasharray="8 6"/>
@@ -698,7 +698,8 @@ function renderTrust() {
   }
   const sl = L.sleeper_seat ? seatName(L.sleeper_seat) : "The sleeper";
   const leg = [`<span><i style="background:var(--bone)"></i>${sl}'s true honesty</span>`]
-    .concat(agents.map((a) => `<span><i style="background:${COL[a] || "var(--bone-dim)"}"></i>${esc(a)} estimate</span>`)).join("");
+    .concat(agents.map((a) => `<span><i style="background:${COL[a] || "var(--bone-dim)"}"></i>${esc(a)} estimate</span>`))
+    .concat(det !== null && det !== undefined ? [`<span><b style="color:var(--ice);font-size:1.3em;line-height:0">◎</b> profiler detects the turn (median)</span>`] : []).join("");
   const ec = L.exploitation_cost || {}; const rtd = L.rtd || {};
   const stat = Object.keys(ec).concat(Object.keys(rtd)).filter((v, i, a) => a.indexOf(v) === i).map((a) => `
     <div class="kv" style="font-size:28px;padding:12px 0;border-top:1px solid var(--rule)"><b style="color:${COL[a] || "var(--bone)"}">${esc(a)}</b>
@@ -755,13 +756,13 @@ function renderDecisions() {
         <text x="0" y="${y + 34}" fill="var(--bone-faint)" font-size="19">n = ${esc(d.n)} paired seeds</text>`;
       if (d.lo !== null && d.lo !== undefined) s += `<line x1="${X(d.lo)}" x2="${X(d.hi)}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="5"/>`;
       s += `<circle cx="${X(d.mean)}" cy="${y}" r="11" fill="${col}"/>
-        <text x="${X(d.mean)}" y="${y - 22}" fill="var(--bone)" font-size="26" font-weight="700" text-anchor="middle">${fmt(d.mean)}</text>`;
+        <text x="${Math.abs(X(d.mean) - X(0)) < 70 ? X(d.mean) + (d.mean >= 0 ? 14 : -14) : X(d.mean)}" y="${y - 22}" fill="var(--bone)" font-size="26" font-weight="700" text-anchor="${Math.abs(X(d.mean) - X(0)) < 70 ? (d.mean >= 0 ? "start" : "end") : "middle"}">${fmt(d.mean)}</text>`;
     });
     return `<div><h3 style="font-size:30px;margin:0 0 6px">${esc(r0.label)}</h3><div class="foot" style="margin:0 0 14px">Profiler − no-memory counter, same seeds; whiskers 95% CI</div>${svg(w, h, s)}</div>`;
   };
   const hl = D.headline?.holds ? `<div style="font-family:var(--voice);font-style:italic;font-size:52px;line-height:1.15;margin-top:30px;max-width:1500px">${esc(D.headline.text)}</div>` : "";
   el.innerHTML = head + `<p class="sub">Does memory sharpen its beliefs, and do sharper beliefs win more games? Paired against the no-memory counter on the same seeds, per respond rule.</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:80px;margin-top:34px">${metrics.map(panel).join("")}</div>${hl}
+    <div class="dec-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:80px;margin-top:34px">${metrics.map(panel).join("")}</div>${hl}
     <div class="foot" style="margin-top:18px">${(D.texts || []).map(esc).join("<br>")}</div>`;
   where(`Run ${esc(R.run ?? "")}`);
 }
@@ -772,13 +773,23 @@ function renderForge() {
   const head = `<h2 class="title">Strategy forge: memory compiled into code, run as untrusted</h2>`;
   if (!F) { el.innerHTML = head + awaiting("Not available", "No <code>bundle/forge.json</code>."); return; }
   const kv = (k, v) => `<div class="kv"><span>${esc(k)}</span>${v}</div>`;
-  el.innerHTML = head + `<div class="forge"><pre>${esc(F.source || F.module_source || "")}</pre><div>
-    ${kv("Static gate", F.gate?.ok ? '<span class="honestword">passed</span>' : `<span class="bluffword">rejected</span> ${esc(F.gate?.reason || "")}`)}
-    ${kv("Sandbox", esc(F.sandbox_id || "—") + (F.network_blocked_verified ? ' <span class="chip evidence">network blocked</span>' : (F.sandbox_id ? ' <span class="chip none">restricted network</span>' : "")))}
-    ${kv("Win rate, same seeds", `${pct(F.win_rate)}${F.ci ? ` (${pct(F.ci[0])}–${pct(F.ci[1])})` : ""} vs Profiler ${pct(F.baseline_win_rate)}`)}
-    ${kv("Games, crashes, timeouts", `${esc(F.games)}, ${esc(F.crashes)}, ${esc(F.timeouts)}`)}
-    ${kv("Promoted", F.promoted ? '<span class="honestword">yes</span>' : "no")}</div></div>`;
-  where(`Forge, ${esc(F.policy_id || "")}`);
+  // forge.json nests the sandbox result under entry.forge_result; read whichever level has it.
+  const E = F.entry || {}; const R = F.forge_result || E.forge_result || {}; const V = F.eval || E.eval || {};
+  const pick = (...vs) => vs.find((v) => v !== null && v !== undefined);
+  const sid = pick(F.sandbox_id, R.sandbox_id, E.sandbox_id);
+  const wr = pick(F.win_rate, R.win_rate, V.win_rate); const ci = pick(F.ci, R.ci, V.ci);
+  const base = pick(F.baseline_win_rate, R.baseline_win_rate);
+  const games = pick(F.eval?.games, R.games, V.games), crashes = pick(R.crashes, V.crashes), timeouts = pick(R.timeouts, V.timeouts);
+  const promoted = pick(F.promoted, R.promoted, E.promoted);
+  const blocked = F.network_blocked_verified || E.network_blocked_verified;
+  const gate = F.gate || E.gate;
+  const rows = [kv("Static gate", gate?.ok ? '<span class="honestword">passed</span>' : `<span class="bluffword">rejected</span> ${esc(gate?.reason || "")}`)];
+  if (sid) rows.push(kv("Sandbox", `<code class="sid">${esc(sid)}</code>${blocked ? ' <span class="chip evidence">network blocked</span>' : ' <span class="chip none">restricted network</span>'}`));
+  if (wr !== undefined) rows.push(kv("Win rate, same seeds", `${pct(wr)}${ci ? ` <small>(${pct(ci[0])}–${pct(ci[1])})</small>` : ""}${base !== undefined ? ` vs Profiler ${pct(base)}` : ""}`));
+  if (games !== undefined) rows.push(kv("Games, crashes, timeouts", [games, crashes, timeouts].map((v) => esc(v ?? "—")).join(", ")));
+  if (promoted !== undefined) rows.push(kv("Promoted", promoted ? '<span class="honestword">yes</span>' : "no"));
+  el.innerHTML = head + `<div class="forge"><pre>${esc(F.source || F.module_source || E.module_source || "")}</pre><div>${rows.join("")}</div></div>`;
+  where(`Forge${pick(F.policy_id, E.policy_id, R.policy_id) ? `, ${esc(pick(F.policy_id, E.policy_id, R.policy_id))}` : ""}`);
 }
 
 /* ================================================================ split */
