@@ -796,6 +796,28 @@ function renderDecisions() {
 }
 
 /* ================================================================ forge */
+function renderForgeIntro() {
+  const el = $("#v-forgeintro"); const F = B.forge;
+  const head = `<h2 class="title">Strategy Forge: the agent writes its own strategy</h2>`;
+  if (!F) { el.innerHTML = head + awaiting("Not available", "No <code>bundle/forge.json</code>."); return; }
+  const ctl = (Array.isArray(F.all_runs) ? F.all_runs : []).find((r) => r.control && r.win_rate !== undefined);
+  const T = F.tally || {}; const tt = T.telltale || {};
+  const step = (n, t, body) => `<div style="flex:1;border:1px solid var(--brass,#b8902f);border-radius:6px;padding:26px 28px;background:rgba(10,20,15,.6)">
+      <div style="font-family:var(--display);font-size:64px;font-weight:700;color:var(--brass-hi,#e8c46a);line-height:1">${n}</div>
+      <div style="font-family:var(--display);font-size:32px;font-weight:600;color:var(--ivory);margin:10px 0 12px">${t}</div>
+      <div style="font-size:21px;line-height:1.45;color:var(--ivory-dim)">${body}</div></div>`;
+  const w = F.win_rate, ci = F.ci || [], b = F.baseline_win_rate;
+  el.innerHTML = head + `<p class="sub">After the Profiler has built its memory, Claude turns that memory into a small Python program, and we run it without trusting it.</p>
+    <div style="display:flex;gap:28px;margin-top:22px">
+      ${step("1", "Memory → code", "Claude reads the agent's confirmed memory lines and writes a function that decides when to play and when to call a bluff.")}
+      ${step("2", "Treated as untrusted", "A static check allows only safe imports (no files, no network, no exec). It then runs in a fresh Daytona sandbox with all network blocked, in a separate process that sees only what a player at the table sees.")}
+      ${step("3", "Scored on the same seeds", `${esc(F.games ?? "?")} games against the agent that wrote it: <b style="color:var(--ivory)">${w !== undefined ? pct(w) : "?"}</b> wins (95% CI ${ci.length ? `${pct(ci[0])}–${pct(ci[1])}` : "?"}) vs the Profiler's ${b !== undefined ? pct(b) : "?"}.${ctl ? ` A forge given no memory won ${pct(ctl.win_rate)}.` : ""} ${tt.tried ? `${esc(tt.promoted)} of ${esc(tt.tried)} forges beat the Profiler.` : ""}`)}
+    </div>
+    <div class="foot" style="margin-top:22px;font-size:22px;line-height:1.45;color:var(--ivory)"><b>Takeaway:</b> what the agent learned became a program, and that program ran safely, without trusting the model that wrote it.
+      <span style="color:var(--ivory-dim);font-size:18px">Caveat: it largely hard-codes the tell phrases and drops exploration, so it's a narrower player.</span></div>`;
+  where("Strategy Forge");
+}
+
 function renderForge() {
   const el = $("#v-forge"); const F = B.forge;
   const head = `<h2 class="title">Strategy forge: memory compiled into code, run as untrusted</h2>`;
@@ -1067,10 +1089,10 @@ function renderTwoSided() {
 function where(t) { $("#strip-where").innerHTML = t; }
 const RENDER = { title: renderTitle, table: renderTable, inspector: renderInspector, dossier: renderDossier, surgery: renderSurgery,
   ablation: renderAblation, trust: renderTrust, split: renderSplit, results: renderResults, decisions: renderDecisions, forge: renderForge, stack: renderStack, close: renderClose,
-  longcon2: renderLongcon2, branches: renderBranches, boundary: renderBoundary, memory: renderMemory, longcon3: renderLongcon3, twosided: renderTwoSided };
+  longcon2: renderLongcon2, branches: renderBranches, boundary: renderBoundary, memory: renderMemory, longcon3: renderLongcon3, twosided: renderTwoSided, forgeintro: renderForgeIntro };
 const SCENE = { title: "", table: "The table", inspector: "Mind inspector", dossier: "Dossier", surgery: "Memory surgery",
   ablation: "Ablation", trust: "Long con", split: "Split screen", results: "Results", decisions: "Beliefs and decisions", forge: "Strategy forge", stack: "How it's built", close: "",
-  longcon2: "Long con at scale", branches: "Checkpoint branches", boundary: "Capability map", memory: "Does memory help?", longcon3: "Long con, full Profiler", twosided: "One memory, two opponents" };
+  longcon2: "Long con at scale", branches: "Checkpoint branches", boundary: "Capability map", memory: "Does memory help?", longcon3: "Long con, full Profiler", twosided: "One memory, two opponents", forgeintro: "Strategy Forge" };
 let lastView = null;
 function render(live = false) {
   const prevView = lastView; lastView = S.view;
