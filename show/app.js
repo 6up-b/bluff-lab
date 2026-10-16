@@ -142,6 +142,7 @@ function applyCue(c, live) {
 }
 function next() {
   if (idx >= cues.length) return;
+  stopAudio();   // scanning forward: never let the previous cue's line talk over this one
   applyCue(cues[idx], true); idx++;
   while (idx < cues.length && cues[idx - 1].skip) { applyCue(cues[idx], true); idx++; }  // never land on a skip
   render(true);
@@ -157,6 +158,7 @@ function goto(n) {
   resetState(); stopAudio(); tableStop(); T.built = false;
   for (let i = 0; i < n; i++) applyCue(cues[i], false);
   idx = n; render(false);
+  if (n > 0) replayCueAudio(cues[n - 1]);   // ← / ?cue= land on a voiced cue: play its line again (blocked silently before the first key/tap)
   void document.body.offsetHeight;
   requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove("instant")));
 }
@@ -166,6 +168,13 @@ function playQueue() {
   if (!f) return;
   el.onended = () => playQueue(); el.onerror = () => playQueue();   // a file that fails to load is skipped silently
   el.src = `${BUNDLE}/${f}`; el.currentTime = 0; el.play().catch(() => {});
+}
+function replayCueAudio(c) {
+  if (!c || c.skip) return;
+  AQ.length = 0;
+  for (const a of c.actions) if (a.action === "audio" && a.file && !a.missing) AQ.push(a.file);
+  for (const a of c.actions) if (a.action === "play_to" && a.voice) AQ.push(a.voice);
+  playQueue();
 }
 function playAudio(file) { AQ.length = 0; AQ.push(file); playQueue(); }
 function stopAudio() { AQ.length = 0; const el = $("#audio"); el.onended = null; el.onerror = null; el.pause(); }
