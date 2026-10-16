@@ -397,8 +397,22 @@ def longcon_metrics(w: dict, sl: str, rds: list[dict]) -> dict:
 
 # ------------------------------------------------------------------ aggregation
 def by_seed(ws: list[dict], key: str) -> dict:
-    """Per-world metric keyed by (table, seed) so pooled comparisons stay paired."""
-    return {(w["table"], w["seed"]): w["m"].get(key) for w in ws if w["m"].get(key) is not None}
+    """Per-world metric keyed by (table, seed) so pooled comparisons stay paired.
+
+    The caller must pass ONE arm (single agent label, respond rule and reflection type). Two worlds on the
+    same (table, seed) would silently overwrite each other, so that is an error, not a merge."""
+    out: dict = {}
+    seen: dict = {}
+    for w in ws:
+        k = (w["table"], w["seed"])
+        if k in seen:
+            a, b = seen[k], w
+            raise ValueError(f"by_seed: two worlds for {k} ({a['wid']} {a['label']}/{a['rule']}/{a['reflection']} vs "
+                             f"{b['wid']} {b['label']}/{b['rule']}/{b['reflection']}); split the arms first")
+        seen[k] = w
+        if w["m"].get(key) is not None:
+            out[k] = w["m"][key]
+    return out
 
 
 def paired_delta(a: dict, b: dict) -> dict:
@@ -460,42 +474,78 @@ def deltas(worlds: list[dict]) -> dict:
     return out
 
 
-def ablation(worlds: list[dict], table: str = "telltale", agent: str = "profiler", rule: str | None = None) -> dict:
-    br = [w for w in worlds if w["vkey"] and w["agent"] == agent and (rule is None or w["rule"] == rule)]
+def ablation_arms(worlds: list[dict], agent: str = "profiler") -> list[tuple[str, str]]:
+    """(respond_rule, reflection) pairs that have ablation branches for `agent`."""
+    return sorted({(w["rule"], w["reflection"]) for w in worlds if w["vkey"] and w["agent"] == agent})
+
+
+def ablation(worlds: list[dict], table: str = "telltale", agent: str = "profiler", rule: str | None = None,
+             reflection: str | None = None) -> dict:
+    """Outcome-level Memory Surgery for ONE arm: one respond rule × one reflection type × one table.
+
+    Every branch is paired with its parent world (`parent_world`); a branch's rule and reflection must match
+    its parent's. Bars use only parents that have every variant (complete cases) so bars are comparable;
+    `delta_vs_full` is the per-parent paired difference against that parent's `full` branch, and the `full`
+    bar also reports `delta_vs_parent` (branch games 11–20 vs the parent's own games 11–20: a reproduction check;
+    it is nonzero only where the parent kept learning after the branch point)."""
+    br = [w for w in worlds if w["vkey"] and w["agent"] == agent and w["done"]
+          and (rule is None or w["rule"] == rule) and (reflection is None or w["reflection"] == reflection)]
     if any(w["table"] == table for w in br):
         br = [w for w in br if w["table"] == table]
     elif br:
         table = br[0]["table"]
         br = [w for w in br if w["table"] == table]
-    by_v = defaultdict(list)
+    parents = {w["wid"]: w for w in base_worlds(worlds)}
+    by_v: dict = defaultdict(dict)                      # variant -> parent wid -> branch world
+    orphans, mismatched = [], []
     for w in br:
-        by_v[w["vkey"]].append(w)
-    def by_parent(ws, key):          # branches pair by parent world (same seed AND same parent memory)
-        return {w["parent_world"]: w["m"].get(key) for w in ws if w["m"].get(key) is not None}
-    full = by_parent(by_v.get("full", []), "win_rate")
+        p = parents.get(w["parent_world"])
+        if p is None:
+            orphans.append(w["wid"])
+            continue
+        if (p["rule"], p["reflection"], p["table"], p["seed"]) != (w["rule"], w["reflection"], w["table"], w["seed"]):
+            mismatched.append(w["wid"])
+            continue
+        if w["parent_world"] in by_v[w["vkey"]]:
+            raise ValueError(f"ablation: two {w['vkey']} branches of parent {w['parent_world']}")
+        by_v[w["vkey"]][w["parent_world"]] = w
+    variants = sorted(by_v, key=lambda k: ABL_ORDER.index(k) if k in ABL_ORDER else 99)
+    common = set.intersection(*(set(by_v[k]) for k in variants)) if variants else set()
+    full = {pw: by_v["full"][pw]["m"].get("win_rate") for pw in common} if "full" in by_v else {}
     bars = []
-    for k in sorted(by_v, key=lambda k: ABL_ORDER.index(k) if k in ABL_ORDER else 99):
-        b = boot(w["m"]["win_rate"] for w in by_v[k])
-        b.update({"variant": k, "label": ABL_LABEL.get(k, k),
-                  "n_by_reflection": dict(Counter(w["reflection"] for w in by_v[k])),
-                  "delta_vs_full": paired_delta(by_parent(by_v[k], "win_rate"), full) if full and k != "full" else None})
+    for k in variants:
+        vals = {pw: by_v[k][pw]["m"].get("win_rate") for pw in common}
+        vals = {pw: v for pw, v in vals.items() if v is not None}
+        b = boot(vals.values())
+        b.update({"variant": k, "label": ABL_LABEL.get(k, k), "n_parents": len(vals),
+                  "delta_vs_full": paired_delta(vals, {p: v for p, v in full.items() if v is not None})
+                  if full and k != "full" else None})
+        if k == "full":
+            par = {pw: parents[pw]["m"].get("win_rate_late") for pw in common}
+            b["delta_vs_parent"] = paired_delta(vals, {p: v for p, v in par.items() if v is not None})
         bars.append(b)
     at = sorted({w["from_game"] for w in br if w["from_game"] is not None})
-    return {"table": table, "agent": agent, "respond_rule": rule, "at_game": at[0] if len(at) == 1 else at,
-            "metric": "win_rate", "window": f"{(at[0] + 1) if len(at) == 1 else '?'}–20", "bars": bars,
-            "flips": None, "n_branch_worlds": len(br)}
+    return {"table": table, "agent": agent, "respond_rule": rule, "reflection": reflection,
+            "at_game": at[0] if len(at) == 1 else at, "metric": "win_rate",
+            "window": f"{(at[0] + 1) if len(at) == 1 else '?'}–20", "bars": bars, "flips": None,
+            "n_branch_worlds": sum(len(v) for v in by_v.values()), "n_parents": len(common),
+            "seeds": sorted(parents[pw]["seed"] for pw in common),
+            "dropped": {"orphans": orphans, "rule_or_reflection_mismatch": mismatched,
+                        "incomplete_parents": sorted(set().union(*(set(v) for v in by_v.values())) - common)
+                        if by_v else []}}
 
 
 def decision_flips(worlds: list[dict], table: str = "telltale", agent: str = "profiler", rule: str | None = None,
-                   max_worlds: int = 10) -> dict:
+                   max_worlds: int = 10, reflection: str | None = None) -> dict:
     """§6 decision flips: recorded respond states (games 11–20) whose action differs between the logged
     full-memory decision and replay under as_of:0. Real replays; capped at `max_worlds` worlds."""
     try:
         from blab.replay import replay_decision
     except Exception as e:
         return {"n": 0, "flipped": None, "error": str(e)}
-    ws = sorted([w for w in base_worlds(worlds) if w["table"] == table and w["label"] == agent
-                 and (rule is None or w["rule"] == rule)], key=lambda w: w["seed"])[:max_worlds]
+    ws = sorted([w for w in base_worlds(worlds) if w["table"] == table and w["agent"] == agent
+                 and (rule is None or w["rule"] == rule) and (reflection is None or w["reflection"] == reflection)],
+                key=lambda w: w["seed"])[:max_worlds]
     n = fl = errs = 0
     for w in ws:
         for d in respond_decisions(ensure_events(w)["events"]):
@@ -510,7 +560,7 @@ def decision_flips(worlds: list[dict], table: str = "telltale", agent: str = "pr
             fl += int(bool(r.get("flipped")))
         w.pop("events", None)
     return {"n": n, "flipped": fl, "worlds": len(ws), "errors": errs, "variant": "as_of:0",
-            "games": f"{LATE_FROM}–20", "respond_rule": rule}
+            "games": f"{LATE_FROM}–20", "respond_rule": rule, "reflection": reflection}
 
 
 def longcon(worlds: list[dict], agents=("counter", "bayes", "profiler"), rule: str | None = None) -> dict:
@@ -694,7 +744,8 @@ def claims(res: dict) -> dict:
         d = e["delta_vs_full"]
         out["erase_hurts"] = {"holds": _sig(d) == "lower", "delta": d,
                               "text": f"Erasing memory at game {ab.get('at_game')} changes win rate in games "
-                                      f"{ab.get('window')} by {_ci(d, True, 'parent worlds, paired')} ({ab.get('respond_rule')} rule)."}
+                                      f"{ab.get('window')} by {_ci(d, True, 'parent worlds, paired')} ({ab.get('respond_rule')} rule, "
+                                      f"{ab.get('reflection')} reflection)."}
     fl = ab.get("flips") or {}
     if fl.get("n"):
         out["decision_flips"] = {"holds": fl["flipped"] > 0, "text": f"Erasing memory flips {fl['flipped']} of "
@@ -797,12 +848,20 @@ def summary_md(res: dict) -> str:
                 L.append(f"| {t} | {k} | {_cell(d['win_rate'])} | {_cell(d['win_rate_late'])} | {_cell(d['brier'])} | "
                          f"{_cell(d['missed_bluffs'])} |")
         L.append("")
-    for r, ab in res["ablation_by_rule"].items():
+    for key, ab in res["ablation_by_arm"].items():
         if ab["bars"]:
-            L += [f"## ablation (rule `{r}`, {ab['table']}, {ab['agent']}, from game {ab['at_game']})", "",
-                  "| variant | n | win rate | Δ vs full |", "|---|---|---|---|"]
+            L += [f"## ablation ({key}: {ab['table']}, {ab['agent']}, from game {ab['at_game']}, "
+                  f"{ab['n_parents']} parent worlds, complete cases)", "",
+                  "| variant | n parents | win rate g11–20 | Δ vs full (paired by parent) |", "|---|---|---|---|"]
             for b in ab["bars"]:
-                L.append(f"| {b['variant']} | {b['n']} | {b['mean']:.3f} | {_cell(b.get('delta_vs_full'))} |")
+                L.append(f"| {b['variant']} | {b['n_parents']} | {_cell(b)} | {_cell(b.get('delta_vs_full'))} |")
+            full = next((b for b in ab["bars"] if b["variant"] == "full"), None)
+            if full and full.get("delta_vs_parent"):
+                L.append(f"\n`full` branch vs its parent's own games 11–20: {_cell(full['delta_vs_parent'])} "
+                         "(reproduction check; nonzero where the parent kept learning).")
+            if ab.get("flips"):
+                fl = ab["flips"]
+                L.append(f"\nDecision flips (as_of:0 vs logged, games {fl.get('games')}): {fl.get('flipped')} of {fl.get('n')}.")
             L.append("")
     return "\n".join(L)
 
@@ -818,7 +877,7 @@ def analyze(run: str = "r01", root: str | Path = "runs", worlds: list[dict] | No
         "n_worlds": len(base_worlds(worlds)), "n_branch_worlds": sum(1 for w in worlds if w["vkey"]),
         "rules": rules, "primary_rule": primary, "metric_defs": METRIC_DEFS, "setting": setting_of(worlds, run),
         "groups": groups, "deltas": deltas(worlds),
-        "ablation_by_rule": {r: ablation(worlds, rule=r) for r in rules},
+        "ablation_by_arm": {f"{r}/{rf}": ablation(worlds, rule=r, reflection=rf) for r, rf in ablation_arms(worlds)},
         "longcon_by_rule": {r: longcon(worlds, rule=r) for r in rules},
         "worlds": [{"wid": w["wid"], "dir": str(w["dir"]), "seed": w["seed"], "agent": w["agent"], "label": w["label"],
                     "respond_rule": w["rule"], "reflection": w["reflection"],
@@ -826,8 +885,18 @@ def analyze(run: str = "r01", root: str | Path = "runs", worlds: list[dict] | No
                     **{k: v for k, v in w["m"].items() if k not in ("honesty_by_game", "trust_by_game", "world_end")}}
                    for w in worlds],
     }
-    res["ablation_by_rule"][primary]["flips"] = decision_flips(worlds, rule=primary)
-    res["ablation"] = res["ablation_by_rule"][primary]
+    # Primary ablation shown on stage: primary rule, real-Claude reflection if branched, else stub.
+    arms = res["ablation_by_arm"]
+    for key, ab in arms.items():
+        if ab["bars"]:
+            ab["flips"] = decision_flips(worlds, rule=ab["respond_rule"], reflection=ab["reflection"])
+    pkey = next((k for k in (f"{primary}/claude", f"{primary}/stub") if arms.get(k, {}).get("bars")),
+                next(iter(arms), None))
+    res["ablation"] = dict(arms[pkey]) if pkey else {"bars": [], "flips": None}
+    res["ablation"]["arm"] = pkey
+    res["ablation"]["other_arms"] = {k: {"n_parents": a["n_parents"], "bars": [
+        {kk: b.get(kk) for kk in ("variant", "mean", "lo", "hi", "n_parents", "delta_vs_full")} for b in a["bars"]]}
+        for k, a in arms.items() if k != pkey}
     res["longcon"] = res["longcon_by_rule"][primary]
     res["show_grid"] = show_grid(groups, primary)
     res["show_grids"] = {r: show_grid(groups, r) for r in rules}
