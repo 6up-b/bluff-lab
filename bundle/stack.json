@@ -1,0 +1,60 @@
+{
+ "run": "local",
+ "daytona": {
+  "boxes": null,
+  "worlds_total": 26,
+  "worlds_per_box": null,
+  "picked_world_box": null,
+  "forge_sandbox_id": null,
+  "forge_network": null,
+  "spike": {
+   "D1": "PASS",
+   "D2": "PASS",
+   "D2b": "PASS",
+   "D3": "PASS",
+   "S1": "PASS",
+   "S2": "FAIL",
+   "S3": "PASS",
+   "A1": "PASS",
+   "A2": "SKIP",
+   "C1.bedrock": "PASS",
+   "C1.anthropic": "PASS",
+   "C1.openrouter": "PASS",
+   "E1": "PASS"
+  }
+ },
+ "claude": {
+  "provider": null,
+  "model": null,
+  "reflections": 0,
+  "reflections_total": 80,
+  "proposed_hypotheses": 0,
+  "sample_reflect_trace": null
+ },
+ "surrealdb": {
+  "traces": 0,
+  "sample_surreal_trace_id": null,
+  "supersessions_in_logs": 5,
+  "supersession_example": {
+   "entity": "agent/longcon-profiler-s7.p3",
+   "key": "baseline_bluff",
+   "history_len_from_log": 2,
+   "reason": "drift",
+   "world": "longcon-profiler-s7"
+  }
+ },
+ "arize": {
+  "project": "bluff-lab",
+  "sample_arize_trace_id": null,
+  "decision_spans_in_picked_world": 0,
+  "sample_reflect_trace": null
+ },
+ "elevenlabs": null,
+ "picked_decision": {
+  "world": "telltale-profiler-s1",
+  "box": null,
+  "seq": 1043,
+  "arize_trace_id": null,
+  "surreal_trace_id": null
+ }
+}

@@ -1,6 +1,6 @@
 # Show bundle provenance (honesty record)
 
-Built 2026-10-16T17:20:23Z by `blab pick-demo --run local` from real event logs. No number in this bundle was written by hand.
+Built 2026-10-16T17:21:48Z by `blab pick-demo --run local` from real event logs. No number in this bundle was written by hand.
 
 - **Run:** `local`
 - **World:** `telltale-profiler-s1` (`runs/local/telltale-profiler-s1`)
@@ -36,5 +36,6 @@ Built 2026-10-16T17:20:23Z by `blab pick-demo --run local` from real event logs.
 - `ablation.json`: `blab analyze --run local` output
 - `longcon.json`: `blab analyze --run local` output
 - `results.json`: `blab analyze --run local` output
+- `stack.json`: sponsor-stack facts from run artifacts (ids/trace ids only, no secrets)
 - `reveal.json`: Surgery Reveal decision + replay_decision outputs
 - `cues.json`: director script generated from the picked seqs (show/FLOW.md order)
