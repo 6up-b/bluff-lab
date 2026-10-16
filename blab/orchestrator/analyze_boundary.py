@@ -19,7 +19,7 @@ from pathlib import Path
 
 import numpy as np
 
-from blab.orchestrator.analyze import boot, ensure_events, load_worlds, respond_decisions
+from blab.orchestrator.analyze import boot, ensure_events, load_worlds, respond_decisions, tell_discovery
 
 TABLES = ("tell_relational", "tell_flipper", "answer_tell")
 AGENTS = ("counter", "bayes", "bayes_discount", "logreg_bow", "logreg_embed", "profiler+claude", "profiler_amnesic")
@@ -46,7 +46,13 @@ def _metrics(w: dict) -> dict:
     g1 = int((w["seats"].get("p3", {}).get("params") or {}).get("G1", 0) or 0)
     return {"win_rate": m["win_rate"], "brier": m["brier"], "n_brier": m["n_brier"],
             "brier_first10": _brier_window(w), "brier_after_flip10": _brier_window(w, from_game=g1) if g1 else None,
-            "revealed_to_discovery": m.get("revealed_to_discovery")}
+            "revealed_to_discovery": _rtd(w)}
+
+
+def _rtd(w: dict) -> int | None:
+    """§6 discovery (analyze.tell_discovery) about the tell opponent p3; None if never discovered."""
+    g, n = tell_discovery(w, "p3")
+    return n if g is not None else None
 
 
 def _paired(cells: dict, a: str, b: str, key: str) -> dict:
@@ -100,6 +106,12 @@ def boundary(root: str | Path = "runs") -> dict:
         "H3": [_hyp("H3", cells["answer_tell"], P, "logreg_embed", "revealed_to_discovery", "neg",
                     "answer_tell: profiler revealed claims to discovery < logreg_embed")],
     }
+    h3 = hyps["H3"][0]
+    if h3["status"] == "run" and h3.get("n", 0) == 0:
+        h3.update(status="not testable", holds=None,
+                  note="logreg_embed has no discovery statistic (no interpretable tell coefficient on a 64-dim "
+                       "projection; analyze.tell_discovery needs logreg.tell_coef), so no paired seeds exist. "
+                       "Profiler's revealed_to_discovery is reported descriptively in per_cell.")
     for h in hyps["H2"]:
         if h["name"] == "H2b" and h["status"] == "run":
             h["holds"] = None if h.get("hi") is None else bool(h["hi"] < 0)
@@ -123,7 +135,7 @@ def boundary(root: str | Path = "runs") -> dict:
 
     def row(cue, h, winner_if):
         if h["status"] != "run":
-            return {"cue": cue, "hypothesis": h["name"], "status": "not run", "winner": None, "delta": None,
+            return {"cue": cue, "hypothesis": h["name"], "status": h["status"], "winner": None, "delta": None,
                     "ci": None, "holds": None, "note": h.get("note")}
         win = winner_if(h)
         return {"cue": cue, "hypothesis": h["name"], "status": "run", "metric": h["metric"], "a": h["a"], "b": h["b"],
@@ -147,7 +159,22 @@ def boundary(root: str | Path = "runs") -> dict:
             row("shifting (tell_flipper)", hyps["H2"][0], lower_wins),
             row("shifting vs bayes_discount (tell_flipper)", hyps["H2"][1], lower_wins),
             row("answer (answer_tell)", hyps["H3"][0], lower_wins)]
-    return {"run": "b01", "prereg": "PREREG.md @ 2167c1a", "info": "raw", "respond_rule": "threshold",
+    calls = defaultdict(int)
+    for d in sorted((root / "b01").glob("*-profiler-raw-s*")):
+        for line in open(d / "events.jsonl"):
+            if '"reflect_result"' in line:
+                calls[d.name.split("-profiler")[0]] += 1
+    llm_info = {"reflection": "claude (Opus 5.5 via Bedrock, blab.orchestrator.reflect.local_reflector)",
+                "prompt": "raw_patched",
+                "prompt_note": ("Not leaky: blab/experiments/b01_claude.py replaced the formal_register row, the "
+                                "no_contractions op and both tell examples in llm.STABLE_SYSTEM before any call (same patch "
+                                "as runs/mem01/core_runner.py) and asserted no 'formal'/'no_contractions' remained; llm.py "
+                                "reads the module global at call time. Raw DSL validation (validate_predicate mode=raw). "
+                                "0 reflect results or hypotheses mention formal_register."),
+                "reflect_calls": dict(calls), "reflect_calls_total": int(sum(calls.values())),
+                "max_concurrent_claude_calls": 8, "llm_contradiction": "not built (PREREG: 'may use'); 0 Sonnet calls",
+                "embeddings": "openai/text-embedding-3-small via OpenRouter, 665 sentences precomputed (blab/data/embed_cache.json)"}
+    return {"run": "b01", "prereg": "PREREG.md @ 2167c1a", "llm": llm_info, "info": "raw", "respond_rule": "threshold",
             "seeds": [4000, 4023], "games": 20, "resamples": 2000,
             "definitions": {"brier_first10": "mean (p_final - was_bluff)^2 over p1's first 10 revealed claims by p3",
                             "brier_after_flip10": "same, over the first 10 reveals of p3 claims in games >= G1",

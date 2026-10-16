@@ -1,0 +1,999 @@
+{
+ "run": "b01",
+ "prereg": "PREREG.md @ 2167c1a",
+ "llm": {
+  "reflection": "claude (Opus 5.5 via Bedrock, blab.orchestrator.reflect.local_reflector)",
+  "prompt": "raw_patched",
+  "prompt_note": "Not leaky: blab/experiments/b01_claude.py replaced the formal_register row, the no_contractions op and both tell examples in llm.STABLE_SYSTEM before any call (same patch as runs/mem01/core_runner.py) and asserted no 'formal'/'no_contractions' remained; llm.py reads the module global at call time. Raw DSL validation (validate_predicate mode=raw). 0 reflect results or hypotheses mention formal_register.",
+  "reflect_calls": {
+   "answer_tell": 240,
+   "tell_flipper": 240,
+   "tell_relational": 240
+  },
+  "reflect_calls_total": 720,
+  "max_concurrent_claude_calls": 8,
+  "llm_contradiction": "not built (PREREG: 'may use'); 0 Sonnet calls",
+  "embeddings": "openai/text-embedding-3-small via OpenRouter, 665 sentences precomputed (blab/data/embed_cache.json)"
+ },
+ "info": "raw",
+ "respond_rule": "threshold",
+ "seeds": [
+  4000,
+  4023
+ ],
+ "games": 20,
+ "resamples": 2000,
+ "definitions": {
+  "brier_first10": "mean (p_final - was_bluff)^2 over p1's first 10 revealed claims by p3",
+  "brier_after_flip10": "same, over the first 10 reveals of p3 claims in games >= G1",
+  "revealed_to_discovery": "analyze.tell_discovery (telltale-family only); None elsewhere",
+  "delta": "a - b, paired by seed",
+  "holds": "95% CI excludes 0 in the predicted direction"
+ },
+ "per_cell": {
+  "tell_relational": {
+   "counter": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.3854166666666667,
+     "lo": 0.34791666666666665,
+     "hi": 0.425,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.31372979193020245,
+     "lo": 0.30121939931834435,
+     "hi": 0.3263684456153309,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.30496673491584164,
+     "lo": 0.27467094696646155,
+     "hi": 0.33814178789198973,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   },
+   "bayes": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.26666666666666666,
+     "lo": 0.23125000000000004,
+     "hi": 0.3020833333333333,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.2942926743419421,
+     "lo": 0.28753705081702263,
+     "hi": 0.3007827401176133,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.3072628726960374,
+     "lo": 0.2857708284319866,
+     "hi": 0.33054888515223435,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   },
+   "bayes_discount": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.25833333333333336,
+     "lo": 0.225,
+     "hi": 0.28958333333333336,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.28458647391256725,
+     "lo": 0.27620010414645996,
+     "hi": 0.29241670397376557,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.3037741979311854,
+     "lo": 0.2833491032464347,
+     "hi": 0.3266882273932973,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   },
+   "logreg_bow": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.3083333333333333,
+     "lo": 0.2708333333333333,
+     "hi": 0.34375,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.2886704435698981,
+     "lo": 0.282774681389742,
+     "hi": 0.2948756579271009,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.29511742159855764,
+     "lo": 0.27921667407831713,
+     "hi": 0.31046134268721387,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   },
+   "logreg_embed": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.23124999999999998,
+     "lo": 0.2041666666666667,
+     "hi": 0.25625000000000003,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.2807731792566877,
+     "lo": 0.276200538824294,
+     "hi": 0.28541324465778106,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.27452295346386585,
+     "lo": 0.2644224159143886,
+     "hi": 0.2849371308791867,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   },
+   "profiler+claude": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.2416666666666667,
+     "lo": 0.2041666666666667,
+     "hi": 0.2833333333333333,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.29226430862909797,
+     "lo": 0.2825310916094714,
+     "hi": 0.3020322295611313,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.3072628726960374,
+     "lo": 0.2857708284319866,
+     "hi": 0.33054888515223435,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": 54.285714285714285,
+     "lo": 48.42857142857143,
+     "hi": 60.57857142857139,
+     "n": 7
+    }
+   },
+   "profiler_amnesic": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.08958333333333335,
+     "lo": 0.060416666666666674,
+     "hi": 0.12505208333333304,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.31474210623589616,
+     "lo": 0.3068823240904483,
+     "hi": 0.32297928350219784,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.32458364097820197,
+     "lo": 0.29957797952810783,
+     "hi": 0.35028893443930487,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   }
+  },
+  "tell_flipper": {
+   "counter": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.37916666666666665,
+     "lo": 0.32916666666666666,
+     "hi": 0.43124999999999997,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.330748981481467,
+     "lo": 0.31778657105604685,
+     "hi": 0.34315519223667895,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.3287382351865959,
+     "lo": 0.2929932925046089,
+     "hi": 0.3656215707106725,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": 0.3508745646133458,
+     "lo": 0.3103590577387578,
+     "hi": 0.3966755592218447,
+     "n": 24
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   },
+   "bayes": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.26666666666666666,
+     "lo": 0.2333333333333333,
+     "hi": 0.3,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.2989156224159993,
+     "lo": 0.2898303785295203,
+     "hi": 0.3078770498167782,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.312826154206979,
+     "lo": 0.29530612553096897,
+     "hi": 0.3307901984112081,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": 0.2923981946887822,
+     "lo": 0.27340788927043497,
+     "hi": 0.31152195800085586,
+     "n": 24
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   },
+   "bayes_discount": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.26458333333333334,
+     "lo": 0.23536458333333335,
+     "hi": 0.29583333333333334,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.2973412224592799,
+     "lo": 0.28924243312118597,
+     "hi": 0.30560653962859213,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.3188675855313558,
+     "lo": 0.30089012545723387,
+     "hi": 0.3374416783013183,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": 0.3087064422108709,
+     "lo": 0.28897724351343984,
+     "hi": 0.33069962610475717,
+     "n": 24
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   },
+   "logreg_bow": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.2583333333333333,
+     "lo": 0.22916666666666666,
+     "hi": 0.28750000000000003,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.2767298917525678,
+     "lo": 0.2707596515745466,
+     "hi": 0.28277213557230957,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.26124951146602665,
+     "lo": 0.2507938990859204,
+     "hi": 0.2717566824368856,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": 0.2988548701314014,
+     "lo": 0.2800862268834058,
+     "hi": 0.31819966716332304,
+     "n": 24
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   },
+   "logreg_embed": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.22291666666666665,
+     "lo": 0.19166666666666668,
+     "hi": 0.25625000000000003,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.2780961216221128,
+     "lo": 0.2736699615369274,
+     "hi": 0.28291973938637777,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.26600559897300147,
+     "lo": 0.25624884446743884,
+     "hi": 0.27550581332960916,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": 0.27255314072306247,
+     "lo": 0.2618620434131705,
+     "hi": 0.2846516395983184,
+     "n": 24
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   },
+   "profiler+claude": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.21875,
+     "lo": 0.18541666666666667,
+     "hi": 0.25625,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.2983933483353596,
+     "lo": 0.2896118716507299,
+     "hi": 0.307887110488607,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.312826154206979,
+     "lo": 0.29530612553096897,
+     "hi": 0.3307901984112081,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": 0.29688464863159225,
+     "lo": 0.2689618301497872,
+     "hi": 0.3290383292659079,
+     "n": 24
+    },
+    "revealed_to_discovery": {
+     "mean": 60.333333333333336,
+     "lo": 51.583333333333336,
+     "hi": 69.00208333333332,
+     "n": 12
+    }
+   },
+   "profiler_amnesic": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.1125,
+     "lo": 0.09166666666666667,
+     "hi": 0.13125,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.3098330943481268,
+     "lo": 0.30380631809584097,
+     "hi": 0.3154421293529574,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.3170416946186892,
+     "lo": 0.3025245947576189,
+     "hi": 0.3328832974300882,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": 0.31018412534574374,
+     "lo": 0.29710380394355207,
+     "hi": 0.32457284699712236,
+     "n": 24
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   }
+  },
+  "answer_tell": {
+   "counter": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.375,
+     "lo": 0.3354166666666667,
+     "hi": 0.41041666666666665,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.32166585758336824,
+     "lo": 0.31061007713891503,
+     "hi": 0.3332230485747754,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.3077776442936542,
+     "lo": 0.2783575282771998,
+     "hi": 0.33764704880019103,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   },
+   "bayes": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.25625000000000003,
+     "lo": 0.21458333333333335,
+     "hi": 0.3,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.29567166107540377,
+     "lo": 0.28725276852909215,
+     "hi": 0.3039173921178661,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.31150380890207446,
+     "lo": 0.29093556549824634,
+     "hi": 0.33200894270720477,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   },
+   "bayes_discount": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.2354166666666667,
+     "lo": 0.2020833333333333,
+     "hi": 0.26875,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.30248774791603683,
+     "lo": 0.296628295463767,
+     "hi": 0.30908910079677004,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.3152082443277915,
+     "lo": 0.2942900254476288,
+     "hi": 0.3364268803241131,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   },
+   "logreg_bow": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.2833333333333333,
+     "lo": 0.2541666666666667,
+     "hi": 0.3125,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.28213720689405514,
+     "lo": 0.2768818703473043,
+     "hi": 0.2874490479276797,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.2820950344620548,
+     "lo": 0.26798339669180543,
+     "hi": 0.29745935963037534,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   },
+   "logreg_embed": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.2395833333333333,
+     "lo": 0.20833333333333334,
+     "hi": 0.2708333333333333,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.2849395565045865,
+     "lo": 0.2793601691750112,
+     "hi": 0.29044594323713374,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.28992859376245583,
+     "lo": 0.2794201350347366,
+     "hi": 0.3008969818402532,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   },
+   "profiler+claude": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.2104166666666667,
+     "lo": 0.1729166666666667,
+     "hi": 0.24791666666666665,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.28949851582126757,
+     "lo": 0.2823882306858497,
+     "hi": 0.296188052736403,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.31150380890207446,
+     "lo": 0.29093556549824634,
+     "hi": 0.33200894270720477,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": 40.91304347826087,
+     "lo": 34.64891304347826,
+     "hi": 47.00108695652173,
+     "n": 23
+    }
+   },
+   "profiler_amnesic": {
+    "status": "run",
+    "n_seeds": 24,
+    "win_rate": {
+     "mean": 0.08541666666666668,
+     "lo": 0.0625,
+     "hi": 0.10833333333333334,
+     "n": 24
+    },
+    "brier": {
+     "mean": 0.3057509982280932,
+     "lo": 0.3000281073468531,
+     "hi": 0.31152696646347067,
+     "n": 24
+    },
+    "brier_first10": {
+     "mean": 0.3098442197801568,
+     "lo": 0.2905734891698777,
+     "hi": 0.32892018267404893,
+     "n": 24
+    },
+    "brier_after_flip10": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    }
+   }
+  }
+ },
+ "hypotheses": {
+  "H1": [
+   {
+    "name": "H1a",
+    "text": "tell_relational: profiler Brier (first 10 reveals by p3) < logreg_embed",
+    "status": "run",
+    "mean": 0.03273991923217162,
+    "lo": 0.00926271233211565,
+    "hi": 0.05718225241491494,
+    "n": 24,
+    "a": "profiler+claude",
+    "b": "logreg_embed",
+    "metric": "brier_first10",
+    "direction": "neg",
+    "holds": false
+   },
+   {
+    "name": "H1b",
+    "text": "tell_relational: profiler Brier (first 10 reveals by p3) < logreg_bow",
+    "status": "run",
+    "mean": 0.012145451097479802,
+    "lo": -0.016312226969313576,
+    "hi": 0.04153652415812613,
+    "n": 24,
+    "a": "profiler+claude",
+    "b": "logreg_bow",
+    "metric": "brier_first10",
+    "direction": "neg",
+    "holds": false
+   }
+  ],
+  "H2": [
+   {
+    "name": "H2a",
+    "text": "tell_flipper: profiler Brier (10 reveals after the flip) < logreg_embed",
+    "status": "run",
+    "mean": 0.024331507908529778,
+    "lo": -0.002819460527289995,
+    "hi": 0.05420329958686988,
+    "n": 24,
+    "a": "profiler+claude",
+    "b": "logreg_embed",
+    "metric": "brier_after_flip10",
+    "direction": "neg",
+    "holds": false
+   },
+   {
+    "name": "H2b",
+    "text": "tell_flipper: profiler Brier (10 reveals after the flip) not worse than bayes_discount",
+    "status": "run",
+    "mean": -0.011821793579278655,
+    "lo": -0.04318498876888242,
+    "hi": 0.0224954124532506,
+    "n": 24,
+    "a": "profiler+claude",
+    "b": "bayes_discount",
+    "metric": "brier_after_flip10",
+    "direction": "not_worse",
+    "holds": false,
+    "note": "'not worse' has no pre-registered margin; reported as holds iff the CI excludes 0 in profiler's favour (strict), with the CI itself shown"
+   }
+  ],
+  "H3": [
+   {
+    "name": "H3",
+    "text": "answer_tell: profiler revealed claims to discovery < logreg_embed",
+    "status": "not testable",
+    "mean": null,
+    "lo": null,
+    "hi": null,
+    "n": 0,
+    "a": "profiler+claude",
+    "b": "logreg_embed",
+    "metric": "revealed_to_discovery",
+    "direction": "neg",
+    "holds": null,
+    "note": "logreg_embed has no discovery statistic (no interpretable tell coefficient on a 64-dim projection; analyze.tell_discovery needs logreg.tell_coef), so no paired seeds exist. Profiler's revealed_to_discovery is reported descriptively in per_cell."
+   }
+  ],
+  "H4": [
+   {
+    "name": "H4[profiler|win_rate]",
+    "text": "r01 telltale (engineered, lexical): logreg_bow win_rate better than profiler (stub reflection)",
+    "status": "run",
+    "mean": 0.021666666666666667,
+    "lo": -0.021666666666666667,
+    "hi": 0.065,
+    "n": 30,
+    "a": "logreg_bow",
+    "b": "profiler",
+    "metric": "win_rate",
+    "direction": "pos",
+    "holds": false,
+    "source": "runs/r01"
+   },
+   {
+    "name": "H4[profiler|brier]",
+    "text": "r01 telltale (engineered, lexical): logreg_bow brier better than profiler (stub reflection)",
+    "status": "run",
+    "mean": -0.02185142727352277,
+    "lo": -0.028296646458175426,
+    "hi": -0.014728602351090466,
+    "n": 30,
+    "a": "logreg_bow",
+    "b": "profiler",
+    "metric": "brier",
+    "direction": "neg",
+    "holds": true,
+    "source": "runs/r01"
+   },
+   {
+    "name": "H4[profiler+claude|win_rate]",
+    "text": "r01 telltale (engineered, lexical): logreg_bow win_rate better than profiler+claude (Claude reflection)",
+    "status": "run",
+    "mean": 0.06666666666666667,
+    "lo": 0.008333333333333325,
+    "hi": 0.12510416666666613,
+    "n": 12,
+    "a": "logreg_bow",
+    "b": "profiler+claude",
+    "metric": "win_rate",
+    "direction": "pos",
+    "holds": true,
+    "source": "runs/r01"
+   },
+   {
+    "name": "H4[profiler+claude|brier]",
+    "text": "r01 telltale (engineered, lexical): logreg_bow brier better than profiler+claude (Claude reflection)",
+    "status": "run",
+    "mean": -0.02981568209415415,
+    "lo": -0.04806729735780363,
+    "hi": -0.006788691591563911,
+    "n": 12,
+    "a": "logreg_bow",
+    "b": "profiler+claude",
+    "metric": "brier",
+    "direction": "neg",
+    "holds": true,
+    "source": "runs/r01"
+   }
+  ]
+ },
+ "capability_map": {
+  "columns": [
+   "cue",
+   "winner",
+   "delta",
+   "ci",
+   "holds"
+  ],
+  "rows": [
+   {
+    "cue": "lexical / engineered (r01 telltale, Claude reflection)",
+    "hypothesis": "H4[profiler+claude|win_rate]",
+    "status": "run",
+    "metric": "win_rate",
+    "a": "logreg_bow",
+    "b": "profiler+claude",
+    "winner": "logreg_bow",
+    "delta": 0.06666666666666667,
+    "ci": [
+     0.008333333333333325,
+     0.12510416666666613
+    ],
+    "n": 12,
+    "holds": true
+   },
+   {
+    "cue": "lexical / engineered (r01 telltale, stub reflection)",
+    "hypothesis": "H4[profiler|win_rate]",
+    "status": "run",
+    "metric": "win_rate",
+    "a": "logreg_bow",
+    "b": "profiler",
+    "winner": "tie (CI spans 0)",
+    "delta": 0.021666666666666667,
+    "ci": [
+     -0.021666666666666667,
+     0.065
+    ],
+    "n": 30,
+    "holds": false
+   },
+   {
+    "cue": "relational (tell_relational)",
+    "hypothesis": "H1a",
+    "status": "run",
+    "metric": "brier_first10",
+    "a": "profiler+claude",
+    "b": "logreg_embed",
+    "winner": "logreg_embed",
+    "delta": 0.03273991923217162,
+    "ci": [
+     0.00926271233211565,
+     0.05718225241491494
+    ],
+    "n": 24,
+    "holds": false
+   },
+   {
+    "cue": "shifting (tell_flipper)",
+    "hypothesis": "H2a",
+    "status": "run",
+    "metric": "brier_after_flip10",
+    "a": "profiler+claude",
+    "b": "logreg_embed",
+    "winner": "tie (CI spans 0)",
+    "delta": 0.024331507908529778,
+    "ci": [
+     -0.002819460527289995,
+     0.05420329958686988
+    ],
+    "n": 24,
+    "holds": false
+   },
+   {
+    "cue": "shifting vs bayes_discount (tell_flipper)",
+    "hypothesis": "H2b",
+    "status": "run",
+    "metric": "brier_after_flip10",
+    "a": "profiler+claude",
+    "b": "bayes_discount",
+    "winner": "tie (CI spans 0)",
+    "delta": -0.011821793579278655,
+    "ci": [
+     -0.04318498876888242,
+     0.0224954124532506
+    ],
+    "n": 24,
+    "holds": false
+   },
+   {
+    "cue": "answer (answer_tell)",
+    "hypothesis": "H3",
+    "status": "not testable",
+    "winner": null,
+    "delta": null,
+    "ci": null,
+    "holds": null,
+    "note": "logreg_embed has no discovery statistic (no interpretable tell coefficient on a 64-dim projection; analyze.tell_discovery needs logreg.tell_coef), so no paired seeds exist. Profiler's revealed_to_discovery is reported descriptively in per_cell."
+   }
+  ],
+  "note": "\u0394 = profiler \u2212 baseline (H1\u2013H3, lower Brier/claims is better) or logreg_bow \u2212 profiler (r01 win rate). Roles designed after r01 (PREREG disclosure). 'not run' cells were not run."
+ }
+}

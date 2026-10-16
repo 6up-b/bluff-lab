@@ -8,5 +8,4 @@ seeds: [4000, 4023]
 tables: [tell_relational, tell_flipper, answer_tell]   # = [control, tell_*] / [control, answer_tell]
 agents: [counter, bayes, bayes_discount, logreg_bow, logreg_embed, profiler, profiler_amnesic]
 reflection: {profiler: claude}
-not_run:                                 # cells not run (deadline GO/NO-GO 14:15); see runs/b01/NOT_RUN.md
-  profiler: "real-Claude reflection: ~200 s/world, 72 worlds at <= 8 concurrent Claude calls ~ 30+ min > deadline"
+not_run: {}                               # all cells run (profiler: real Claude reflection, Opus via Bedrock)
