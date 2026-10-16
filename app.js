@@ -834,7 +834,7 @@ function renderForge() {
   const blocked = F.network_blocked_verified || E.network_blocked_verified;
   const gate = F.gate || E.gate;
   const rows = [kv("Static gate", gate?.ok ? '<span class="honestword">passed</span>' : `<span class="bluffword">rejected</span> ${esc(gate?.reason || "")}`)];
-  if (sid) rows.push(kv("Sandbox", `<code class="sid">${esc(sid)}</code>${blocked ? ' <span class="chip evidence">network blocked</span>' : ' <span class="chip none">restricted network</span>'}`));
+  if (sid) rows.push(kv("Daytona sandbox", `<code class="sid">${esc(sid)}</code>`));
   if (wr !== undefined) rows.push(kv("Win rate, same seeds", `${pct(wr)}${ci ? ` <small>(${pct(ci[0])}–${pct(ci[1])})</small>` : ""}${base !== undefined ? ` vs Profiler ${pct(base)}` : ""}`));
   if (games !== undefined) rows.push(kv("Games, crashes, timeouts", [games, crashes, timeouts].map((v) => esc(v ?? "—")).join(", ")));
   if (promoted !== undefined) rows.push(kv("Promoted", promoted ? '<span class="honestword">yes</span>' : "no"));
