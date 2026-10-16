@@ -68,5 +68,54 @@
   "dataset_layout": "one dataset per agent (experiments.run has no row filter)",
   "dataset_id": "RGF0YXNldDozNzAyODQ6aCtCeA==",
   "ax_url": null,
-  "created": "2026-10-16T13:54:12"
+  "created": "2026-10-16T13:54:12",
+  "surgery": {
+    "dataset_id": "RGF0YXNldDozNzAyODg6c1BKYw==",
+    "dataset_name": "surgery-r01-140200",
+    "n_rows": 555,
+    "recorded_brier": 0.27676038977124234,
+    "sanity_full_equals_recorded": true,
+    "experiments": [
+      {
+        "name": "surgery-full",
+        "variant": "full",
+        "experiment_id": "RXhwZXJpbWVudDoxNjI0NzY6ZTFLUw==",
+        "mean_brier_arize": 0.27676038977124234,
+        "mean_brier_local": 0.27676038977124234,
+        "flips_arize": 0,
+        "flips_local": 0,
+        "visible_in_listing": true
+      },
+      {
+        "name": "surgery-erased",
+        "variant": "as_of:0",
+        "experiment_id": "RXhwZXJpbWVudDoxNjI0ODE6R0RGUg==",
+        "mean_brier_arize": 0.2975531867257939,
+        "mean_brier_local": 0.2975531867257939,
+        "flips_arize": 63,
+        "flips_local": 63,
+        "visible_in_listing": true
+      },
+      {
+        "name": "surgery-false-memory",
+        "variant": "false_memory",
+        "experiment_id": "RXhwZXJpbWVudDoxNjI0ODY6Qm9vWg==",
+        "mean_brier_arize": 0.27676038977124234,
+        "mean_brier_local": 0.27676038977124234,
+        "flips_arize": 0,
+        "flips_local": 0,
+        "visible_in_listing": true
+      },
+      {
+        "name": "surgery-provenance-blind",
+        "variant": "false_memory@profiler_blind",
+        "experiment_id": "RXhwZXJpbWVudDoxNjI0ODk6TzI0Ng==",
+        "mean_brier_arize": 0.28409574386687014,
+        "mean_brier_local": 0.28409574386687014,
+        "flips_arize": 146,
+        "flips_local": 146,
+        "visible_in_listing": true
+      }
+    ]
+  }
 }

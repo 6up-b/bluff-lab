@@ -56,6 +56,8 @@ def build_rows(cap: int = 2000) -> pd.DataFrame:
                     "agent": label, "reflection": w["reflection"], "respond_rule": w["rule"],
                     "seed": str(s), "p_final": float(p["p_final"]),
                     "was_bluff": int(bool(rev["payload"]["was_bluff"])),
+                    "world_dir": str(w["dir"]), "seq": int(d["ev"]["seq"]),
+                    "tell_seat": next((st for st, r in w["roles"].items() if r == "telltale"), "p3"),
                 })
             w.pop("events", None)
         if rows and len(rows) + len(chunk) > cap:
@@ -76,10 +78,101 @@ def brier(output, dataset_row):
     return EvaluationResult(score=(p - y) ** 2, label="brier", explanation=f"p={p:.4f} was_bluff={int(y)}")
 
 
+SURGERY = {"surgery-full": "full", "surgery-erased": "as_of:0",
+           "surgery-false-memory": "false_memory", "surgery-provenance-blind": "false_memory@profiler_blind"}
+
+
+def _variant(name: str, tell_seat: str):
+    """String variant → dict; false_memory targets the telltale seat, same logic as pick.false_memory_variant."""
+    from blab.orchestrator.pick import false_memory_variant
+    from blab.replay import parse_variant
+    if not name.startswith("false_memory"):
+        return name
+    v = false_memory_variant(tell_seat)
+    if "@" in name:
+        v = {**v, "agent": parse_variant(name).get("agent")}
+    return v
+
+
+def _num(o, k):
+    if isinstance(o, str):
+        try:
+            o = json.loads(o)
+        except Exception:
+            return float(o) if k == "p_final" else o
+    return o[k] if isinstance(o, dict) else (float(o) if k == "p_final" else None)
+
+
+def surgery(c, space: str, stamp: str) -> dict:
+    from arize.experiments import EvaluationResult
+    from blab.replay import replay_decision
+    df = build_rows(2000)
+    df = df[df["agent"] == "profiler"].reset_index(drop=True)
+    local = {}
+    for ename, vname in SURGERY.items():
+        rs = [replay_decision(r.world_dir, int(r.seq), _variant(vname, r.tell_seat)) for r in df.itertuples()]
+        local[ename] = pd.DataFrame({"p": [x["p_final"] for x in rs], "a": [x["action"] for x in rs]})
+    recorded = float(((df["p_final"] - df["was_bluff"]) ** 2).mean())
+    full_b = float(((local["surgery-full"]["p"] - df["was_bluff"]) ** 2).mean())
+    print(f"surgery sanity: recorded={recorded:.6f} full-replay={full_b:.6f} n={len(df)}")
+    if abs(full_b - recorded) > 1e-9:
+        raise SystemExit("surgery: full replay Brier != recorded Brier; not publishing")
+    full_action = dict(zip(df["state_id"], local["surgery-full"]["a"]))
+    ds_name = f"surgery-r01-{stamp}"
+    ds = c.datasets.create(space=space, name=ds_name, examples=df)
+    out = {"dataset_id": ds.id, "dataset_name": ds_name, "n_rows": len(df), "recorded_brier": recorded,
+           "sanity_full_equals_recorded": True, "experiments": []}
+
+    def b_eval(output, dataset_row):
+        p, y = _num(output, "p_final"), float(dataset_row["was_bluff"])
+        return EvaluationResult(score=(p - y) ** 2, label="brier", explanation=f"p={p:.4f} was_bluff={int(y)}")
+
+    def f_eval(output, dataset_row):
+        a, a0 = _num(output, "action"), full_action[dataset_row["state_id"]]
+        return EvaluationResult(score=float(a != a0), label="flipped" if a != a0 else "same",
+                                explanation=f"{a0}->{a}")
+
+    for ename, vname in SURGERY.items():
+        def task(dataset_row, _v=vname):
+            r = replay_decision(dataset_row["world_dir"], int(dataset_row["seq"]), _variant(_v, dataset_row["tell_seat"]))
+            return {"p_final": float(r["p_final"]), "action": r["action"]}
+        exp, res = c.experiments.run(name=f"{ename}-{stamp}", dataset=ds.id, space=space, task=task,
+                                     evaluators={"brier": b_eval, "flipped": f_eval}, concurrency=10)
+        col = lambda n: next((k for k in res.columns if n in k and k.endswith("score")), None)
+        lb = float(((local[ename]["p"] - df["was_bluff"]) ** 2).mean())
+        lf = int((local[ename]["a"].values != local["surgery-full"]["a"].values).sum())
+        out["experiments"].append({"name": ename, "variant": vname, "experiment_id": getattr(exp, "id", None),
+                                   "mean_brier_arize": float(res[col("brier")].mean()), "mean_brier_local": lb,
+                                   "flips_arize": int(res[col("flipped")].sum()), "flips_local": lf})
+        print(out["experiments"][-1])
+    time.sleep(5)
+    ids = [getattr(e, "id", None) for e in (getattr(c.experiments.list(dataset=ds.id, space=space), "experiments", None) or [])]
+    for e in out["experiments"]:
+        e["visible_in_listing"] = e["experiment_id"] in ids
+    return out
+
+
+def main_surgery() -> None:
+    load_env()
+    from arize import ArizeClient
+    space = os.environ["ARIZE_SPACE_ID"]
+    c = ArizeClient(api_key=os.environ["ARIZE_API_KEY"])
+    out = surgery(c, space, datetime.now().strftime("%H%M%S"))
+    p = RUN / "arize_experiment.json"
+    j = json.loads(p.read_text())
+    j["surgery"] = out
+    p.write_text(json.dumps(j, indent=2))
+    Path("show/bundle/arize_experiment.json").write_text(json.dumps(j, indent=2))
+    print(json.dumps(out, indent=2))
+
+
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cap", type=int, default=2000)
+    ap.add_argument("--surgery", action="store_true")
     args = ap.parse_args(argv)
+    if args.surgery:
+        return main_surgery()
     load_env()
     from arize import ArizeClient
     space = os.environ["ARIZE_SPACE_ID"]

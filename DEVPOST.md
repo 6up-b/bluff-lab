@@ -86,10 +86,17 @@ All metric definitions, including the §6 versions and our corrected ones, are i
 - **SurrealDB Agent Memory:** a mirror of the belief graph. Rewriting a belief supersedes the old one, which
   keeps its `valid_until` and history. A planted false line is flagged by the Profiler: no evidence behind it.
   (SurrealDB did not raise an `uncertainty` record for it in our spike, so we do not claim one.) Retrieval feeds reflection.
-- **Arize AX:** spans for decisions, reflections, forge steps and surgery, plus one experiment per agent over
-  frozen r01 decisions (1,994 revealed respond decisions, telltale table, threshold rule) with a Brier
-  evaluator. Mean Brier: logreg_bow {{arize:logreg_bow|3}}, profiler {{arize:profiler|3}}, bayes
-  {{arize:bayes|3}}, counter {{arize:counter|3}} (ids in `show/bundle/arize_experiment.json`).
+- **Arize AX:** spans for decisions, reflections, forge steps and surgery, plus two sets of experiments over
+  frozen r01 decisions (telltale table, threshold rule), each with a Brier evaluator.
+  - One experiment per agent, each agent scored on its own revealed decisions (n differs; 1,994 in total).
+    Mean Brier: logreg_bow {{arize:logreg_bow|3}}, profiler {{arize:profiler|3}}, bayes {{arize:bayes|3}},
+    counter {{arize:counter|3}}.
+  - Memory Surgery: same 555 decisions, only memory changes. Each Profiler decision is replayed in-process
+    (no LLM) with full memory, erased memory, a planted false memory, and the planted memory given to a
+    provenance-blind agent. Mean Brier (actions flipped vs full): full {{arize_surgery:full|3}}, erased
+    {{arize_surgery:erased|3}} ({{arize_flips:erased}}), false memory {{arize_surgery:false-memory|3}}
+    ({{arize_flips:false-memory}}), provenance-blind {{arize_surgery:provenance-blind|3}}
+    ({{arize_flips:provenance-blind}}). Ids are in `show/bundle/arize_experiment.json`.
 - **ElevenLabs:** the Profiler's interrogation line ("You've gone very formal all of a sudden.") is voiced
   from the real `ask` event.
 

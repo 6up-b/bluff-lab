@@ -658,6 +658,7 @@ def fill_devpost(run: str = "r01", template: str = "DEVPOST.md", out: str = "DEV
       {{reveal:variants.1.result.p_final|2}}   any field of show/bundle/reveal.json (Surgery Reveal numbers)
       {{mem:setting}} / {{memclaims:threshold}}  show/bundle/memory.json fields / its claim sentences as a list
       {{arize:profiler|3}}               mean Brier of that agent's Arize AX experiment (runs/<run>/arize_experiment.json)
+      {{arize_surgery:erased|3}}         mean Brier of a Memory Surgery experiment (name or variant); {{arize_flips:erased}} its flips
     Anything that cannot be resolved becomes `[missing: …]` and is reported, so nothing is silently invented."""
     import re
     res = json.loads((Path(root) / run / "results.json").read_text())
@@ -697,6 +698,14 @@ def fill_devpost(run: str = "r01", template: str = "DEVPOST.md", out: str = "DEV
             v = next((e.get("mean_brier_arize") for e in ex if e.get("agent") == key[6:]), None)
             if v is not None:
                 return fmt(v, spec)
+        if key.startswith("arize_surgery:") or key.startswith("arize_flips:"):   # Memory Surgery experiments
+            aj = Path(root) / run / "arize_experiment.json"
+            sx = (json.loads(aj.read_text()).get("surgery") or {}).get("experiments", []) if aj.exists() else []
+            name = key.split(":", 1)[1]
+            e = next((e for e in sx if e.get("variant") == name or e.get("name") in (name, f"surgery-{name}")), None)
+            v = (e.get("mean_brier_arize") if key.startswith("arize_surgery:") else e.get("flips_arize")) if e else None
+            if v is not None:
+                return str(v) if key.startswith("arize_flips:") else fmt(v, spec)
         if key.startswith("claim_if:"):
             c = res.get("claims", {}).get(key[9:])
             return c["text"] if c and c.get("holds") and c.get("text") else ""
