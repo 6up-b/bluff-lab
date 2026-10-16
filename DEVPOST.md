@@ -94,6 +94,14 @@ All metric definitions, including the §6 versions and our corrected ones, are i
 
 - The demo is a recorded replay of one real simulated world, picked by rule (near the median discovery game).
 - Every number above comes from `runs/r01/results.json`. This file is generated from it.
+- r01 is the engineered-feature control: every agent was given a precomputed `formal_register` feature, so a
+  simple classifier is expected to win there, and it did (`logreg_bow` beat the Profiler on the engineered
+  `telltale`). The opponent roles `tell_relational`, `tell_flipper` and `answer_tell` were designed **after**
+  that result, to test where LLM memory should help. They are pre-registered in `PREREG.md` (committed before
+  any of those worlds ran, on fresh seeds) and every cell is reported, including ties and losses.
+- Strategy Forge: 2 of 4 telltale forges were promoted (0 of 1 on longcon); outcomes vary a lot between
+  generations from the same memory. The Show displays the earliest forge for the picked world, chosen without
+  looking at its result, alongside that tally.
 - The tells are planted. This is a controlled experiment, and ground truth requires them. The question is
   whether the agent finds them without being told which feature matters.
 
