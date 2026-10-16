@@ -10,38 +10,156 @@
   ]
  },
  {
-  "name": "cold open: the claim",
-  "say": "Game 10. Player 3 claims 1 A.",
+  "name": "cold open: the deal (game 1, round 1)",
+  "cold_open": {
+   "rule": "the first round of the picked world (lowest game, then round) that ends in a challenge and a reveal; game 1 when it has one",
+   "game": 1,
+   "round": 1,
+   "deal_seq": 3,
+   "claim_seqs": [
+    4,
+    6
+   ],
+   "challenge_seq": 10,
+   "reveal_seq": 11,
+   "ask_seq": 7
+  },
+  "say": "Three players, five cards each. The table rank this round is Kings. Jokers are wild.",
   "actions": [
    {
     "action": "play_to",
-    "seq": 1042
+    "seq": 3,
+    "from": 3
+   },
+   {
+    "action": "caption",
+    "text": "Five cards each, one table rank: Kings. Jokers are wild."
+   }
+  ]
+ },
+ {
+  "name": "cold open: Player 2 claims",
+  "say": "Player 2: \u201cDon't sweat it, two Kings.\u201d",
+  "actions": [
+   {
+    "action": "play_to",
+    "seq": 4
+   },
+   {
+    "action": "caption",
+    "text": "Put down 1\u20133 cards face down and claim they are all the table rank. Lie if you like."
+   }
+  ]
+ },
+ {
+  "name": "cold open: Player 3 claims",
+  "say": "Player 3: \u201cThe cards are one King.\u201d",
+  "actions": [
+   {
+    "action": "play_to",
+    "seq": 6
+   },
+   {
+    "action": "caption",
+    "text": "The next player may call it, or play on and make a claim of their own."
+   }
+  ]
+ },
+ {
+  "name": "cold open: the Profiler asks",
+  "say": "The Profiler can ask a question first: \u201cAre you sure about that?\u201d",
+  "actions": [
+   {
+    "action": "play_to",
+    "seq": 8
+   },
+   {
+    "action": "caption",
+    "text": "Before it decides, the Profiler may ask one question."
+   }
+  ]
+ },
+ {
+  "name": "cold open: the call",
+  "say": "The Profiler calls it.",
+  "actions": [
+   {
+    "action": "play_to",
+    "seq": 10
+   },
+   {
+    "action": "caption",
+    "text": "Only the next player can call a claim."
+   }
+  ]
+ },
+ {
+  "name": "cold open: the reveal",
+  "say": "It was a bluff. Player 3 loses a life.",
+  "actions": [
+   {
+    "action": "play_to",
+    "seq": 12
+   },
+   {
+    "action": "caption",
+    "text": "Caught lying, you lose a life. Wrong call, the caller loses one."
+   }
+  ]
+ },
+ {
+  "name": "game 10: the claim",
+  "say": "Game 10. Player 3: \u201cThe cards are one King.\u201d",
+  "actions": [
+   {
+    "action": "play_to",
+    "seq": 1023,
+    "from": 1014,
+    "pace": 0.6
+   },
+   {
+    "action": "caption",
+    "text": "Game 10. The Profiler has played Player 3 for 9 games."
+   }
+  ]
+ },
+ {
+  "name": "the ask (audio if voiced)",
+  "say": "That's a frozen model. Nobody told it to watch for that.",
+  "actions": [
+   {
+    "action": "play_to",
+    "seq": 1025
+   },
+   {
+    "action": "audio",
+    "file": "voice/ask_1024.mp3"
    }
   ]
  },
  {
   "name": "freeze",
-  "say": "Let's freeze that decision and look inside.",
+  "say": "The Profiler has to decide: call Player 3, or play on. Let's stop time and look inside.",
   "actions": [
    {
     "action": "freeze",
-    "seq": 1043
+    "seq": 1026
    }
   ]
  },
  {
   "name": "mind inspector",
-  "say": "Card math alone says 0.09.",
+  "say": "Card math alone says 0.24.",
   "actions": [
    {
     "action": "inspect",
-    "seq": 1043
+    "seq": 1026
    }
   ]
  },
  {
   "name": "memory evidence",
-  "say": "Memory line: Player 3 speaks formally (no contractions, 4+ words) when bluffing \u2014 applies on 15 reveals. Pushes it to 0.69, so it challenges.",
+  "say": "Memory line: Player 3 speaks formally (no contractions, 4+ words) when bluffing. \u2014 applies on 11 reveals. Pushes it to 0.76, so it challenges.",
   "actions": [
    {
     "action": "evidence"
@@ -58,20 +176,6 @@
    {
     "action": "dossier",
     "game": 4,
-    "about": "p3"
-   }
-  ]
- },
- {
-  "name": "dossier as of game 7",
-  "requires": [
-   "dossier.json"
-  ],
-  "say": "",
-  "actions": [
-   {
-    "action": "dossier",
-    "game": 7,
     "about": "p3"
    }
   ]
@@ -102,7 +206,7 @@
  },
  {
   "name": "surgery: erased",
-  "say": "No memory: 0.32.",
+  "say": "No memory: 0.43.",
   "actions": [
    {
     "action": "surgery",
@@ -112,7 +216,7 @@
  },
  {
   "name": "surgery: false memory",
-  "say": "Plant 'Player 3 never bluffs': 0.69.",
+  "say": "Plant 'Player 3 never bluffs': 0.76.",
   "actions": [
    {
     "action": "surgery",
@@ -122,7 +226,7 @@
  },
  {
   "name": "surgery: provenance-blind",
-  "say": "A provenance-blind agent: 0.09.",
+  "say": "A provenance-blind agent: 0.24.",
   "actions": [
    {
     "action": "surgery",

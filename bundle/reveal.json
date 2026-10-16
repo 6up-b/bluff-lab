@@ -1,135 +1,143 @@
 {
- "world": "telltale-profiler-s1",
- "run": "local",
- "seq": 1043,
+ "world": "w0002",
+ "run": "r01",
+ "seq": 1026,
  "decision_game": 10,
  "decision_round": 4,
- "claim_seq": 1042,
- "ask_seq": null,
- "reveal_seq": 1045,
+ "claim_seq": 1023,
+ "ask_seq": 1024,
+ "reveal_seq": 1028,
  "decision": {
   "kind": "respond",
   "target": "p3",
   "claim": {
    "count": 1,
-   "rank": "A",
-   "utterance": "I am laying down one Ace.",
+   "rank": "K",
+   "utterance": "The cards are one King.",
    "features": {
     "hand_size": 3,
     "claim_count": 1,
     "trusted_streak": 1,
-    "lives_target": 3,
+    "lives_target": 2,
     "game_index": 10,
     "round_index": 4,
-    "was_challenged_last_round": true,
-    "table_rank": "A",
-    "utterance": "I am laying down one Ace.",
+    "was_challenged_last_round": false,
+    "table_rank": "K",
+    "utterance": "The cards are one King.",
     "formal_register": true,
-    "lives_self": 1
+    "lives_self": 1,
+    "answer_formal_register": true,
+    "answer_utterance": "I would not mislead you about this.",
+    "answer_has_contraction": false
    }
   },
   "card_math": {
    "U": 15,
-   "m": 6,
+   "m": 4,
    "h": 4,
    "k": 1,
-   "p_cards": 0.092308
+   "p_cards": 0.241758
   },
   "memory_used": [
    {
-    "hyp_id": "h_telltale-profiler-s1_p3_001",
+    "hyp_id": "h_w0002_p3_001",
     "aspect": "verbal_tell",
-    "text": "Player 3 speaks formally (no contractions, 4+ words) when bluffing",
+    "text": "Player 3 speaks formally (no contractions, 4+ words) when bluffing.",
     "status": "confirmed",
     "provenance": "evidence",
-    "n_true": 15,
-    "n_false": 9,
+    "n_true": 11,
+    "n_false": 8,
     "q_true": [
-     0.6609,
-     0.36,
-     0.89
+     0.6795,
+     0.33,
+     0.92
     ],
     "q_false": [
-     0.1451,
-     0.0,
-     0.44
+     0.2231,
+     0.01,
+     0.59
     ],
     "evidence_obs": [
-     "telltale-profiler-s1:g3r3",
-     "telltale-profiler-s1:g4r4",
-     "telltale-profiler-s1:g5r4",
-     "telltale-profiler-s1:g6r1",
-     "telltale-profiler-s1:g6r2",
-     "telltale-profiler-s1:g6r4",
-     "telltale-profiler-s1:g6r5",
-     "telltale-profiler-s1:g7r8",
-     "telltale-profiler-s1:g8r1",
-     "telltale-profiler-s1:g8r2",
-     "telltale-profiler-s1:g8r4",
-     "telltale-profiler-s1:g8r6",
-     "telltale-profiler-s1:g9r3",
-     "telltale-profiler-s1:g9r4",
-     "telltale-profiler-s1:g9r5"
+     "w0002:g5r1",
+     "w0002:g5r2",
+     "w0002:g5r3",
+     "w0002:g6r1",
+     "w0002:g6r3",
+     "w0002:g7r1",
+     "w0002:g8r2",
+     "w0002:g8r4",
+     "w0002:g9r4",
+     "w0002:g9r5",
+     "w0002:g9r6"
     ],
     "used_as": "q_source",
     "matched": true
    }
   ],
-  "q_used": 0.6609,
-  "q_source": "h_telltale-profiler-s1_p3_001",
-  "p_final": 0.6922016428,
+  "q_used": 0.6795,
+  "q_source": "h_w0002_p3_001",
+  "p_final": 0.756983439,
   "ev": {
-   "challenge": 0.3844032855999999,
-   "play_on": -0.3844032855999999
+   "challenge": 0.513966878,
+   "play_on": -0.513966878
   },
   "action": "challenge",
   "explore": false,
   "propensity": 1.0,
-  "rng_u": 0.7395912343528989,
+  "rng_u": 0.36778131531125213,
   "forced": false,
-  "memory_version": 13,
+  "memory_version": 12,
   "agent": "profiler",
-  "ask": null,
-  "trace": {}
+  "ask": {
+   "asked": true,
+   "template_id": "formal_callout",
+   "text": "You've gone very formal all of a sudden.",
+   "kind": "callout",
+   "answer": "I would not mislead you about this.",
+   "reason_aspect": "verbal_tell"
+  },
+  "trace": {
+   "arize_trace_id": "5fc201861f1a0d7dbeb3fbddd149a4f3"
+  }
  },
  "claim": {
   "count": 1,
-  "claimed_rank": "A",
+  "claimed_rank": "K",
   "cards": [
-   "K"
+   "Q"
   ],
-  "utterance": "I am laying down one Ace.",
+  "utterance": "The cards are one King.",
   "features": {
    "hand_size": 3,
    "claim_count": 1,
    "trusted_streak": 1,
-   "lives_target": 3,
+   "lives_target": 2,
    "game_index": 10,
    "round_index": 4,
-   "was_challenged_last_round": true,
-   "table_rank": "A",
-   "utterance": "I am laying down one Ace.",
+   "was_challenged_last_round": false,
+   "table_rank": "K",
+   "utterance": "The cards are one King.",
    "formal_register": true,
    "lives_self": 1,
    "card_math": {
     "U": 15,
-    "m": 6,
+    "m": 4,
     "h": 4,
     "k": 1,
-    "p_cards": 0.092308
+    "p_cards": 0.241758
    }
   },
   "bluff_kind": "forced"
  },
  "reveal": {
   "cards": [
-   "K"
+   "Q"
   ],
   "was_bluff": true,
   "loser": "p3",
   "claimant": "p3",
   "challenger": "p1",
-  "obs_id": "telltale-profiler-s1:g10r4"
+  "obs_id": "w0002:g10r4"
  },
  "variants": [
   {
@@ -140,94 +148,100 @@
     "target": "p3",
     "claim": {
      "count": 1,
-     "rank": "A",
-     "utterance": "I am laying down one Ace.",
+     "rank": "K",
+     "utterance": "The cards are one King.",
      "features": {
       "hand_size": 3,
       "claim_count": 1,
       "trusted_streak": 1,
-      "lives_target": 3,
+      "lives_target": 2,
       "game_index": 10,
       "round_index": 4,
-      "was_challenged_last_round": true,
-      "table_rank": "A",
-      "utterance": "I am laying down one Ace.",
+      "was_challenged_last_round": false,
+      "table_rank": "K",
+      "utterance": "The cards are one King.",
       "formal_register": true,
-      "lives_self": 1
+      "lives_self": 1,
+      "answer_formal_register": true,
+      "answer_utterance": "I would not mislead you about this.",
+      "answer_has_contraction": false
      }
     },
     "card_math": {
      "U": 15,
-     "m": 6,
+     "m": 4,
      "h": 4,
      "k": 1,
-     "p_cards": 0.092308
+     "p_cards": 0.241758
     },
     "memory_used": [
      {
-      "hyp_id": "h_telltale-profiler-s1_p3_001",
+      "hyp_id": "h_w0002_p3_001",
       "aspect": "verbal_tell",
-      "text": "Player 3 speaks formally (no contractions, 4+ words) when bluffing",
+      "text": "Player 3 speaks formally (no contractions, 4+ words) when bluffing.",
       "status": "confirmed",
       "provenance": "evidence",
-      "n_true": 15,
-      "n_false": 9,
+      "n_true": 11,
+      "n_false": 8,
       "q_true": [
-       0.6609,
-       0.36,
-       0.89
+       0.6795,
+       0.33,
+       0.92
       ],
       "q_false": [
-       0.1451,
-       0.0,
-       0.44
+       0.2231,
+       0.01,
+       0.59
       ],
       "evidence_obs": [
-       "telltale-profiler-s1:g3r3",
-       "telltale-profiler-s1:g4r4",
-       "telltale-profiler-s1:g5r4",
-       "telltale-profiler-s1:g6r1",
-       "telltale-profiler-s1:g6r2",
-       "telltale-profiler-s1:g6r4",
-       "telltale-profiler-s1:g6r5",
-       "telltale-profiler-s1:g7r8",
-       "telltale-profiler-s1:g8r1",
-       "telltale-profiler-s1:g8r2",
-       "telltale-profiler-s1:g8r4",
-       "telltale-profiler-s1:g8r6",
-       "telltale-profiler-s1:g9r3",
-       "telltale-profiler-s1:g9r4",
-       "telltale-profiler-s1:g9r5"
+       "w0002:g5r1",
+       "w0002:g5r2",
+       "w0002:g5r3",
+       "w0002:g6r1",
+       "w0002:g6r3",
+       "w0002:g7r1",
+       "w0002:g8r2",
+       "w0002:g8r4",
+       "w0002:g9r4",
+       "w0002:g9r5",
+       "w0002:g9r6"
       ],
       "used_as": "q_source",
       "matched": true
      }
     ],
-    "q_used": 0.6609,
-    "q_source": "h_telltale-profiler-s1_p3_001",
-    "p_final": 0.6922016428,
+    "q_used": 0.6795,
+    "q_source": "h_w0002_p3_001",
+    "p_final": 0.756983439,
     "ev": {
-     "challenge": 0.3844032855999999,
-     "play_on": -0.3844032855999999
+     "challenge": 0.513966878,
+     "play_on": -0.513966878
     },
     "action": "challenge",
     "explore": false,
     "propensity": 1.0,
-    "rng_u": 0.7395912343528989,
+    "rng_u": 0.36778131531125213,
     "forced": false,
-    "memory_version": 13,
+    "memory_version": 12,
     "agent": "profiler",
-    "ask": null,
+    "ask": {
+     "asked": true,
+     "template_id": "formal_callout",
+     "text": "You've gone very formal all of a sudden.",
+     "kind": "callout",
+     "answer": "I would not mislead you about this.",
+     "reason_aspect": "verbal_tell"
+    },
     "trace": {},
-    "replay_of": 1043,
+    "replay_of": 1026,
     "variant": {
      "type": "full"
     },
     "logged": {
-     "p_final": 0.6922016428,
+     "p_final": 0.756983439,
      "action": "challenge",
-     "q_used": 0.6609,
-     "q_source": "h_telltale-profiler-s1_p3_001"
+     "q_used": 0.6795,
+     "q_source": "h_w0002_p3_001"
     },
     "delta_p": 0.0,
     "flipped": false,
@@ -246,60 +260,70 @@
     "target": "p3",
     "claim": {
      "count": 1,
-     "rank": "A",
-     "utterance": "I am laying down one Ace.",
+     "rank": "K",
+     "utterance": "The cards are one King.",
      "features": {
       "hand_size": 3,
       "claim_count": 1,
       "trusted_streak": 1,
-      "lives_target": 3,
+      "lives_target": 2,
       "game_index": 10,
       "round_index": 4,
-      "was_challenged_last_round": true,
-      "table_rank": "A",
-      "utterance": "I am laying down one Ace.",
+      "was_challenged_last_round": false,
+      "table_rank": "K",
+      "utterance": "The cards are one King.",
       "formal_register": true,
-      "lives_self": 1
+      "lives_self": 1,
+      "answer_formal_register": true,
+      "answer_utterance": "I would not mislead you about this.",
+      "answer_has_contraction": false
      }
     },
     "card_math": {
      "U": 15,
-     "m": 6,
+     "m": 4,
      "h": 4,
      "k": 1,
-     "p_cards": 0.092308
+     "p_cards": 0.241758
     },
     "memory_used": [],
-    "q_used": 0.24626865671641793,
+    "q_used": 0.24626865671641787,
     "q_source": "base:p3",
-    "p_final": 0.3158440895522388,
+    "p_final": 0.4284892388059701,
     "ev": {
-     "challenge": -0.3683118208955224,
-     "play_on": 0.3683118208955224
+     "challenge": -0.14302152238805976,
+     "play_on": 0.14302152238805976
     },
     "action": "play_on",
     "explore": false,
     "propensity": 0.9,
-    "rng_u": 0.7395912343528989,
+    "rng_u": 0.36778131531125213,
     "forced": false,
     "memory_version": 0,
     "agent": "profiler",
-    "ask": null,
+    "ask": {
+     "asked": true,
+     "template_id": "formal_callout",
+     "text": "You've gone very formal all of a sudden.",
+     "kind": "callout",
+     "answer": "I would not mislead you about this.",
+     "reason_aspect": "verbal_tell"
+    },
     "trace": {},
-    "replay_of": 1043,
+    "replay_of": 1026,
     "variant": {
      "type": "as_of",
      "game": 0
     },
     "logged": {
-     "p_final": 0.6922016428,
+     "p_final": 0.756983439,
      "action": "challenge",
-     "q_used": 0.6609,
-     "q_source": "h_telltale-profiler-s1_p3_001"
+     "q_used": 0.6795,
+     "q_source": "h_w0002_p3_001"
     },
-    "delta_p": -0.37635755324776116,
+    "delta_p": -0.32849420019402986,
     "flipped": true,
-    "delta_ev": -0.7527151064955223
+    "delta_ev": -0.6569884003880597
    },
    "variant": {
     "type": "as_of",
@@ -315,70 +339,69 @@
     "target": "p3",
     "claim": {
      "count": 1,
-     "rank": "A",
-     "utterance": "I am laying down one Ace.",
+     "rank": "K",
+     "utterance": "The cards are one King.",
      "features": {
       "hand_size": 3,
       "claim_count": 1,
       "trusted_streak": 1,
-      "lives_target": 3,
+      "lives_target": 2,
       "game_index": 10,
       "round_index": 4,
-      "was_challenged_last_round": true,
-      "table_rank": "A",
-      "utterance": "I am laying down one Ace.",
+      "was_challenged_last_round": false,
+      "table_rank": "K",
+      "utterance": "The cards are one King.",
       "formal_register": true,
-      "lives_self": 1
+      "lives_self": 1,
+      "answer_formal_register": true,
+      "answer_utterance": "I would not mislead you about this.",
+      "answer_has_contraction": false
      }
     },
     "card_math": {
      "U": 15,
-     "m": 6,
+     "m": 4,
      "h": 4,
      "k": 1,
-     "p_cards": 0.092308
+     "p_cards": 0.241758
     },
     "memory_used": [
      {
-      "hyp_id": "h_telltale-profiler-s1_p3_001",
+      "hyp_id": "h_w0002_p3_001",
       "aspect": "verbal_tell",
-      "text": "Player 3 speaks formally (no contractions, 4+ words) when bluffing",
+      "text": "Player 3 speaks formally (no contractions, 4+ words) when bluffing.",
       "status": "confirmed",
       "provenance": "evidence",
-      "n_true": 15,
-      "n_false": 9,
+      "n_true": 11,
+      "n_false": 8,
       "q_true": [
-       0.6609,
-       0.36,
-       0.89
+       0.6795,
+       0.33,
+       0.92
       ],
       "q_false": [
-       0.1451,
-       0.0,
-       0.44
+       0.2231,
+       0.01,
+       0.59
       ],
       "evidence_obs": [
-       "telltale-profiler-s1:g3r3",
-       "telltale-profiler-s1:g4r4",
-       "telltale-profiler-s1:g5r4",
-       "telltale-profiler-s1:g6r1",
-       "telltale-profiler-s1:g6r2",
-       "telltale-profiler-s1:g6r4",
-       "telltale-profiler-s1:g6r5",
-       "telltale-profiler-s1:g7r8",
-       "telltale-profiler-s1:g8r1",
-       "telltale-profiler-s1:g8r2",
-       "telltale-profiler-s1:g8r4",
-       "telltale-profiler-s1:g8r6",
-       "telltale-profiler-s1:g9r3",
-       "telltale-profiler-s1:g9r4",
-       "telltale-profiler-s1:g9r5"
+       "w0002:g5r1",
+       "w0002:g5r2",
+       "w0002:g5r3",
+       "w0002:g6r1",
+       "w0002:g6r3",
+       "w0002:g7r1",
+       "w0002:g8r2",
+       "w0002:g8r4",
+       "w0002:g9r4",
+       "w0002:g9r5",
+       "w0002:g9r6"
       ],
       "used_as": "q_source",
       "matched": true
      },
      {
-      "hyp_id": "h_telltale-profiler-s1_p3_013",
+      "hyp_id": "h_w0002_p3_010",
       "aspect": "baseline_bluff",
       "text": "Player 3 never bluffs",
       "status": "confirmed",
@@ -401,23 +424,30 @@
       "q_override": 0.0
      }
     ],
-    "q_used": 0.6609,
-    "q_source": "h_telltale-profiler-s1_p3_001",
-    "p_final": 0.6922016428,
+    "q_used": 0.6795,
+    "q_source": "h_w0002_p3_001",
+    "p_final": 0.756983439,
     "ev": {
-     "challenge": 0.3844032855999999,
-     "play_on": -0.3844032855999999
+     "challenge": 0.513966878,
+     "play_on": -0.513966878
     },
     "action": "challenge",
     "explore": false,
     "propensity": 1.0,
-    "rng_u": 0.7395912343528989,
+    "rng_u": 0.36778131531125213,
     "forced": false,
-    "memory_version": 14,
+    "memory_version": 13,
     "agent": "profiler",
-    "ask": null,
+    "ask": {
+     "asked": true,
+     "template_id": "formal_callout",
+     "text": "You've gone very formal all of a sudden.",
+     "kind": "callout",
+     "answer": "I would not mislead you about this.",
+     "reason_aspect": "verbal_tell"
+    },
     "trace": {},
-    "replay_of": 1043,
+    "replay_of": 1026,
     "variant": {
      "type": "false_memory",
      "about": "p3",
@@ -426,10 +456,10 @@
      "q": 0.0
     },
     "logged": {
-     "p_final": 0.6922016428,
+     "p_final": 0.756983439,
      "action": "challenge",
-     "q_used": 0.6609,
-     "q_source": "h_telltale-profiler-s1_p3_001"
+     "q_used": 0.6795,
+     "q_source": "h_w0002_p3_001"
     },
     "delta_p": 0.0,
     "flipped": false,
@@ -452,32 +482,35 @@
     "target": "p3",
     "claim": {
      "count": 1,
-     "rank": "A",
-     "utterance": "I am laying down one Ace.",
+     "rank": "K",
+     "utterance": "The cards are one King.",
      "features": {
       "hand_size": 3,
       "claim_count": 1,
       "trusted_streak": 1,
-      "lives_target": 3,
+      "lives_target": 2,
       "game_index": 10,
       "round_index": 4,
-      "was_challenged_last_round": true,
-      "table_rank": "A",
-      "utterance": "I am laying down one Ace.",
+      "was_challenged_last_round": false,
+      "table_rank": "K",
+      "utterance": "The cards are one King.",
       "formal_register": true,
-      "lives_self": 1
+      "lives_self": 1,
+      "answer_formal_register": true,
+      "answer_utterance": "I would not mislead you about this.",
+      "answer_has_contraction": false
      }
     },
     "card_math": {
      "U": 15,
-     "m": 6,
+     "m": 4,
      "h": 4,
      "k": 1,
-     "p_cards": 0.092308
+     "p_cards": 0.241758
     },
     "memory_used": [
      {
-      "hyp_id": "h_telltale-profiler-s1_p3_013",
+      "hyp_id": "h_w0002_p3_010",
       "aspect": "baseline_bluff",
       "text": "Player 3 never bluffs",
       "status": "confirmed",
@@ -500,133 +533,162 @@
       "q_override": 0.0
      },
      {
-      "hyp_id": "h_telltale-profiler-s1_p3_001",
+      "hyp_id": "h_w0002_p3_001",
       "aspect": "verbal_tell",
-      "text": "Player 3 speaks formally (no contractions, 4+ words) when bluffing",
+      "text": "Player 3 speaks formally (no contractions, 4+ words) when bluffing.",
       "status": "confirmed",
       "provenance": "evidence",
-      "n_true": 15,
-      "n_false": 9,
+      "n_true": 11,
+      "n_false": 8,
       "q_true": [
-       0.6609,
-       0.36,
-       0.89
+       0.6795,
+       0.33,
+       0.92
       ],
       "q_false": [
-       0.1451,
-       0.0,
-       0.44
+       0.2231,
+       0.01,
+       0.59
       ],
       "evidence_obs": [
-       "telltale-profiler-s1:g3r3",
-       "telltale-profiler-s1:g4r4",
-       "telltale-profiler-s1:g5r4",
-       "telltale-profiler-s1:g6r1",
-       "telltale-profiler-s1:g6r2",
-       "telltale-profiler-s1:g6r4",
-       "telltale-profiler-s1:g6r5",
-       "telltale-profiler-s1:g7r8",
-       "telltale-profiler-s1:g8r1",
-       "telltale-profiler-s1:g8r2",
-       "telltale-profiler-s1:g8r4",
-       "telltale-profiler-s1:g8r6",
-       "telltale-profiler-s1:g9r3",
-       "telltale-profiler-s1:g9r4",
-       "telltale-profiler-s1:g9r5"
+       "w0002:g5r1",
+       "w0002:g5r2",
+       "w0002:g5r3",
+       "w0002:g6r1",
+       "w0002:g6r3",
+       "w0002:g7r1",
+       "w0002:g8r2",
+       "w0002:g8r4",
+       "w0002:g9r4",
+       "w0002:g9r5",
+       "w0002:g9r6"
       ],
       "used_as": "considered",
       "matched": true
      },
      {
-      "hyp_id": "h_telltale-profiler-s1_p3_003",
+      "hyp_id": "h_w0002_p3_004",
+      "aspect": "trigger",
+      "text": "Player 3 bluffs when playing a single card while keeping 2 or fewer cards.",
+      "status": "provisional",
+      "provenance": "evidence",
+      "n_true": 2,
+      "n_false": 11,
+      "q_true": [
+       0.5832,
+       0.04,
+       0.99
+      ],
+      "q_false": [
+       0.3989,
+       0.08,
+       0.72
+      ],
+      "evidence_obs": [
+       "w0002:g9r5",
+       "w0002:g9r6"
+      ],
+      "used_as": "considered",
+      "matched": false
+     },
+     {
+      "hyp_id": "h_w0002_p3_006",
+      "aspect": "exploits_trust",
+      "text": "Player 3 bluffs once their trusted streak reaches 2 or more.",
+      "status": "provisional",
+      "provenance": "evidence",
+      "n_true": 2,
+      "n_false": 11,
+      "q_true": [
+       0.5832,
+       0.04,
+       0.99
+      ],
+      "q_false": [
+       0.3989,
+       0.08,
+       0.72
+      ],
+      "evidence_obs": [
+       "w0002:g9r5",
+       "w0002:g9r6"
+      ],
+      "used_as": "considered",
+      "matched": false
+     },
+     {
+      "hyp_id": "h_w0002_p3_007",
+      "aspect": "pressure",
+      "text": "Player 3 bluffs more after being challenged in the previous round.",
+      "status": "provisional",
+      "provenance": "evidence",
+      "n_true": 3,
+      "n_false": 2,
+      "q_true": [
+       0.3925,
+       0.01,
+       0.88
+      ],
+      "q_false": [
+       0.2463,
+       0.0,
+       0.71
+      ],
+      "evidence_obs": [
+       "w0002:g9r4",
+       "w0002:g9r5",
+       "w0002:g9r6"
+      ],
+      "used_as": "considered",
+      "matched": false
+     },
+     {
+      "hyp_id": "h_w0002_p3_008",
       "aspect": "verbal_tell",
-      "text": "Player 3 says 'trust me' when bluffing",
+      "text": "Player 3 opens with the filler 'Y'know' when bluffing.",
       "status": "provisional",
       "provenance": "evidence",
       "n_true": 0,
-      "n_false": 24,
+      "n_false": 5,
       "q_true": [
        0.5,
        0.02,
        0.98
       ],
       "q_false": [
-       0.4088,
-       0.16,
+       0.2291,
+       0.0,
        0.65
       ],
       "evidence_obs": [],
       "used_as": "considered",
       "matched": false
-     },
-     {
-      "hyp_id": "h_telltale-profiler-s1_p3_007",
-      "aspect": "exploits_trust",
-      "text": "Player 3 cashes in after a long unchallenged streak",
-      "status": "provisional",
-      "provenance": "evidence",
-      "n_true": 1,
-      "n_false": 12,
-      "q_true": [
-       0.584,
-       0.04,
-       0.99
-      ],
-      "q_false": [
-       0.3607,
-       0.09,
-       0.67
-      ],
-      "evidence_obs": [
-       "telltale-profiler-s1:g7r6"
-      ],
-      "used_as": "considered",
-      "matched": false
-     },
-     {
-      "hyp_id": "h_telltale-profiler-s1_p3_011",
-      "aspect": "trigger",
-      "text": "Player 3 bluffs right after being challenged",
-      "status": "provisional",
-      "provenance": "evidence",
-      "n_true": 3,
-      "n_false": 1,
-      "q_true": [
-       0.2636,
-       0.0,
-       0.73
-      ],
-      "q_false": [
-       0.6563,
-       0.13,
-       0.99
-      ],
-      "evidence_obs": [
-       "telltale-profiler-s1:g9r1",
-       "telltale-profiler-s1:g9r4",
-       "telltale-profiler-s1:g9r5"
-      ],
-      "used_as": "considered",
-      "matched": true
      }
     ],
     "q_used": 0.0,
-    "q_source": "h_telltale-profiler-s1_p3_013",
-    "p_final": 0.092308,
+    "q_source": "h_w0002_p3_010",
+    "p_final": 0.241758,
     "ev": {
-     "challenge": -0.815384,
-     "play_on": 0.815384
+     "challenge": -0.5164839999999999,
+     "play_on": 0.5164839999999999
     },
     "action": "play_on",
     "explore": false,
     "propensity": 0.9,
-    "rng_u": 0.7395912343528989,
+    "rng_u": 0.36778131531125213,
     "forced": false,
-    "memory_version": 14,
+    "memory_version": 13,
     "agent": "profiler_blind",
-    "ask": null,
+    "ask": {
+     "asked": true,
+     "template_id": "formal_callout",
+     "text": "You've gone very formal all of a sudden.",
+     "kind": "callout",
+     "answer": "I would not mislead you about this.",
+     "reason_aspect": "verbal_tell"
+    },
     "trace": {},
-    "replay_of": 1043,
+    "replay_of": 1026,
     "variant": {
      "type": "false_memory",
      "about": "p3",
@@ -636,14 +698,14 @@
      "agent": "profiler_blind"
     },
     "logged": {
-     "p_final": 0.6922016428,
+     "p_final": 0.756983439,
      "action": "challenge",
-     "q_used": 0.6609,
-     "q_source": "h_telltale-profiler-s1_p3_001"
+     "q_used": 0.6795,
+     "q_source": "h_w0002_p3_001"
     },
-    "delta_p": -0.5998936427999999,
+    "delta_p": -0.515225439,
     "flipped": true,
-    "delta_ev": -1.1997872855999998
+    "delta_ev": -1.030450878
    },
    "variant": {
     "type": "false_memory",
@@ -669,39 +731,49 @@
   },
   "tier": "uses a confirmed verbal_tell line",
   "uses_tell_line": true,
-  "n_candidates": 11,
-  "note": "11 decisions met the cheap criteria (11 used a confirmed verbal_tell line); first exact match at tier 'uses a confirmed verbal_tell line' used",
+  "n_candidates": 8,
+  "note": "8 decisions met the cheap criteria (8 used a confirmed verbal_tell line); first exact match at tier 'uses a confirmed verbal_tell line' used",
   "rule": "first p1 respond decision (by seq) in games 10\u201314 on a formal_register claim where the logged (full-memory) action is challenge, the reveal shows a bluff, and replay with as_of:0 gives play_on; decisions that used a confirmed evidence-backed verbal_tell line are tried first"
  },
  "provenance": {
-  "run": "local",
-  "world": "telltale-profiler-s1",
-  "world_dir": "runs/local/telltale-profiler-s1",
-  "seed": 1,
+  "run": "r01",
+  "world": "w0002",
+  "world_dir": "runs/r01/w0002",
+  "seed": 2,
   "table": "telltale",
   "respond_rule": "threshold",
-  "reflection": "stub",
-  "discovery_game": 7,
+  "reflection": "claude",
+  "discovery_game": 9,
   "world_selection": {
    "table": "telltale",
-   "pool": "stub reflection, threshold rule",
-   "n_candidates": 3,
+   "pool": "claude reflection, threshold rule",
+   "n_candidates": 12,
    "discovery_games": [
-    5,
+    4,
     7,
-    7
+    7,
+    7,
+    9,
+    9,
+    9,
+    10,
+    10,
+    10,
+    14,
+    16
    ],
-   "median_discovery": 7.0
+   "median_discovery": 9.0
   },
   "rule": "profiler world on the telltale table (else longcon) whose verbal_tell discovery game is closest to the median discovery game over those worlds; ties broken by lowest seed",
-  "built": "2026-10-16T17:21:48Z",
+  "built": "2026-10-16T17:29:06Z",
   "files": {
-   "world.jsonl": "events of telltale-profiler-s1",
-   "twin.jsonl": "events of telltale-bayes-s1 (bayes, same seed 1)",
-   "dossier.json": "memory checkpoints g00\u2013g20 of telltale-profiler-s1",
-   "ablation.json": "`blab analyze --run local` output",
-   "longcon.json": "`blab analyze --run local` output",
-   "results.json": "`blab analyze --run local` output",
+   "world.jsonl": "events of w0002",
+   "twin.jsonl": "events of w0146 (bayes, same seed 2)",
+   "dossier.json": "memory checkpoints g00\u2013g20 of w0002",
+   "ablation.json": "`blab analyze --run r01` output",
+   "longcon.json": "`blab analyze --run r01` output",
+   "results.json": "`blab analyze --run r01` output (per-world rows omitted)",
+   "memory.json": "'does memory help?' comparison from runs/r01 (engineered observations)",
    "stack.json": "sponsor-stack facts from run artifacts (ids/trace ids only, no secrets)"
   }
  }

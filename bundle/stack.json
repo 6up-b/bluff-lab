@@ -1,10 +1,26 @@
 {
- "run": "local",
+ "run": "r01",
  "daytona": {
-  "boxes": null,
-  "worlds_total": 26,
-  "worlds_per_box": null,
-  "picked_world_box": null,
+  "boxes": [
+   {
+    "id": "box1",
+    "sandbox_id": "9b9eac57-c25f-4757-ae86-4ff9ed1f42f6",
+    "cpu": 4,
+    "mem": null
+   },
+   {
+    "id": "box2",
+    "sandbox_id": "8ee72201-5409-4bba-bd82-58eb8b85e278",
+    "cpu": 4,
+    "mem": null
+   }
+  ],
+  "worlds_total": 5916,
+  "worlds_per_box": {
+   "box2": 1224,
+   "box1": 1224
+  },
+  "picked_world_box": "box2",
   "forge_sandbox_id": null,
   "forge_network": null,
   "spike": {
@@ -26,35 +42,35 @@
  "claude": {
   "provider": null,
   "model": null,
-  "reflections": 0,
-  "reflections_total": 80,
-  "proposed_hypotheses": 0,
-  "sample_reflect_trace": null
+  "reflections": 453,
+  "reflections_total": 5280,
+  "proposed_hypotheses": 1128,
+  "sample_reflect_trace": "req_011Cg6J6Bm8ZBCB7TsNDVvfG"
  },
  "surrealdb": {
-  "traces": 0,
-  "sample_surreal_trace_id": null,
-  "supersessions_in_logs": 5,
+  "traces": 7,
+  "sample_surreal_trace_id": "met051naprqtgp8qxh3g",
+  "supersessions_in_logs": 392,
   "supersession_example": {
-   "entity": "agent/longcon-profiler-s7.p3",
-   "key": "baseline_bluff",
-   "history_len_from_log": 2,
-   "reason": "drift",
-   "world": "longcon-profiler-s7"
+   "entity": "agent/w0002.p3",
+   "key": "verbal_tell",
+   "history_len_from_log": 5,
+   "reason": "llm",
+   "world": "w0002"
   }
  },
  "arize": {
   "project": "bluff-lab",
-  "sample_arize_trace_id": null,
-  "decision_spans_in_picked_world": 0,
-  "sample_reflect_trace": null
+  "sample_arize_trace_id": "5fc201861f1a0d7dbeb3fbddd149a4f3",
+  "decision_spans_in_picked_world": 365,
+  "sample_reflect_trace": "req_011Cg6J6Bm8ZBCB7TsNDVvfG"
  },
  "elevenlabs": null,
  "picked_decision": {
-  "world": "telltale-profiler-s1",
-  "box": null,
-  "seq": 1043,
-  "arize_trace_id": null,
+  "world": "w0002",
+  "box": "box2",
+  "seq": 1026,
+  "arize_trace_id": "5fc201861f1a0d7dbeb3fbddd149a4f3",
   "surreal_trace_id": null
  }
 }
