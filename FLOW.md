@@ -31,7 +31,7 @@ The cold-open round is picked by rule in `cues()`: **the first round of the pick
 | 12–13 | `dossier` | The file on Player 3 at game 4 → decision game − 1; SurrealDB history line | `dossier` × 2 | "Nobody wrote this; reflection proposed it, reveals confirmed it." | `dossier.json`, `stack.json` |
 | 14–17 | `surgery` | Four columns appear one per key: full, erased, false memory, provenance-blind | `surgery …` | "Same cards, same claim, same model; only the memory changes." | `reveal.json` |
 | 18 | surgery flip | The claimed card flips; bluff stamp; right/wrong per column | `flip` | "It was a bluff." | `reveal.json.reveal` |
-| 19 | `ablation` | Dose-response bars with CIs | `view ablation` | "A changed decision isn't an improved one. So we ablate at scale." | `ablation.json` |
+| 19 | `ablation` | One arm (Profiler, real Claude reflection, threshold rule, paired with parent worlds): win-rate bars with CIs and Δ vs full per bar. Not a staircase: say what the bars say | `view ablation` | "A changed decision isn't an improved one. So we ablate on the same seeds: erasing memory costs [Δ as_of:0]; the partial checkpoints are not below full." (read Δs from the slide) | `ablation.json` |
 | 20 | `trust` | Long Con trust curve | `view trust` | "Every memory was true; the attack is assuming people don't change." | `longcon.json` |
 | 21 | `split` (optional) | Same seed, Profiler vs Bayes twin, won games as chips | `view split` | "Same seed, same cards. Different memory." | `twin.jsonl` |
 | 22 | `results` | Results grid | `view results` | "All of it from real worlds." | `results.json` |

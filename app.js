@@ -460,7 +460,7 @@ function gaugeSVG(pc, pf, { w = 1080, h = 170, label = true } = {}) {
       ? `<text class="g-lbl-cards" x="${x0}" y="${y - 20}" fill="var(--brass-hi)" font-size="28" font-weight="600" text-anchor="start">card math ${f2(pc)}</text>`
       : `<text class="g-lbl-cards" x="${X(pc)}" y="${y - 20}" fill="var(--brass-hi)" font-size="28" font-weight="600" text-anchor="end">card math ${f2(pc)}</text>`;
     if (pf !== null && pf !== undefined) s += `<text class="g-lbl-mem" x="${Math.min(X(pf) + 14, x1)}" y="${y - 20}" fill="var(--pearl)" font-size="28" font-weight="600" text-anchor="${X(pf) > x1 - 260 ? "end" : "start"}">with memory ${f2(pf)}</text>`;
-    for (const t of [0, .25, .5, .75, 1]) s += `<text x="${X(t)}" y="${y + bh + 22}" fill="var(--bone-faint)" font-size="18" text-anchor="middle">${t === .5 ? "" : t}</text>`;
+    for (const t of [0, .25, .5, .75, 1]) if (pf === null || pf === undefined || Math.abs(X(t) - X(pf)) > 34) s += `<text x="${X(t)}" y="${y + bh + 22}" fill="var(--bone-faint)" font-size="18" text-anchor="middle">${t === .5 ? "" : t}</text>`;
   }
   return svg(w, h, s, "gauge");
 }
@@ -631,7 +631,8 @@ function renderAblation() {
   const el = $("#v-ablation"); const A = B.ablation;
   const head = `<h2 class="title">Does the memory help? Ablation on the same seeds</h2>`;
   if (!A?.bars?.length) { el.innerHTML = head + awaiting("Awaiting data", "No <code>bundle/ablation.json</code> yet. It comes from <code>blab ablate</code> branch worlds via <code>blab analyze</code>."); return; }
-  const w = 1776, h = 600, x0 = 90, x1 = w - 20, yT = 30, yB = h - 90;
+  const w = 1776, h = 640, x0 = 90, x1 = w - 20, yT = 30, yB = h - 130;
+  const pts = (v) => `${v >= 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(1)}${""} pts`;
   const bars = A.bars; const n = bars.length;
   const top = Math.min(1, Math.max(...bars.map((b) => b.hi ?? b.mean ?? 0)) + 0.1);
   const Y = (v) => yB - (yB - yT) * (v / top);
@@ -650,10 +651,13 @@ function renderAblation() {
       s += `<text x="${cx}" y="${Y(b.hi ?? b.mean) - 14}" fill="var(--bone)" font-size="32" font-weight="700" text-anchor="middle">${pct(b.mean)}</text>`;
     }
     s += `<text x="${cx}" y="${yB + 36}" fill="var(--bone)" font-size="26" font-weight="600" text-anchor="middle">${esc(b.label || b.variant)}</text>
-      <text x="${cx}" y="${yB + 66}" fill="var(--bone-faint)" font-size="20" text-anchor="middle">n = ${esc(b.n)}</text>`;
+      <text x="${cx}" y="${yB + 64}" fill="var(--bone-faint)" font-size="19" text-anchor="middle">n = ${esc(b.n_parents ?? b.n)}${b.delta_vs_full && b.delta_vs_full.mean !== null && b.delta_vs_full.mean !== undefined ? "" : ""}</text>
+      ${b.delta_vs_full && b.delta_vs_full.mean !== null && b.delta_vs_full.mean !== undefined ? `<text x="${cx}" y="${yB + 92}" fill="var(--bone)" font-size="21" font-weight="600" text-anchor="middle">Δ vs full ${pts(b.delta_vs_full.mean)}</text>${b.delta_vs_full.lo !== null && b.delta_vs_full.lo !== undefined ? `<text x="${cx}" y="${yB + 116}" fill="var(--bone-faint)" font-size="17" text-anchor="middle">CI ${pts(b.delta_vs_full.lo)} to ${pts(b.delta_vs_full.hi)}</text>` : ""}` : ""}`;
   });
   const fl = A.flips;
-  el.innerHTML = head + `<p class="sub">Win rate in games ${esc(A.window || "11–20")}, memory frozen at game ${esc(A.at_game ?? 10)}, ${esc(A.table || "")} table. Bars: mean; whiskers: 95% bootstrap CI over seeds.</p>
+  const arm = [A.agent === "profiler" ? "Profiler" : A.agent, A.reflection === "claude" ? "with real Claude reflection" : A.reflection ? `with ${A.reflection} reflection` : "",
+    A.respond_rule ? `${A.respond_rule} respond rule` : "", A.n_parents ? `${A.n_parents} parent worlds, branches paired with their parent` : ""].filter(Boolean).map(esc).join(", ");
+  el.innerHTML = head + `<p class="sub">${arm ? `${arm}. ` : ""}Win rate in games ${esc(A.window || "11–20")}, memory frozen at game ${esc(A.at_game ?? 10)}, ${esc(A.table || "")} table. Bars: mean; whiskers: 95% bootstrap CI.</p>
     <div class="chart">${svg(w, h, s)}</div>
     <div class="foot">${fl && fl.n ? `Decision flips (full vs erased, same recorded states): ${esc(fl.flipped)} of ${esc(fl.n)}.` : ""} Source: ${esc(A.source || "")}</div>`;
   where(`Ablation, ${esc(A.source || "")}`);
@@ -863,7 +867,7 @@ function renderTitle() {
   where("");
 }
 function renderClose() {
-  $("#v-close").innerHTML = `<div class="line">The question isn't how much an agent remembers. It's which memories it should trust.</div>
+  $("#v-close").innerHTML = `<div class="line">The question isn’t how much an agent remembers. It’s which memories it should trust.</div>
     <div class="line2">Every decision recorded and replayable, every belief tied to the reveals behind it.</div>`;
   where("");
 }
