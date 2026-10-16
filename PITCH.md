@@ -68,17 +68,20 @@ Every table or chart ends on a spoken **Takeaway** line, so the audience always 
 > One decision isn't proof. So we replayed games eleven to twenty on the same seeds, with memory frozen at game ten. Erased, the win rate falls from 23% to 9%. But older memory, from game four or six, did as well as the full file.
 > **Takeaway:** more memory isn't better. *Trusted* memory is.
 
-*(cues 20, 21, 23–25: not in the pitch deck. If they come up, use the table takeaways below.)*
+*(cues 20, 21, 24–26: not in the pitch deck. If they come up, use the table takeaways below.)*
 
 **[checkpoint branches table]** (cue 22) · 1:55
-> Memory can also be used against you. An opponent plays honestly, then turns. We restored 120 worlds from just before the turn and changed one thing. Erase what the agent had learned, and it lets through 17 fewer of the betrayer's bluffs. ⟲ *(Say this next sentence only if the drift-off difference's CI excludes 0:)* Switch off the part that notices change, and it lets through about 7 more.
-> **Takeaway:** every one of those memories was true. The danger is memory that assumes people don't change.
+> Memory can also be used against you. An opponent plays honestly, then turns. We restored 120 worlds from just before the turn: erase what the agent had learned, and it lets through 17 fewer of the betrayer's bluffs.
 
-**[does memory help? table]** (cue 26) · 2:20
+**[long con, full Profiler (lc03)]** (cue 23) · 2:08
+> And our best agent isn't immune. Same seeds, Claude's reflection on versus off: switched on, it let through 24 more of the betrayer's bluffs and noticed the turn later. Pre-registered, twelve fresh seeds.
+> **Takeaway:** every one of those memories was true. The memory that wins against consistent players is exactly what a long con exploits.
+
+**[does memory help? table]** (cue 27) · 2:20
 > The cleanest test: same model, same raw table talk, only the memory differs. A raw transcript of past rounds: no detectable gain. A file of hypotheses: plus 6 points. Hypotheses weighed by a small statistical model: plus 19. Early evidence, three to four seeds per table.
 > **Takeaway:** it isn't having the history that helps. It's how the memory is structured.
 
-**[capability map table]** (cue 27) · 2:40
+**[capability map table]** (cue 28) · 2:40
 > And where we lose: on our pre-registered boundary test, a sentence-embedding classifier predicted bluffs better.
 > **Takeaway:** memory doesn't make a better lie detector than a good classifier. It makes an agent you can inspect, edit and defend.
 
@@ -88,21 +91,21 @@ Every table or chart ends on a spoken **Takeaway** line, so the audience always 
 - *Neither holds:* "Our pre-registered confirmatory run finished after the deadline and didn't confirm it, so we don't claim it." Then change the Takeaway to "…a good classifier, yet."
 - *lc03:* stage line only if it holds AND you have time; otherwise Q&A: "With the full Profiler, the Long Con result [held / didn't hold] on 12 fresh seeds."
 
-**[close]** (cue 31) · 2:55
-> The question isn't how much an agent remembers. It's which memories it should trust.
+**[close]** (cue 32) · 2:55
+> Memory made our agent better against players who stay the same, and more exploitable by players who don't. The question isn't how much an agent remembers. It's which memories it should trust, and when to stop.
 
 *(Stop. Smile. Wait for questions.)*
 
 ## Table takeaways (Q&A, or if a skipped slide comes up)
 - **Long con chart (cue 20):** the Profiler's estimate tracks the turn most closely and catches it in a median of 14 rounds. Plain Bayes lets through about as few bluffs. **Takeaway:** noticing a change isn't the same as acting on it.
 - **Long con at scale (cue 21):** every memory agent catches the turn within about 10–12 rounds; with no memory it takes 55. But our Profiler also raises false alarms on honest players. **Takeaway:** sensitivity to betrayal has a cost, and our detection rule fires too easily.
-- **Results grid (cue 24):** no agent wins every column. Memory agents predict and detect better, but the original Profiler over-challenges and loses on win rate under the spec's rule. **Takeaway:** prediction and decision are different scores.
-- **Beliefs vs decisions (cue 25):** memory sharpens predictions under both decision rules. Only the cost-aware rule turns that into more wins. **Takeaway:** better beliefs need a decision rule that uses them.
-- **Split screen (cue 23):** don't show it (6 vs 6; the games diverge after the first difference).
+- **Results grid (cue 25):** no agent wins every column. Memory agents predict and detect better, but the original Profiler over-challenges and loses on win rate under the spec's rule. **Takeaway:** prediction and decision are different scores.
+- **Beliefs vs decisions (cue 26):** memory sharpens predictions under both decision rules. Only the cost-aware rule turns that into more wins. **Takeaway:** better beliefs need a decision rule that uses them.
+- **Split screen (cue 24):** don't show it (6 vs 6; the games diverge after the first difference).
 - **The Regulars (not in the deck):** keying memory by person split the data four ways. A pooled memory learned the shared patterns faster, and the conflicting tells were too weak to hurt it. **Takeaway:** identity needs a shared population file that each person's file starts from (partial pooling). That's the next pre-registered arm.
 
 ## If you're over time (cut in this order)
-1. The drift-detector sentence in the checkpoint-branches beat.
+1. The checkpoint-branches beat (cue 22): press through and go straight to lc03.
 2. "Early evidence, three to four seeds per table." (keep it for Q&A).
 3. The ablation's "older memory" sentence. Keep the Takeaway.
 4. Cold open: "Claim your cards match; you can lie; the next player plays on, asks, or calls it."
