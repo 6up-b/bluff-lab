@@ -46,7 +46,16 @@
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+html, body { margin: 0; height: 100%; background: #000; overflow: hidden; touch-action: none; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+/* Mobile: tap/swipe navigation hint (shown only on touch screens, hidden after the first tap) */
+#touch-hint { display: none; }
+@media (hover: none) and (pointer: coarse) {
+  #touch-hint { display: block; position: fixed; left: 12px; right: 12px; bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 50;
+    text-align: center; font: 13px/1.4 var(--sans); color: var(--ivory); opacity: .8; pointer-events: none; transition: opacity .6s; }
+  body.touched #touch-hint { opacity: 0; }
+}
+#touch-hint .portrait-only { display: none; }
+@media (orientation: portrait) { #touch-hint .portrait-only { display: inline; } }
 body { font-family: var(--sans); color: var(--ivory); font-variant-numeric: lining-nums tabular-nums; font-variation-settings: "opsz" 18; }
 
 #viewport { position: fixed; inset: 0; display: grid; place-items: center; }

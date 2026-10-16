@@ -1064,6 +1064,23 @@ addEventListener("keydown", (e) => {
   else if (k === "h" || k === "H") $("#hud").classList.toggle("on");
   else if (k === "f" || k === "F") { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); }
 });
+// Touch navigation (phones/tablets only; mouse clicks are left alone so a presenter's stray click never advances):
+// tap the right half → next, left half → back; swipe left → next, swipe right → back.
+let touchStart = null;
+addEventListener("pointerdown", (e) => {
+  if (e.pointerType === "mouse") return;
+  touchStart = { x: e.clientX, y: e.clientY };
+}, { passive: true });
+addEventListener("pointerup", (e) => {
+  if (e.pointerType === "mouse" || !touchStart) return;
+  const dx = e.clientX - touchStart.x, dy = e.clientY - touchStart.y; touchStart = null;
+  if (e.target.closest && e.target.closest("a, button, input, select, textarea, #hud")) return;
+  document.body.classList.add("touched");
+  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) { if (dx < 0) next(); else prev(); return; }   // swipe
+  if (Math.abs(dx) > 12 || Math.abs(dy) > 12) return;                                                 // a drag, not a tap
+  if (e.clientX < innerWidth / 2) prev(); else next();                                                // tap
+});
+addEventListener("pointercancel", () => { touchStart = null; });
 
 (async function main() {
   fit(); resetState();
