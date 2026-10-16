@@ -102,6 +102,17 @@ embedding classifier, built later for b01, beat the Profiler there). In a same-m
 memory block of the prompt differs, 4 seeds per table), a hypothesis dossier improved win rate over no memory
 by +0.064 (CI +0.009 to +0.127) and a raw transcript showed no detectable effect.
 
+**Stronger agent, confirmatory (c01; `PREREG_c01.md` committed first; seeds 5000–5023, 4 tables, raw text, real
+Claude reflection).** First, an audit of b01: its relational tell leaked through wording (a text-only classifier
+predicted false statements with AUC 0.667), so we rebuilt it with identical wording for true and false statements
+(AUC 0.501). Results: `profiler_plus` beat the bag-of-words classifier on pooled win rate (H13, +0.081, 95% CI
++0.057 to +0.104), replicating mem01 on fresh seeds; on raw text that classifier gets no engineered feature.
+`profiler_hybrid` (adds a per-claim Claude check of statements against the public record, about 6,100 Sonnet
+calls, right 80–83% of the time) also beat it (H12, +0.080, CI +0.054 to +0.107), but added nothing over
+`profiler_plus`. H11 did not hold: on the rebuilt relational tell and the flipper, the hybrid's Brier over the
+first 10 reveals was not better than the embedding classifier's. Comparisons against the embedding classifier
+(+0.16 win rate) are exploratory, because that test was added after the run started.
+
 **Confirmatory rerun on fresh seeds (c02; `PREREG_c02.md` committed first; seeds 9000–9011, 4 tables, real Claude
 reflection).** Pre-registered H21 and H22 held: `profiler_plus` beat a sentence-embedding classifier on win rate
 (+0.181, 95% CI +0.132 to +0.228) and Brier (−0.030, CI −0.042 to −0.021). Caveat: that classifier is a weak
