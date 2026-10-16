@@ -210,5 +210,12 @@ if __name__ == "__main__":
     root = sys.argv[1] if len(sys.argv) > 1 else "runs"
     res = _clean(boundary(root))
     out = Path(root) / "b01" / "boundary.json"
+    if out.exists():                                   # keep deviations appended later (e.g. c01's leak audit)
+        prev = json.loads(out.read_text()).get("deviations", [])
+        res["deviations"] += [d for d in prev if d not in res["deviations"]]
+    if any("auc" in d.lower() for d in res["deviations"]):
+        res["capability_map"]["note"] += (" Leak audit (c01, after b01): on the b01 relational templates, wording alone "
+                                          "predicted false statements (text-only AUC 0.67), so the embedding classifier could "
+                                          "win from template wording; c01 rebuilt the templates (AUC 0.50–0.56).")
     out.write_text(json.dumps(res, indent=1))
     print(json.dumps(res["capability_map"], indent=1))
