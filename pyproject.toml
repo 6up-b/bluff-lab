@@ -1,0 +1,26 @@
+[project]
+name = "blufflab"
+version = "0.1.0"
+description = "Bluff Lab: a controlled experiment in agent memory under adversarial, hidden-information play"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "numpy", "pydantic>=2", "fastapi", "uvicorn", "httpx", "typer", "pyyaml",
+  "daytona", "anthropic[bedrock]", "boto3", "arize-otel", "openinference-instrumentation",
+  "openinference-instrumentation-anthropic", "arize>=8",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+blab = "blab.orchestrator.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["blab*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

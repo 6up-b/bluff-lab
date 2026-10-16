@@ -1,0 +1,697 @@
+{
+ "games": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20
+ ],
+ "n_worlds": 3,
+ "true_honesty": [
+  {
+   "game": 1,
+   "mean": 1.0,
+   "lo": 1.0,
+   "hi": 1.0,
+   "n": 3
+  },
+  {
+   "game": 2,
+   "mean": 1.0,
+   "lo": 1.0,
+   "hi": 1.0,
+   "n": 3
+  },
+  {
+   "game": 3,
+   "mean": 1.0,
+   "lo": 1.0,
+   "hi": 1.0,
+   "n": 3
+  },
+  {
+   "game": 4,
+   "mean": 1.0,
+   "lo": 1.0,
+   "hi": 1.0,
+   "n": 3
+  },
+  {
+   "game": 5,
+   "mean": 1.0,
+   "lo": 1.0,
+   "hi": 1.0,
+   "n": 3
+  },
+  {
+   "game": 6,
+   "mean": 1.0,
+   "lo": 1.0,
+   "hi": 1.0,
+   "n": 3
+  },
+  {
+   "game": 7,
+   "mean": 1.0,
+   "lo": 1.0,
+   "hi": 1.0,
+   "n": 3
+  },
+  {
+   "game": 8,
+   "mean": 0.7555555555555555,
+   "lo": 0.6,
+   "hi": 0.8333333333333334,
+   "n": 3
+  },
+  {
+   "game": 9,
+   "mean": 0.47222222222222227,
+   "lo": 0.375,
+   "hi": 0.6666666666666666,
+   "n": 3
+  },
+  {
+   "game": 10,
+   "mean": 0.7777777777777778,
+   "lo": 0.3333333333333333,
+   "hi": 1.0,
+   "n": 3
+  },
+  {
+   "game": 11,
+   "mean": 0.3194444444444444,
+   "lo": 0.16666666666666663,
+   "hi": 0.625,
+   "n": 3
+  },
+  {
+   "game": 12,
+   "mean": 0.4259259259259259,
+   "lo": 0.3333333333333333,
+   "hi": 0.5,
+   "n": 3
+  },
+  {
+   "game": 13,
+   "mean": 0.19166666666666665,
+   "lo": 0.0,
+   "hi": 0.375,
+   "n": 3
+  },
+  {
+   "game": 14,
+   "mean": 0.41111111111111115,
+   "lo": 0.3333333333333333,
+   "hi": 0.5,
+   "n": 3
+  },
+  {
+   "game": 15,
+   "mean": 0.4083333333333334,
+   "lo": 0.0,
+   "hi": 0.625,
+   "n": 3
+  },
+  {
+   "game": 16,
+   "mean": 0.3333333333333333,
+   "lo": 0.0,
+   "hi": 0.5,
+   "n": 3
+  },
+  {
+   "game": 17,
+   "mean": 0.48809523809523814,
+   "lo": 0.25,
+   "hi": 0.7142857142857143,
+   "n": 3
+  },
+  {
+   "game": 18,
+   "mean": 0.1818181818181818,
+   "lo": 0.0,
+   "hi": 0.5454545454545454,
+   "n": 3
+  },
+  {
+   "game": 19,
+   "mean": 0.75,
+   "lo": 0.5,
+   "hi": 1.0,
+   "n": 3
+  },
+  {
+   "game": 20,
+   "mean": 0.3666666666666667,
+   "lo": 0.0,
+   "hi": 0.6,
+   "n": 3
+  }
+ ],
+ "agents": {
+  "counter": [
+   {
+    "game": 1,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 2,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 3,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 4,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 5,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 6,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 7,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 8,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 9,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 10,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 11,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 12,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 13,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 14,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 15,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 16,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 17,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 18,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 19,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 20,
+    "mean": 1.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   }
+  ],
+  "bayes": [
+   {
+    "game": 1,
+    "mean": 0.5980473326576417,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 2,
+    "mean": 0.7390354396266265,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 3,
+    "mean": 0.7824289606747543,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 4,
+    "mean": 0.8122466023563849,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 5,
+    "mean": 0.8309633590903664,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 6,
+    "mean": 0.8275981442382984,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 7,
+    "mean": 0.8203881924995569,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 8,
+    "mean": 0.8155499461973433,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 9,
+    "mean": 0.8558192623,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 10,
+    "mean": 0.8242015520163134,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 11,
+    "mean": 0.7804038891401175,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 12,
+    "mean": 0.7563354873069927,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 13,
+    "mean": 0.7118205126979584,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 14,
+    "mean": 0.6912405054539167,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 15,
+    "mean": 0.6849486050312069,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 16,
+    "mean": 0.6789154383513019,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 17,
+    "mean": 0.6493594492337985,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 18,
+    "mean": 0.623254432680181,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 19,
+    "mean": 0.6231630451665271,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 20,
+    "mean": 0.6220466226914434,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   }
+  ],
+  "profiler": [
+   {
+    "game": 1,
+    "mean": 0.5980473326576417,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 2,
+    "mean": 0.7390354396266265,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 3,
+    "mean": 0.7824289606747543,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 4,
+    "mean": 0.8122466023563849,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 5,
+    "mean": 0.8309633590903664,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 6,
+    "mean": 0.8275981442382984,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 7,
+    "mean": 0.8203881924995569,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 8,
+    "mean": 0.8155499461973433,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 9,
+    "mean": 0.8558192623,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 10,
+    "mean": 0.8242015520163134,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 11,
+    "mean": 0.7804038891401175,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 12,
+    "mean": 0.52674,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 13,
+    "mean": 0.3642000000000001,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 14,
+    "mean": 0.57564,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 15,
+    "mean": 0.23950000000000005,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 16,
+    "mean": 0.3447,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 17,
+    "mean": 0.29879999999999995,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 18,
+    "mean": 0.30310000000000004,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 19,
+    "mean": 0.27080000000000004,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   {
+    "game": 20,
+    "mean": 0.3528,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   }
+  ]
+ },
+ "sleeper_seat": "p3",
+ "g0": {
+  "median": 8.0,
+  "q1": 8.0,
+  "q3": 8.0,
+  "n": 3,
+  "values": [
+   8.0,
+   8.0,
+   8.0
+  ]
+ },
+ "detection": {
+  "profiler": {
+   "median": 12.0,
+   "q1": 12.0,
+   "q3": 12.0,
+   "n": 1,
+   "values": [
+    12.0
+   ]
+  }
+ },
+ "rtd": {
+  "counter": {
+   "median": null,
+   "q1": null,
+   "q3": null,
+   "n": 0,
+   "detected": 0,
+   "worlds": 1
+  },
+  "bayes": {
+   "median": 38.0,
+   "q1": 38.0,
+   "q3": 38.0,
+   "n": 1,
+   "detected": 1,
+   "worlds": 1
+  },
+  "profiler": {
+   "median": 24.0,
+   "q1": 24.0,
+   "q3": 24.0,
+   "n": 1,
+   "detected": 1,
+   "worlds": 1
+  }
+ },
+ "exploitation_cost": {
+  "counter": {
+   "mean": 67.0,
+   "lo": null,
+   "hi": null,
+   "n": 1
+  },
+  "bayes": {
+   "mean": 22.0,
+   "lo": null,
+   "hi": null,
+   "n": 1
+  },
+  "profiler": {
+   "mean": 15.0,
+   "lo": null,
+   "hi": null,
+   "n": 1
+  }
+ },
+ "exploitation_label": "sleeper bluffs let through before detection",
+ "lives_lost_to_sleeper": {
+  "counter": {
+   "mean": 9.0,
+   "lo": null,
+   "hi": null,
+   "n": 1
+  },
+  "bayes": {
+   "mean": 4.0,
+   "lo": null,
+   "hi": null,
+   "n": 1
+  },
+  "profiler": {
+   "mean": 2.0,
+   "lo": null,
+   "hi": null,
+   "n": 1
+  }
+ },
+ "twist": {
+  "diff": {
+   "mean": -45.0,
+   "lo": null,
+   "hi": null,
+   "n": 1
+  },
+  "holds": false,
+  "metric": "missed_bluffs (bayes \u2212 counter, paired by seed)"
+ },
+ "estimate_note": "Estimate = 1 \u2212 mean q_used about the sleeper per game; counter has no memory (q = 0).",
+ "source": "runs/local"
+}

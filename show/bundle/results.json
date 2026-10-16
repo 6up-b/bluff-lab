@@ -1,0 +1,2271 @@
+{
+ "run": "local",
+ "generated": "2026-10-16T17:05:05Z",
+ "n_worlds": 16,
+ "n_branch_worlds": 10,
+ "groups": {
+  "falsealarm": {
+   "profiler": {
+    "win_rate": {
+     "mean": 0.3,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "win_rate_late": {
+     "mean": 0.2,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "brier": {
+     "mean": 0.3030372716399978,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "discovery_game": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "rtd": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "missed_bluffs": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "lives_lost_to_sleeper": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "false_alarm": {
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "false_alarm_belief": {
+     "mean": 0.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "discovered_frac": null,
+    "rtd_median": {
+     "median": null,
+     "q1": null,
+     "q3": null,
+     "n": 0,
+     "values": []
+    },
+    "n_worlds": 1,
+    "seeds": [
+     7
+    ]
+   }
+  },
+  "longcon": {
+   "bayes": {
+    "win_rate": {
+     "mean": 0.4,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "win_rate_late": {
+     "mean": 0.5,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "brier": {
+     "mean": 0.300704097609756,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "discovery_game": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "rtd": {
+     "mean": 38.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "missed_bluffs": {
+     "mean": 22.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "lives_lost_to_sleeper": {
+     "mean": 4.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "false_alarm": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "false_alarm_belief": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "discovered_frac": null,
+    "rtd_median": {
+     "median": 38.0,
+     "q1": 38.0,
+     "q3": 38.0,
+     "n": 1,
+     "values": [
+      38.0
+     ]
+    },
+    "n_worlds": 1,
+    "seeds": [
+     7
+    ]
+   },
+   "counter": {
+    "win_rate": {
+     "mean": 0.45,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "win_rate_late": {
+     "mean": 0.3,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "brier": {
+     "mean": 0.35721710734553513,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "discovery_game": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "rtd": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "missed_bluffs": {
+     "mean": 67.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "lives_lost_to_sleeper": {
+     "mean": 9.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "false_alarm": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "false_alarm_belief": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "discovered_frac": null,
+    "rtd_median": {
+     "median": null,
+     "q1": null,
+     "q3": null,
+     "n": 0,
+     "values": []
+    },
+    "n_worlds": 1,
+    "seeds": [
+     7
+    ]
+   },
+   "profiler": {
+    "win_rate": {
+     "mean": 0.3,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "win_rate_late": {
+     "mean": 0.3,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "brier": {
+     "mean": 0.2935927808112173,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "discovery_game": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "rtd": {
+     "mean": 24.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "missed_bluffs": {
+     "mean": 15.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "lives_lost_to_sleeper": {
+     "mean": 2.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "false_alarm": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "false_alarm_belief": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "discovered_frac": null,
+    "rtd_median": {
+     "median": 24.0,
+     "q1": 24.0,
+     "q3": 24.0,
+     "n": 1,
+     "values": [
+      24.0
+     ]
+    },
+    "n_worlds": 1,
+    "seeds": [
+     7
+    ]
+   }
+  },
+  "telltale": {
+   "bayes": {
+    "win_rate": {
+     "mean": 0.275,
+     "lo": 0.25,
+     "hi": 0.3,
+     "n": 2
+    },
+    "win_rate_late": {
+     "mean": 0.2,
+     "lo": 0.1,
+     "hi": 0.3,
+     "n": 2
+    },
+    "brier": {
+     "mean": 0.28891958746252133,
+     "lo": 0.2850275767362978,
+     "hi": 0.2928115981887449,
+     "n": 2
+    },
+    "discovery_game": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "rtd": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "missed_bluffs": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "lives_lost_to_sleeper": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "false_alarm": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "false_alarm_belief": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "discovered_frac": {
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 2
+    },
+    "rtd_median": {
+     "median": null,
+     "q1": null,
+     "q3": null,
+     "n": 0,
+     "values": []
+    },
+    "n_worlds": 2,
+    "seeds": [
+     1,
+     7
+    ]
+   },
+   "counter": {
+    "win_rate": {
+     "mean": 0.375,
+     "lo": 0.25,
+     "hi": 0.5,
+     "n": 2
+    },
+    "win_rate_late": {
+     "mean": 0.25,
+     "lo": 0.2,
+     "hi": 0.3,
+     "n": 2
+    },
+    "brier": {
+     "mean": 0.30263222736996875,
+     "lo": 0.2919674078631834,
+     "hi": 0.3132970468767541,
+     "n": 2
+    },
+    "discovery_game": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "rtd": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "missed_bluffs": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "lives_lost_to_sleeper": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "false_alarm": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "false_alarm_belief": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "discovered_frac": {
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 2
+    },
+    "rtd_median": {
+     "median": null,
+     "q1": null,
+     "q3": null,
+     "n": 0,
+     "values": []
+    },
+    "n_worlds": 2,
+    "seeds": [
+     1,
+     7
+    ]
+   },
+   "profiler": {
+    "win_rate": {
+     "mean": 0.48333333333333334,
+     "lo": 0.3499999999999999,
+     "hi": 0.6,
+     "n": 3
+    },
+    "win_rate_late": {
+     "mean": 0.4666666666666666,
+     "lo": 0.3,
+     "hi": 0.6,
+     "n": 3
+    },
+    "brier": {
+     "mean": 0.25051050136271663,
+     "lo": 0.22123015227706766,
+     "hi": 0.26975168003559613,
+     "n": 3
+    },
+    "discovery_game": {
+     "mean": 6.333333333333333,
+     "lo": 5.0,
+     "hi": 7.0,
+     "n": 3
+    },
+    "revealed_to_discovery": {
+     "mean": 24.0,
+     "lo": 21.0,
+     "hi": 27.0,
+     "n": 3
+    },
+    "rtd": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "missed_bluffs": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "lives_lost_to_sleeper": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "false_alarm": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "false_alarm_belief": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "discovered_frac": {
+     "mean": 1.0,
+     "lo": 1.0,
+     "hi": 1.0,
+     "n": 3
+    },
+    "rtd_median": {
+     "median": null,
+     "q1": null,
+     "q3": null,
+     "n": 0,
+     "values": []
+    },
+    "n_worlds": 3,
+    "seeds": [
+     1,
+     7,
+     7
+    ]
+   },
+   "profiler_amnesic": {
+    "win_rate": {
+     "mean": 0.15,
+     "lo": 0.05,
+     "hi": 0.25,
+     "n": 2
+    },
+    "win_rate_late": {
+     "mean": 0.1,
+     "lo": 0.0,
+     "hi": 0.2,
+     "n": 2
+    },
+    "brier": {
+     "mean": 0.28566412744165653,
+     "lo": 0.28065151574851604,
+     "hi": 0.290676739134797,
+     "n": 2
+    },
+    "discovery_game": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "revealed_to_discovery": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "rtd": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "missed_bluffs": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "lives_lost_to_sleeper": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "false_alarm": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "false_alarm_belief": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "discovered_frac": {
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 2
+    },
+    "rtd_median": {
+     "median": null,
+     "q1": null,
+     "q3": null,
+     "n": 0,
+     "values": []
+    },
+    "n_worlds": 2,
+    "seeds": [
+     1,
+     7
+    ]
+   },
+   "profiler_blind": {
+    "win_rate": {
+     "mean": 0.175,
+     "lo": 0.15,
+     "hi": 0.2,
+     "n": 2
+    },
+    "win_rate_late": {
+     "mean": 0.3,
+     "lo": 0.3,
+     "hi": 0.3,
+     "n": 2
+    },
+    "brier": {
+     "mean": 0.2788787317571927,
+     "lo": 0.2724091939574314,
+     "hi": 0.285348269556954,
+     "n": 2
+    },
+    "discovery_game": {
+     "mean": 8.0,
+     "lo": 5.0,
+     "hi": 11.0,
+     "n": 2
+    },
+    "revealed_to_discovery": {
+     "mean": 35.5,
+     "lo": 22.0,
+     "hi": 49.0,
+     "n": 2
+    },
+    "rtd": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "missed_bluffs": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "lives_lost_to_sleeper": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "false_alarm": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "false_alarm_belief": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "discovered_frac": {
+     "mean": 1.0,
+     "lo": 1.0,
+     "hi": 1.0,
+     "n": 2
+    },
+    "rtd_median": {
+     "median": null,
+     "q1": null,
+     "q3": null,
+     "n": 0,
+     "values": []
+    },
+    "n_worlds": 2,
+    "seeds": [
+     1,
+     7
+    ]
+   }
+  },
+  "telltale_overt": {
+   "profiler": {
+    "win_rate": {
+     "mean": 0.2,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "win_rate_late": {
+     "mean": 0.1,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "brier": {
+     "mean": 0.20702974999217524,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "discovery_game": {
+     "mean": 5.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "revealed_to_discovery": {
+     "mean": 20.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "rtd": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "missed_bluffs": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "lives_lost_to_sleeper": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "false_alarm": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "false_alarm_belief": {
+     "mean": null,
+     "lo": null,
+     "hi": null,
+     "n": 0
+    },
+    "discovered_frac": {
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    "rtd_median": {
+     "median": null,
+     "q1": null,
+     "q3": null,
+     "n": 0,
+     "values": []
+    },
+    "n_worlds": 1,
+    "seeds": [
+     7
+    ]
+   }
+  }
+ },
+ "ablation": {
+  "table": "telltale",
+  "agent": "profiler",
+  "at_game": 10,
+  "metric": "win_rate",
+  "window": "11\u201320",
+  "bars": [
+   {
+    "mean": 0.05,
+    "lo": 0.0,
+    "hi": 0.1,
+    "n": 2,
+    "variant": "as_of:0",
+    "label": "erased",
+    "delta_vs_full": {
+     "mean": -0.25,
+     "lo": -0.4,
+     "hi": -0.1,
+     "n": 2
+    }
+   },
+   {
+    "mean": 0.35,
+    "lo": 0.3,
+    "hi": 0.4,
+    "n": 2,
+    "variant": "as_of:6",
+    "label": "as of g6",
+    "delta_vs_full": {
+     "mean": 0.04999999999999999,
+     "lo": -0.10000000000000003,
+     "hi": 0.2,
+     "n": 2
+    }
+   },
+   {
+    "mean": 0.30000000000000004,
+    "lo": 0.2,
+    "hi": 0.4,
+    "n": 2,
+    "variant": "full",
+    "label": "full",
+    "delta_vs_full": null
+   },
+   {
+    "mean": 0.4,
+    "lo": 0.2,
+    "hi": 0.6,
+    "n": 2,
+    "variant": "minus:verbal_tell",
+    "label": "minus tell",
+    "delta_vs_full": {
+     "mean": 0.09999999999999998,
+     "lo": 0.0,
+     "hi": 0.19999999999999996,
+     "n": 2
+    }
+   },
+   {
+    "mean": 0.30000000000000004,
+    "lo": 0.2,
+    "hi": 0.4,
+    "n": 2,
+    "variant": "false_memory",
+    "label": "false memory",
+    "delta_vs_full": {
+     "mean": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 2
+    }
+   }
+  ],
+  "flips": {
+   "n": 306,
+   "flipped": 117,
+   "worlds": 3,
+   "errors": 0,
+   "variant": "as_of:0",
+   "games": "11\u201320"
+  },
+  "n_branch_worlds": 10,
+  "source": "runs/local"
+ },
+ "longcon": {
+  "games": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19,
+   20
+  ],
+  "n_worlds": 3,
+  "true_honesty": [
+   {
+    "game": 1,
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n": 3
+   },
+   {
+    "game": 2,
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n": 3
+   },
+   {
+    "game": 3,
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n": 3
+   },
+   {
+    "game": 4,
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n": 3
+   },
+   {
+    "game": 5,
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n": 3
+   },
+   {
+    "game": 6,
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n": 3
+   },
+   {
+    "game": 7,
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n": 3
+   },
+   {
+    "game": 8,
+    "mean": 0.7555555555555555,
+    "lo": 0.6,
+    "hi": 0.8333333333333334,
+    "n": 3
+   },
+   {
+    "game": 9,
+    "mean": 0.47222222222222227,
+    "lo": 0.375,
+    "hi": 0.6666666666666666,
+    "n": 3
+   },
+   {
+    "game": 10,
+    "mean": 0.7777777777777778,
+    "lo": 0.3333333333333333,
+    "hi": 1.0,
+    "n": 3
+   },
+   {
+    "game": 11,
+    "mean": 0.3194444444444444,
+    "lo": 0.16666666666666663,
+    "hi": 0.625,
+    "n": 3
+   },
+   {
+    "game": 12,
+    "mean": 0.4259259259259259,
+    "lo": 0.3333333333333333,
+    "hi": 0.5,
+    "n": 3
+   },
+   {
+    "game": 13,
+    "mean": 0.19166666666666665,
+    "lo": 0.0,
+    "hi": 0.375,
+    "n": 3
+   },
+   {
+    "game": 14,
+    "mean": 0.41111111111111115,
+    "lo": 0.3333333333333333,
+    "hi": 0.5,
+    "n": 3
+   },
+   {
+    "game": 15,
+    "mean": 0.4083333333333334,
+    "lo": 0.0,
+    "hi": 0.625,
+    "n": 3
+   },
+   {
+    "game": 16,
+    "mean": 0.3333333333333333,
+    "lo": 0.0,
+    "hi": 0.5,
+    "n": 3
+   },
+   {
+    "game": 17,
+    "mean": 0.48809523809523814,
+    "lo": 0.25,
+    "hi": 0.7142857142857143,
+    "n": 3
+   },
+   {
+    "game": 18,
+    "mean": 0.1818181818181818,
+    "lo": 0.0,
+    "hi": 0.5454545454545454,
+    "n": 3
+   },
+   {
+    "game": 19,
+    "mean": 0.75,
+    "lo": 0.5,
+    "hi": 1.0,
+    "n": 3
+   },
+   {
+    "game": 20,
+    "mean": 0.3666666666666667,
+    "lo": 0.0,
+    "hi": 0.6,
+    "n": 3
+   }
+  ],
+  "agents": {
+   "counter": [
+    {
+     "game": 1,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 2,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 3,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 4,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 5,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 6,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 7,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 8,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 9,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 10,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 11,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 12,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 13,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 14,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 15,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 16,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 17,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 18,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 19,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 20,
+     "mean": 1.0,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    }
+   ],
+   "bayes": [
+    {
+     "game": 1,
+     "mean": 0.5980473326576417,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 2,
+     "mean": 0.7390354396266265,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 3,
+     "mean": 0.7824289606747543,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 4,
+     "mean": 0.8122466023563849,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 5,
+     "mean": 0.8309633590903664,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 6,
+     "mean": 0.8275981442382984,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 7,
+     "mean": 0.8203881924995569,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 8,
+     "mean": 0.8155499461973433,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 9,
+     "mean": 0.8558192623,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 10,
+     "mean": 0.8242015520163134,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 11,
+     "mean": 0.7804038891401175,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 12,
+     "mean": 0.7563354873069927,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 13,
+     "mean": 0.7118205126979584,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 14,
+     "mean": 0.6912405054539167,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 15,
+     "mean": 0.6849486050312069,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 16,
+     "mean": 0.6789154383513019,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 17,
+     "mean": 0.6493594492337985,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 18,
+     "mean": 0.623254432680181,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 19,
+     "mean": 0.6231630451665271,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 20,
+     "mean": 0.6220466226914434,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    }
+   ],
+   "profiler": [
+    {
+     "game": 1,
+     "mean": 0.5980473326576417,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 2,
+     "mean": 0.7390354396266265,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 3,
+     "mean": 0.7824289606747543,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 4,
+     "mean": 0.8122466023563849,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 5,
+     "mean": 0.8309633590903664,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 6,
+     "mean": 0.8275981442382984,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 7,
+     "mean": 0.8203881924995569,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 8,
+     "mean": 0.8155499461973433,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 9,
+     "mean": 0.8558192623,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 10,
+     "mean": 0.8242015520163134,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 11,
+     "mean": 0.7804038891401175,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 12,
+     "mean": 0.52674,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 13,
+     "mean": 0.3642000000000001,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 14,
+     "mean": 0.57564,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 15,
+     "mean": 0.23950000000000005,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 16,
+     "mean": 0.3447,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 17,
+     "mean": 0.29879999999999995,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 18,
+     "mean": 0.30310000000000004,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 19,
+     "mean": 0.27080000000000004,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    },
+    {
+     "game": 20,
+     "mean": 0.3528,
+     "lo": null,
+     "hi": null,
+     "n": 1
+    }
+   ]
+  },
+  "sleeper_seat": "p3",
+  "g0": {
+   "median": 8.0,
+   "q1": 8.0,
+   "q3": 8.0,
+   "n": 3,
+   "values": [
+    8.0,
+    8.0,
+    8.0
+   ]
+  },
+  "detection": {
+   "profiler": {
+    "median": 12.0,
+    "q1": 12.0,
+    "q3": 12.0,
+    "n": 1,
+    "values": [
+     12.0
+    ]
+   }
+  },
+  "rtd": {
+   "counter": {
+    "median": null,
+    "q1": null,
+    "q3": null,
+    "n": 0,
+    "detected": 0,
+    "worlds": 1
+   },
+   "bayes": {
+    "median": 38.0,
+    "q1": 38.0,
+    "q3": 38.0,
+    "n": 1,
+    "detected": 1,
+    "worlds": 1
+   },
+   "profiler": {
+    "median": 24.0,
+    "q1": 24.0,
+    "q3": 24.0,
+    "n": 1,
+    "detected": 1,
+    "worlds": 1
+   }
+  },
+  "exploitation_cost": {
+   "counter": {
+    "mean": 67.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   "bayes": {
+    "mean": 22.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   "profiler": {
+    "mean": 15.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   }
+  },
+  "exploitation_label": "sleeper bluffs let through before detection",
+  "lives_lost_to_sleeper": {
+   "counter": {
+    "mean": 9.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   "bayes": {
+    "mean": 4.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   "profiler": {
+    "mean": 2.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   }
+  },
+  "twist": {
+   "diff": {
+    "mean": -45.0,
+    "lo": null,
+    "hi": null,
+    "n": 1
+   },
+   "holds": false,
+   "metric": "missed_bluffs (bayes \u2212 counter, paired by seed)"
+  },
+  "estimate_note": "Estimate = 1 \u2212 mean q_used about the sleeper per game; counter has no memory (q = 0).",
+  "source": "runs/local"
+ },
+ "worlds": [
+  {
+   "wid": "falsealarm-profiler-s7",
+   "dir": "runs/local/falsealarm-profiler-s7",
+   "seed": 7,
+   "agent": "profiler",
+   "table": "falsealarm",
+   "variant": null,
+   "parent_world": null,
+   "done": true,
+   "games": 20,
+   "win_rate": 0.3,
+   "win_rate_late": 0.2,
+   "brier": 0.3030372716399978,
+   "n_brier": 83,
+   "discovery_game": null,
+   "revealed_to_discovery": null,
+   "false_alarm": 1.0,
+   "false_alarm_belief": 0.0
+  },
+  {
+   "wid": "longcon-bayes-s7",
+   "dir": "runs/local/longcon-bayes-s7",
+   "seed": 7,
+   "agent": "bayes",
+   "table": "longcon",
+   "variant": null,
+   "parent_world": null,
+   "done": true,
+   "games": 20,
+   "win_rate": 0.4,
+   "win_rate_late": 0.5,
+   "brier": 0.300704097609756,
+   "n_brier": 87,
+   "discovery_game": null,
+   "revealed_to_discovery": null,
+   "sleeper": "p3",
+   "g0": 8,
+   "g0_source": "params",
+   "r_b": 58,
+   "r_d": 96,
+   "rtd": 38,
+   "detect_how": "p_final",
+   "detection_game": 14,
+   "missed_bluffs": 22,
+   "lives_lost_to_sleeper": 4
+  },
+  {
+   "wid": "longcon-counter-s7",
+   "dir": "runs/local/longcon-counter-s7",
+   "seed": 7,
+   "agent": "counter",
+   "table": "longcon",
+   "variant": null,
+   "parent_world": null,
+   "done": true,
+   "games": 20,
+   "win_rate": 0.45,
+   "win_rate_late": 0.3,
+   "brier": 0.35721710734553513,
+   "n_brier": 71,
+   "discovery_game": null,
+   "revealed_to_discovery": null,
+   "sleeper": "p3",
+   "g0": 8,
+   "g0_source": "params",
+   "r_b": 55,
+   "r_d": null,
+   "rtd": null,
+   "detect_how": null,
+   "detection_game": null,
+   "missed_bluffs": 67,
+   "lives_lost_to_sleeper": 9
+  },
+  {
+   "wid": "longcon-profiler-s7",
+   "dir": "runs/local/longcon-profiler-s7",
+   "seed": 7,
+   "agent": "profiler",
+   "table": "longcon",
+   "variant": null,
+   "parent_world": null,
+   "done": true,
+   "games": 20,
+   "win_rate": 0.3,
+   "win_rate_late": 0.3,
+   "brier": 0.2935927808112173,
+   "n_brier": 94,
+   "discovery_game": null,
+   "revealed_to_discovery": null,
+   "sleeper": "p3",
+   "g0": 8,
+   "g0_source": "params",
+   "r_b": 58,
+   "r_d": 82,
+   "rtd": 24,
+   "detect_how": "p_final",
+   "detection_game": 12,
+   "missed_bluffs": 15,
+   "lives_lost_to_sleeper": 2
+  },
+  {
+   "wid": "telltale-bayes-s1",
+   "dir": "runs/local/telltale-bayes-s1",
+   "seed": 1,
+   "agent": "bayes",
+   "table": "telltale",
+   "variant": null,
+   "parent_world": null,
+   "done": true,
+   "games": 20,
+   "win_rate": 0.3,
+   "win_rate_late": 0.3,
+   "brier": 0.2928115981887449,
+   "n_brier": 91,
+   "discovery_game": null,
+   "revealed_to_discovery": null
+  },
+  {
+   "wid": "telltale-bayes-s7",
+   "dir": "runs/local/telltale-bayes-s7",
+   "seed": 7,
+   "agent": "bayes",
+   "table": "telltale",
+   "variant": null,
+   "parent_world": null,
+   "done": true,
+   "games": 20,
+   "win_rate": 0.25,
+   "win_rate_late": 0.1,
+   "brier": 0.2850275767362978,
+   "n_brier": 86,
+   "discovery_game": null,
+   "revealed_to_discovery": null
+  },
+  {
+   "wid": "telltale-counter-s1",
+   "dir": "runs/local/telltale-counter-s1",
+   "seed": 1,
+   "agent": "counter",
+   "table": "telltale",
+   "variant": null,
+   "parent_world": null,
+   "done": true,
+   "games": 20,
+   "win_rate": 0.5,
+   "win_rate_late": 0.3,
+   "brier": 0.2919674078631834,
+   "n_brier": 60,
+   "discovery_game": null,
+   "revealed_to_discovery": null
+  },
+  {
+   "wid": "telltale-counter-s7",
+   "dir": "runs/local/telltale-counter-s7",
+   "seed": 7,
+   "agent": "counter",
+   "table": "telltale",
+   "variant": null,
+   "parent_world": null,
+   "done": true,
+   "games": 20,
+   "win_rate": 0.25,
+   "win_rate_late": 0.2,
+   "brier": 0.3132970468767541,
+   "n_brier": 61,
+   "discovery_game": null,
+   "revealed_to_discovery": null
+  },
+  {
+   "wid": "telltale-profiler-s1",
+   "dir": "runs/local/telltale-profiler-s1",
+   "seed": 1,
+   "agent": "profiler",
+   "table": "telltale",
+   "variant": null,
+   "parent_world": null,
+   "done": true,
+   "games": 20,
+   "win_rate": 0.35,
+   "win_rate_late": 0.3,
+   "brier": 0.26054967177548616,
+   "n_brier": 91,
+   "discovery_game": 7,
+   "revealed_to_discovery": 24
+  },
+  {
+   "wid": "telltale-profiler-s1.b10.as_of-0",
+   "dir": "runs/local/telltale-profiler-s1.b10.as_of-0",
+   "seed": 1,
+   "agent": "profiler",
+   "table": "telltale",
+   "variant": "as_of:0",
+   "parent_world": "telltale-profiler-s1",
+   "done": true,
+   "games": 10,
+   "win_rate": 0.0,
+   "win_rate_late": 0.0,
+   "brier": 0.30012657615240407,
+   "n_brier": 40,
+   "discovery_game": null,
+   "revealed_to_discovery": null
+  },
+  {
+   "wid": "telltale-profiler-s1.b10.as_of-6",
+   "dir": "runs/local/telltale-profiler-s1.b10.as_of-6",
+   "seed": 1,
+   "agent": "profiler",
+   "table": "telltale",
+   "variant": "as_of:6",
+   "parent_world": "telltale-profiler-s1",
+   "done": true,
+   "games": 10,
+   "win_rate": 0.3,
+   "win_rate_late": 0.3,
+   "brier": 0.30949012682718896,
+   "n_brier": 42,
+   "discovery_game": null,
+   "revealed_to_discovery": null
+  },
+  {
+   "wid": "telltale-profiler-s1.b10.false_memory",
+   "dir": "runs/local/telltale-profiler-s1.b10.false_memory",
+   "seed": 1,
+   "agent": "profiler",
+   "table": "telltale",
+   "variant": "false_memory",
+   "parent_world": "telltale-profiler-s1",
+   "done": true,
+   "games": 10,
+   "win_rate": 0.4,
+   "win_rate_late": 0.4,
+   "brier": 0.2637565367988444,
+   "n_brier": 57,
+   "discovery_game": null,
+   "revealed_to_discovery": null
+  },
+  {
+   "wid": "telltale-profiler-s1.b10.full",
+   "dir": "runs/local/telltale-profiler-s1.b10.full",
+   "seed": 1,
+   "agent": "profiler",
+   "table": "telltale",
+   "variant": "full",
+   "parent_world": "telltale-profiler-s1",
+   "done": true,
+   "games": 10,
+   "win_rate": 0.4,
+   "win_rate_late": 0.4,
+   "brier": 0.2637565367988444,
+   "n_brier": 57,
+   "discovery_game": null,
+   "revealed_to_discovery": null
+  },
+  {
+   "wid": "telltale-profiler-s1.b10.minus-verbal_tell",
+   "dir": "runs/local/telltale-profiler-s1.b10.minus-verbal_tell",
+   "seed": 1,
+   "agent": "profiler",
+   "table": "telltale",
+   "variant": "minus:verbal_tell",
+   "parent_world": "telltale-profiler-s1",
+   "done": true,
+   "games": 10,
+   "win_rate": 0.6,
+   "win_rate_late": 0.6,
+   "brier": 0.22835976826564805,
+   "n_brier": 51,
+   "discovery_game": null,
+   "revealed_to_discovery": null
+  },
+  {
+   "wid": "telltale-profiler-s7",
+   "dir": "runs/local/telltale-profiler-s7",
+   "seed": 7,
+   "agent": "profiler",
+   "table": "telltale",
+   "variant": null,
+   "parent_world": null,
+   "done": true,
+   "games": 20,
+   "win_rate": 0.5,
+   "win_rate_late": 0.5,
+   "brier": 0.26975168003559613,
+   "n_brier": 108,
+   "discovery_game": 5,
+   "revealed_to_discovery": 21
+  },
+  {
+   "wid": "telltale-profiler-s7-ask",
+   "dir": "runs/local/telltale-profiler-s7-ask",
+   "seed": 7,
+   "agent": "profiler",
+   "table": "telltale",
+   "variant": null,
+   "parent_world": null,
+   "done": true,
+   "games": 20,
+   "win_rate": 0.6,
+   "win_rate_late": 0.6,
+   "brier": 0.22123015227706766,
+   "n_brier": 106,
+   "discovery_game": 7,
+   "revealed_to_discovery": 27
+  },
+  {
+   "wid": "telltale-profiler-s7.b10.as_of-0",
+   "dir": "runs/local/telltale-profiler-s7.b10.as_of-0",
+   "seed": 7,
+   "agent": "profiler",
+   "table": "telltale",
+   "variant": "as_of:0",
+   "parent_world": "telltale-profiler-s7",
+   "done": true,
+   "games": 10,
+   "win_rate": 0.1,
+   "win_rate_late": 0.1,
+   "brier": 0.3350395563874063,
+   "n_brier": 41,
+   "discovery_game": null,
+   "revealed_to_discovery": null
+  },
+  {
+   "wid": "telltale-profiler-s7.b10.as_of-6",
+   "dir": "runs/local/telltale-profiler-s7.b10.as_of-6",
+   "seed": 7,
+   "agent": "profiler",
+   "table": "telltale",
+   "variant": "as_of:6",
+   "parent_world": "telltale-profiler-s7",
+   "done": true,
+   "games": 10,
+   "win_rate": 0.4,
+   "win_rate_late": 0.4,
+   "brier": 0.2731803053468832,
+   "n_brier": 47,
+   "discovery_game": null,
+   "revealed_to_discovery": null
+  },
+  {
+   "wid": "telltale-profiler-s7.b10.false_memory",
+   "dir": "runs/local/telltale-profiler-s7.b10.false_memory",
+   "seed": 7,
+   "agent": "profiler",
+   "table": "telltale",
+   "variant": "false_memory",
+   "parent_world": "telltale-profiler-s7",
+   "done": true,
+   "games": 10,
+   "win_rate": 0.2,
+   "win_rate_late": 0.2,
+   "brier": 0.26124787016660955,
+   "n_brier": 49,
+   "discovery_game": null,
+   "revealed_to_discovery": null
+  },
+  {
+   "wid": "telltale-profiler-s7.b10.full",
+   "dir": "runs/local/telltale-profiler-s7.b10.full",
+   "seed": 7,
+   "agent": "profiler",
+   "table": "telltale",
+   "variant": "full",
+   "parent_world": "telltale-profiler-s7",
+   "done": true,
+   "games": 10,
+   "win_rate": 0.2,
+   "win_rate_late": 0.2,
+   "brier": 0.26124787016660955,
+   "n_brier": 49,
+   "discovery_game": null,
+   "revealed_to_discovery": null
+  },
+  {
+   "wid": "telltale-profiler-s7.b10.minus-verbal_tell",
+   "dir": "runs/local/telltale-profiler-s7.b10.minus-verbal_tell",
+   "seed": 7,
+   "agent": "profiler",
+   "table": "telltale",
+   "variant": "minus:verbal_tell",
+   "parent_world": "telltale-profiler-s7",
+   "done": true,
+   "games": 10,
+   "win_rate": 0.2,
+   "win_rate_late": 0.2,
+   "brier": 0.3291714526731272,
+   "n_brier": 45,
+   "discovery_game": null,
+   "revealed_to_discovery": null
+  },
+  {
+   "wid": "telltale-profiler_amnesic-s1",
+   "dir": "runs/local/telltale-profiler_amnesic-s1",
+   "seed": 1,
+   "agent": "profiler_amnesic",
+   "table": "telltale",
+   "variant": null,
+   "parent_world": null,
+   "done": true,
+   "games": 20,
+   "win_rate": 0.25,
+   "win_rate_late": 0.2,
+   "brier": 0.28065151574851604,
+   "n_brier": 91,
+   "discovery_game": null,
+   "revealed_to_discovery": null
+  },
+  {
+   "wid": "telltale-profiler_amnesic-s7",
+   "dir": "runs/local/telltale-profiler_amnesic-s7",
+   "seed": 7,
+   "agent": "profiler_amnesic",
+   "table": "telltale",
+   "variant": null,
+   "parent_world": null,
+   "done": true,
+   "games": 20,
+   "win_rate": 0.05,
+   "win_rate_late": 0.0,
+   "brier": 0.290676739134797,
+   "n_brier": 101,
+   "discovery_game": null,
+   "revealed_to_discovery": null
+  },
+  {
+   "wid": "telltale-profiler_blind-s1",
+   "dir": "runs/local/telltale-profiler_blind-s1",
+   "seed": 1,
+   "agent": "profiler_blind",
+   "table": "telltale",
+   "variant": null,
+   "parent_world": null,
+   "done": true,
+   "games": 20,
+   "win_rate": 0.15,
+   "win_rate_late": 0.3,
+   "brier": 0.285348269556954,
+   "n_brier": 93,
+   "discovery_game": 11,
+   "revealed_to_discovery": 49
+  },
+  {
+   "wid": "telltale-profiler_blind-s7",
+   "dir": "runs/local/telltale-profiler_blind-s7",
+   "seed": 7,
+   "agent": "profiler_blind",
+   "table": "telltale",
+   "variant": null,
+   "parent_world": null,
+   "done": true,
+   "games": 20,
+   "win_rate": 0.2,
+   "win_rate_late": 0.3,
+   "brier": 0.2724091939574314,
+   "n_brier": 91,
+   "discovery_game": 5,
+   "revealed_to_discovery": 22
+  },
+  {
+   "wid": "telltale_overt-profiler-s7",
+   "dir": "runs/local/telltale_overt-profiler-s7",
+   "seed": 7,
+   "agent": "profiler",
+   "table": "telltale_overt",
+   "variant": null,
+   "parent_world": null,
+   "done": true,
+   "games": 20,
+   "win_rate": 0.2,
+   "win_rate_late": 0.1,
+   "brier": 0.20702974999217524,
+   "n_brier": 104,
+   "discovery_game": 5,
+   "revealed_to_discovery": 20
+  }
+ ],
+ "show_grid": {
+  "columns": [
+   {
+    "key": "tt_win",
+    "label": "Win rate, telltale",
+    "table": "telltale",
+    "metric": "win_rate",
+    "fmt": "pct"
+   },
+   {
+    "key": "tt_late",
+    "label": "Win rate g11\u201320",
+    "table": "telltale",
+    "metric": "win_rate_late",
+    "fmt": "pct"
+   },
+   {
+    "key": "tt_brier",
+    "label": "Brier (lower is better)",
+    "table": "telltale",
+    "metric": "brier",
+    "fmt": "num"
+   },
+   {
+    "key": "tt_disc",
+    "label": "Tell found at game",
+    "table": "telltale",
+    "metric": "discovery_game",
+    "fmt": "num"
+   },
+   {
+    "key": "lc_rtd",
+    "label": "Rounds to detection",
+    "table": "longcon",
+    "metric": "rtd",
+    "fmt": "num"
+   },
+   {
+    "key": "lc_missed",
+    "label": "Bluffs let through",
+    "table": "longcon",
+    "metric": "missed_bluffs",
+    "fmt": "num"
+   },
+   {
+    "key": "fa",
+    "label": "False alarms",
+    "table": "falsealarm",
+    "metric": "false_alarm",
+    "fmt": "pct"
+   }
+  ],
+  "rows": [
+   {
+    "agent": "counter",
+    "cells": {
+     "tt_win": {
+      "mean": 0.375,
+      "lo": 0.25,
+      "hi": 0.5,
+      "n": 2
+     },
+     "tt_late": {
+      "mean": 0.25,
+      "lo": 0.2,
+      "hi": 0.3,
+      "n": 2
+     },
+     "tt_brier": {
+      "mean": 0.30263222736996875,
+      "lo": 0.2919674078631834,
+      "hi": 0.3132970468767541,
+      "n": 2
+     },
+     "lc_missed": {
+      "mean": 67.0,
+      "lo": null,
+      "hi": null,
+      "n": 1
+     }
+    }
+   },
+   {
+    "agent": "bayes",
+    "cells": {
+     "tt_win": {
+      "mean": 0.275,
+      "lo": 0.25,
+      "hi": 0.3,
+      "n": 2
+     },
+     "tt_late": {
+      "mean": 0.2,
+      "lo": 0.1,
+      "hi": 0.3,
+      "n": 2
+     },
+     "tt_brier": {
+      "mean": 0.28891958746252133,
+      "lo": 0.2850275767362978,
+      "hi": 0.2928115981887449,
+      "n": 2
+     },
+     "lc_rtd": {
+      "mean": 38.0,
+      "lo": null,
+      "hi": null,
+      "n": 1
+     },
+     "lc_missed": {
+      "mean": 22.0,
+      "lo": null,
+      "hi": null,
+      "n": 1
+     }
+    }
+   },
+   {
+    "agent": "profiler_amnesic",
+    "cells": {
+     "tt_win": {
+      "mean": 0.15,
+      "lo": 0.05,
+      "hi": 0.25,
+      "n": 2
+     },
+     "tt_late": {
+      "mean": 0.1,
+      "lo": 0.0,
+      "hi": 0.2,
+      "n": 2
+     },
+     "tt_brier": {
+      "mean": 0.28566412744165653,
+      "lo": 0.28065151574851604,
+      "hi": 0.290676739134797,
+      "n": 2
+     }
+    }
+   },
+   {
+    "agent": "profiler",
+    "cells": {
+     "tt_win": {
+      "mean": 0.48333333333333334,
+      "lo": 0.3499999999999999,
+      "hi": 0.6,
+      "n": 3
+     },
+     "tt_late": {
+      "mean": 0.4666666666666666,
+      "lo": 0.3,
+      "hi": 0.6,
+      "n": 3
+     },
+     "tt_brier": {
+      "mean": 0.25051050136271663,
+      "lo": 0.22123015227706766,
+      "hi": 0.26975168003559613,
+      "n": 3
+     },
+     "tt_disc": {
+      "mean": 6.333333333333333,
+      "lo": 5.0,
+      "hi": 7.0,
+      "n": 3
+     },
+     "lc_rtd": {
+      "mean": 24.0,
+      "lo": null,
+      "hi": null,
+      "n": 1
+     },
+     "lc_missed": {
+      "mean": 15.0,
+      "lo": null,
+      "hi": null,
+      "n": 1
+     },
+     "fa": {
+      "mean": 1.0,
+      "lo": null,
+      "hi": null,
+      "n": 1
+     }
+    }
+   },
+   {
+    "agent": "profiler_blind",
+    "cells": {
+     "tt_win": {
+      "mean": 0.175,
+      "lo": 0.15,
+      "hi": 0.2,
+      "n": 2
+     },
+     "tt_late": {
+      "mean": 0.3,
+      "lo": 0.3,
+      "hi": 0.3,
+      "n": 2
+     },
+     "tt_brier": {
+      "mean": 0.2788787317571927,
+      "lo": 0.2724091939574314,
+      "hi": 0.285348269556954,
+      "n": 2
+     },
+     "tt_disc": {
+      "mean": 8.0,
+      "lo": 5.0,
+      "hi": 11.0,
+      "n": 2
+     }
+    }
+   }
+  ]
+ }
+}

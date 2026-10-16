@@ -1,0 +1,21 @@
+# Experiment matrix (SPEC §6). Tables give the scripted roles for seats [p2, p3].
+# NOTE: longcon is [telltale, sleeper] (SPEC lists [sleeper, telltale]): only the immediate next actor can
+# challenge and p1 always follows p3, so p1 only judges p3's claims; RTD needs p1's p_final about the sleeper.
+games: 20
+reflect_every: 2
+tables:
+  telltale:       [control, telltale]          # learning + Surgery Reveal
+  longcon:        [telltale, sleeper]          # Long Con + tell together
+  falsealarm:     [control, control]
+  telltale_overt: [control, telltale_overt]    # stronger, lexical tell (backup for the Show)
+agents: [counter, bayes, bayes_discount, profiler_amnesic, profiler, profiler_blind]   # logreg_bow, llm_episodic: not implemented
+llm_agents: [profiler, profiler_blind]          # agents that reflect (stub reflection unless --llm)
+llm_agents_extra: {llm_episodic: 10}
+seeds: {llm: 30, non_llm: 300}                  # profiler* = llm
+ablate:
+  agents: [profiler]
+  at_game: 10
+  learning: false
+  variants: [full, "as_of:0", "as_of:4", "as_of:6", "as_of:8", "minus:verbal_tell", false_memory,
+             "transplant:same_role", "transplant:other_role"]
+false_memory_text: {about: p3, aspect: baseline_bluff, text: "Player 3 never bluffs", q: 0.0}

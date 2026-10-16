@@ -1,0 +1,181 @@
+# Internal interfaces (for parallel implementers)
+
+SPEC.md is the source of truth; this file pins down the seams between modules that are being
+built **concurrently by different agents**. Do not edit a module owned by someone else — if
+you need a change in it, write it down under "Requests" at the bottom of this file.
+
+Run everything with `.venv/bin/python` (Python 3.12, deps installed). Tests: `.venv/bin/python -m pytest -q`.
+CLI: `.venv/bin/python -m blab.orchestrator.cli <cmd>` (or `pip install -e .` → `blab`).
+
+## Already written (shared, owned by the lead — read, don't rewrite)
+- `blab/events.py` — **FROZEN event contract** (§4). Use `EventWriter.emit(type, payload, game=, round=, actor=)`.
+  Payload models validate on emit. You may add *optional* fields only (payload models allow extra keys).
+- `blab/grid.py` — grid posterior over q (§5.1): `uniform, update(post,p_c,was_bluff,weight), posterior(claims),
+  mean, interval(post,mass)->[mean,lo,hi], p_diff_greater(a,b,delta,rng,n), to_list/from_list`.
+- `blab/env.py` — `load_env()` reads `settings.env` (aliases `SURREALDB_API_KEY`→`SPECTRON_API_KEY`). `has(*keys)`.
+- `blab/orchestrator/cli.py` — Typer dispatcher; each command lazily imports `module:function` (see that file for
+  exact names/kwargs). Implement the function it points at; sync or async both work.
+
+## Ownership
+| Owner | Files |
+|---|---|
+| core | `blab/engine.py`, `blab/agents/{scripted,banks,ours}.py`, `blab/world.py`, `blab/replay.py`, `tests/test_engine.py`, `tests/test_replay.py`, `matrix.yaml` |
+| hypotheses | `blab/hypotheses.py`, `tests/test_hypotheses.py` |
+| integrations | `blab/worldd.py`, `blab/orchestrator/{spike,boxes,reflect,memory,llm,tracing,voice,forge}.py`, `blab/forge_eval.py`, `tests/test_forge_gate.py` |
+| show | `show/**`, `blab/orchestrator/pick.py` (bundle builder), `blab/orchestrator/analyze.py` |
+
+## Seats, ids
+- Seats `p1,p2,p3`; `p1` is the agent under test. World ids `w001…`; local runs write `runs/local/<wid>/`.
+- Observation id of a revealed claim: `obs_id(world, game, round)` → `"w017:g4r2"` (one reveal per round max).
+
+## Observation (§3.4) — the only thing a policy receives
+Exactly the JSON in SPEC §3.4, plus:
+- every `revealed_history` entry: `{obs_id, game, round, by, challenger, count, was_bluff, cards, utterance, features, p_cards}`
+  where `p_cards` is computed **from the observing seat's own hand at that deal** (observer-specific, no hidden info),
+  and `cards` are the revealed cards (public after a challenge).
+- `pending_claim.features` includes the §3.3 features **and** `card_math: {U,m,h,k,p_cards}` for this observer.
+- `revealed_history` covers ALL games so far in this world (public record). Agents decide what they remember.
+
+## Policy interface (`blab/agents/*`)
+```python
+class Policy:
+    id: str                       # "counter", "profiler", "scripted:telltale", ...
+    def __init__(self, seat: str, rng: np.random.Generator, params: dict): ...
+    def act(self, obs: dict) -> dict
+        # {"type":"challenge"} | {"type":"play","cards":[indices into obs["my_hand"]],"utterance":str}
+        # Our agents also return "decision": <§7.1 payload dict> for respond AND play decisions.
+    # memory-bearing agents only (duck-typed; World checks hasattr):
+    learning: bool
+    def get_memory(self) -> dict          # JSON-serializable, includes memory_version
+    def set_memory(self, mem: dict) -> None
+    def on_game_end(self, obs: dict, game: int) -> list[tuple[str, dict]]   # events to emit: ("hypothesis",{...}), ("belief_superseded",{...})
+    def wants_reflection(self, game: int) -> bool
+    def reflect_payload(self) -> dict     # {seat, memory_version, new_obs:[revealed entries], hypotheses:[...]}
+    def apply_reflection(self, proposed: list[dict], game: int) -> list[tuple[str, dict]]
+```
+**Memory timing rule (makes /replay exact):** checkpoint memory changes only at game end (scoring, drift,
+reflection). During game g the agent decides from `memory = ckpt g<g-1>` **plus** in-game working memory =
+the current game's entries in `obs.revealed_history`. Hence `as_of:0` (empty checkpoint + in-game) ==
+`profiler_amnesic`. Each decision records `memory_version`, `obs`, and `rng_u` (the exploration uniform draw)
+so that `replay(full)` reproduces the logged decision bit-for-bit.
+
+## Memory file (§5.2)
+```json
+{"memory_version": 23, "agent": "profiler", "seat": "p1",
+ "base": {"p2": {"grid": [...101 floats], "n": 14}, "p3": {...}},
+ "hypotheses": [ <hypothesis dicts, §5.2 shape + scoring fields> ],
+ "observations": ["w017:g4r2", ...],
+ "revealed": [ <revealed_history entries remembered> ]}
+```
+
+## hypotheses.py API (owned by hypotheses; core imports it)
+```python
+ASPECTS = ("baseline_bluff","trigger","verbal_tell","pressure","exploits_trust","collusion")
+FEATURES: dict[str, type]                       # §3.3 table (+ "answer_*" prefix allowed)
+def validate_predicate(pred: dict) -> tuple[bool, str]
+def eval_predicate(pred: dict, features: dict) -> bool        # evaluator, never eval()
+def specificity(pred: dict) -> int                            # # of leaves; "most specific" tie-break
+def new_hypothesis(*, wid, about, aspect, text, predicate, created_game, provenance="evidence",
+                   idx: int, supersedes=None) -> dict
+def score_hypothesis(h: dict, revealed: list[dict], rng: np.random.Generator) -> dict
+    # revealed = entries about h["about"] with game > h["created_game"] (caller may pass all; fn filters)
+    # sets n_true,n_false,q_true,q_false (each [mean,lo,hi]), p_gap, status per §5.2, evidence_obs
+def recent_window_check(h, revealed, now_game, rng) -> bool   # confirmed→refuted rule over last 2 games
+def supersede(hyps: list[dict], now_game: int, now_round: int) -> list[tuple[str, dict]]  # belief_superseded events; mutates
+def detect_drift(revealed_about_opp: list[dict], rng, W=8, delta=0.2, thresh=0.9) -> tuple[bool, np.ndarray|None, float]
+def matching_q(hyps, features, about, base_post, *, trust_untrusted=False) -> tuple[float, str|None, list[dict]]
+    # E[q] from the most specific CONFIRMED hypothesis whose predicate matches (q_true mean), else
+    # q_false of a confirmed hypothesis that does NOT match (more informative than base), else base mean.
+    # untrusted lines count only if trust_untrusted (profiler_blind) or independently confirmed.
+    # returns (q_used, q_source, memory_used[] entries in §7.1 shape)
+def hypothesis_event(h: dict) -> dict          # payload for the "hypothesis" event
+```
+
+## World runner (`blab/world.py`, owned by core)
+```python
+class World:
+    def __init__(self, *, wid, seats: list[dict], seed: int, games: int, reflect_every=2, ask=False,
+                 out_dir: str|Path|None, run="local", box="local", variant: dict|None=None,
+                 learning=True, reflector: "Reflector|None"=None, parent_world=None, from_game=None): ...
+    status: str        # "created"|"running"|"awaiting_reflection"|"paused"|"done"
+    async def run(self) -> dict          # returns world_end payload
+    def pause(self); def resume(self)
+    events: EventWriter
+# Reflector = async callable (wid, seat, payload: dict) -> dict | None
+#   returns {"proposed":[{about,aspect,text,predicate,rationale,supersedes_id}], "llm_trace_id":..., "surreal_trace_id":..., "source":"claude"|"stub"}
+#   World wraps it in asyncio.wait_for(…, 60) and keeps the old memory on timeout/None/error.
+def stub_reflector(...)                  # canned hypotheses (incl. formal_register==true verbal_tell) — no network
+def run_local(table, agent, seed, games, reflect_every, out, llm, ask, wid) -> dict
+def replay_decision(world_dir, seq, variant: dict) -> dict   # decision payload under M' + {delta_p, flipped, delta_ev}
+def branch(world_dir, new_wid, from_game, games, variant, learning=False) -> World
+```
+Disk layout per world (§8.2): `<out>/<wid>/events.jsonl`, `ckpt/gNN.json` (engine snapshot + every agent's memory
+after game NN; g00 = start), `memory/<seat>.json`, `meta.json`.
+`memory_variant` dicts exactly as SPEC §8.3. With `llm=True`, run_local uses `blab.orchestrator.reflect.local_reflector`
+(integrations) instead of the stub.
+
+## Show bundle
+SPEC §12.1. Built only from real runs (`runs/…`). Never hand-write numbers into bundle files.
+
+## Requests
+(append here: "<from> → <owner>: what you need")
+hypotheses → core: §3.3 `formal_register` needs ≥ 4 words, so formal-bank lines like "These are Kings." (3 words) do NOT register as formal — keep every formal-bank line ≥ 4 words (and every casual line with a contraction), or the telltale's tell is diluted.
+show → core/lead: run the Show's telltale profiler worlds with `--ask` so real `ask` events exist; the cold-open audio cue (`play_to` the ask + `voice/ask_<seq>.mp3`) is auto-skipped without one. pick-demo prefers decisions that used a confirmed verbal_tell line in games 10–14; with seed 7's g9 refutation, the picked decision (seq 840) used only the base rate (q_source base:p3) — more seeds or the WINDOW_MIN_TRUE fix should give a tell-line decision.
+show → integrations (voice): write TTS mp3s to `<world_dir>/voice/ask_<seq>.mp3` (seq = the `ask` event's seq); pick-demo copies `<world_dir>/voice/*.mp3` into `show/bundle/voice/`.
+show → integrations (forge): write the Show's forge result to `runs/<run>/forge.json` = the `forge_result` payload + `source` (module text) + `network_blocked_verified: bool` (true only if spike D3 passed); pick-demo copies it into the bundle.
+show → whoever runs ablate: branch worlds must carry `world_start.variant` + `parent_world` + `from_game` (core's branch does), and include a `full` branch per seed so Δ-vs-full is paired. analyze reads every `events.jsonl` under `runs/<run>/` at any depth, so `collect` may use any layout.
+
+## Status: hypotheses
+DONE — `blab/hypotheses.py` (full API + extras `apply_drift`, `is_always_true`, `has_contraction`, `formal_register`; `score_hypothesis(..., now_game=None)` applies the recent-window rule when given; memory_used entries add `used_as`/`matched`/`q_override`), 68 tests in `tests/test_hypotheses.py` pass; power: median 14 revealed telltale claims to confirm formal_register (p_cards 0.1–0.3).
+
+## Status: core
+- M1 engine/scripted/counter/bayes/World/run_local: DONE — `.venv/bin/python -m blab.orchestrator.cli local --table telltale --agent profiler --seed 7` → `runs/local/telltale-profiler-s7/` (wid default `<table>-<agent>-s<seed>`; events validate on emit).
+core → all (FYI): decision events carry `obs` with `revealed_history` trimmed to the CURRENT game (`obs.revealed_history_scope:"current_game"`); earlier games live in ckpt memory (timing rule). Claim payloads carry god-view `bluff_kind` ("strategic"|"forced"|null). Tables: `longcon` = p2 telltale, p3 sleeper (swapped vs SPEC: p1 only ever judges p3's claims, since only the next actor can challenge). Extra table `telltale_overt`.
+core → hypotheses/lead: the §5.2 recent-window rule (P<0.3 over last 2 games ⇒ refuted, absorbing) fires on noise: seed 7 confirms the formal tell at g5 then refutes it at g9 with overall p_gap 0.99. Workaround in core (spec-compatible): reflection may re-propose a refuted predicate as a NEW line (stub does so only when the refuted line's overall p_gap > 0.9); it re-confirmed at g15 with a `belief_superseded{reason:"refuted"}`. Consider requiring WINDOW_MIN_TRUE ≥ 4.
+
+## Status: show
+- FLOW.md (storyboard, scene list, fallbacks, cue format): DONE — `show/FLOW.md`.
+- App (`show/index.html`, `app.js`, `style.css`, vendored fonts in `show/vendor/`; no build, offline): DONE — table, inspector + evidence, dossier slider, surgery reveal + flip, ablation, trust curve, split, results, forge, close; HUD (H), Space/→/PageDown, ←/PageUp, R, F; `?cue=N` jumps, `?bundle=dir` loads another bundle; missing files ⇒ "awaiting data" plates / auto-skipped cues.
+- `blab pick-demo --run local|<run>` (`blab/orchestrator/pick.py`): DONE — §13 rule, real `replay_decision` for full/as_of:0/false_memory/profiler_blind (agent override), writes world/twin/reveal/dossier/ablation/longcon/results/cues + PROVENANCE.md.
+- `blab analyze --run <run>` (`blab/orchestrator/analyze.py`): DONE (v1) — win rate (+g11–20), Brier, discovery game, revealed-to-discovery, RTD, missed sleeper bluffs, lives lost to sleeper, false alarm (spec + belief-only), trust curve, ablation bars with paired Δ, twist test; bootstrap CIs over seeds → results.json, summary.md, ablation.json, longcon.json. Decision-flip count not yet computed (null).
+- M2 profiler/profiler_blind/profiler_amnesic/bayes_discount + stub reflection + checkpoints + replay/branch: DONE — `.venv/bin/python -m pytest -q tests/test_engine.py tests/test_replay.py` (26 pass). Replay: `... cli replay telltale-profiler-s1 1043 --variants full,as_of:0,false_memory,false_memory@profiler_blind` (`<variant>@<agent>` re-runs the same state with another agent). Branch: `... cli branch telltale-profiler-s7 --from-game 10 --variant as_of:0` → `runs/local/<wid>.b10.as_of-0/`.
+- M2 acceptance: stub-reflection profiler confirms the formal_register verbal_tell about the telltale within 12 games on 28/30 seeds (1–30; median discovery g7; misses: 15, 22); telltale_overt 30/30 (median g5). Tell open+confirmed at every ckpt g9–g14 on seeds 1,2,4,6,8,9,11,13,14,19,21,23,25,26,27,28. Surgery-Reveal-shaped decisions (formal claim, full challenges, reveal=bluff, as_of:0 → play_on): seed 1 seq 1043 (g10), 1306 (g13).
+- Ask (§7.5, sim text): `... cli local --ask` → `ask`/`answer` events; answer features enter the claim as `answer_*`; decision.ask records it; replay stays exact.
+- Real runs in `runs/local/`: telltale × {profiler,bayes,counter,profiler_blind,profiler_amnesic} × seeds {7,1}; branches `telltale-profiler-s{7,1}.b10.{full,as_of-0,as_of-6,minus-verbal_tell,false_memory}`; profiler on telltale_overt/longcon/falsealarm s7; longcon bayes/counter s7; `telltale-profiler-s7-ask`.
+- For worldd (integrations): `World(..., reflector=async fn(wid, seat, payload))` — to do the box handshake, pass a reflector that awaits a Future resolved by `PUT /memory`; while waiting `world.status == "awaiting_reflection"` and `world.pending_reflection` holds the payload. Return `{"proposed":[...], "source":..., "llm_trace_id":..., "surreal_trace_id":...}` or `{"error":...}`. Timeout default 60 s (`reflect_timeout=`). `World.pause()/resume()` gate between games.
+- Honest findings (20 seeds × 20 games, telltale): win rate counter 0.39, bayes 0.26, profiler 0.29, amnesic 0.13; Brier profiler 0.281 < bayes 0.291 < counter 0.319. Memory improves calibration but NOT win rate under the §5.1 0.5 threshold (3-player: a wrong challenge costs me a life, a right one is shared with the other opponent). Longcon (sleeper at p3): exploitation cost counter 24.5 > profiler 5.9 > bayes 4.7 (counter rarely challenges) — the "naive memory is more exploitable" twist does NOT reproduce. falsealarm: drift fires on 7/20 control worlds.
+- Task 1 (win rate vs Brier) — diagnosis, seeds 1–20, telltale, threshold rule: challenge rate / accuracy: counter 0.25/0.60, bayes 0.39/0.51, profiler 0.47/0.54, amnesic 0.55/0.43. p1 lives lost to wrong challenges vs own claim caught: counter 547/416, bayes 812/215, profiler 841/168, amnesic 1012/124 (no other cause). P(p1 loses a life later in the round | played on) = 0.26–0.34, so playing on is NOT free. p1 starts 36–39% of rounds for every agent. Cause: memory agents estimate q ≈ 0.4 for the telltale, so p_final > 0.5 fires on many ~50/50 claims, and each wrong challenge costs a life for certain.
+- New respond-rule param `respond_rule: "threshold"(default, §5.1) | "ev"`, the same code path for every agent in ours.py. With "ev", P(I lose a life this round) is 1 − p_final if I challenge and L if I play on. Exactly one life is lost per round, so the value of an opponent's life cancels: **challenge iff p_final > 1 − L**, with L = (k+1)/(n+3) (Beta(1,2) prior, mean 1/3). Here n counts p1's past non-forced play_ons and k counts the rounds it then lost. L comes from the memory checkpoint (`memory.self`); counter and amnesic always use the prior 1/3. Decisions record `ev={challenge:-(1-p), play_on:-L}`, `respond_rule`, `ev_detail{L,L_n,L_k,threshold,formula}`. Rule chosen before evaluation; evaluated on seeds 101–130, telltale (win ± se): threshold: counter .362±.024, bayes .262, bayes_discount .247, amnesic .110, profiler .283±.019 (paired profiler−counter −.078±.030). ev: counter .325, bayes .327, bayes_discount .338, amnesic .330, profiler .340±.021 (paired +.015±.028; Brier .253). The ev rule closes the gap, but memory still gives no significant win-rate gain.
+- Task 2 (hypotheses.py, minimal): **recent-window refute now needs ≥ 4 matched claims in the window and P < 0.2** (SPEC §5.2: P < 0.3, no minimum). Tuned on seeds 1001–1030; fresh seeds 2001–2030, telltale: true tell refuted on noise 11/30 → 5/30; discovery ≤ 12 games 25/30 both before and after; a real 2-game reversal (test fixture, P = 0.159) is still refuted. **Drift unchanged (SPEC 0.9)**; the knobs are now module constants `DRIFT_THRESH/DRIFT_MIN_OLD/DRIFT_DELTA`. Fresh seeds at 0.9: falsealarm false alarms 11/30; longcon drift detects the sleeper after G0 in 11/30 (median 2 games late), RTD(any route) median 13.5 rounds. At 0.95: false alarms 2/30, but detection drops to 2/30 and median RTD rises to 15, so I did not adopt it. min_old = 8 had no effect. Most false alarms are about p3 (12 of 16 at 0.9), the opponent p1 judges directly. My guess (not verified): misspecified p_cards (it uses the claimant's current hand size) combined with p1's changing challenge selection. After the change: M2 acceptance 28/30 seeds within 12 games; tell confirmed at every ckpt g9–g14 on 23/30 seeds. runs/local regenerated with the current code.
+- Not done: logreg_bow.
+
+## Status: integrations
+Spike (`blab spike`, results in `runs/spike.json`, 2026-10-16 ~12:55):
+
+| # | Status | Notes |
+|---|---|---|
+| D1 | PASS | box from default snapshot, `auto_stop_interval=0`, repo uploaded as tarball (`sb.fs.upload_file(bytes, path)`), uvicorn `/health` → 200 via preview URL + `x-daytona-preview-token` |
+| D2 | PASS | from a box: bedrock-runtime.us-west-2 / api.anthropic.com / openrouter.ai / otlp.arize.com / app.arize.com / api.elevenlabs.io / pypi / github = reachable; **example.com and the SurrealDB host = blocked** → Surreal stays on the orchestrator (as specced) |
+| D2b | PASS | real Bedrock call (`us.anthropic.claude-opus-5-5`) from inside a box with AWS creds passed via `env_vars` |
+| D3 | PASS | `network_block_all=True` box: anthropic + example.com blocked (UI may say "network: blocked") |
+| S1 | PASS | triples body = `{"infer":"triples","triples":[{"entity":{"type":"agent","name":"w017.p3"},"key":"<aspect>","value":"…"}],"scopes":[["lab/world/w017/agent/p1"]],"observed_at":T}`; same key twice → `history/<key>` shows 2 links, `supersededBy` set |
+| S2 | FAIL | `infer:"full"` text writes extract to an `other` entity, no uncertainty record (`/uncertainty` returns `{"unknowns":[]}`); a `session_id` other than the key's own is rejected (403). Fallback: box-side `untrusted` flag only |
+| S3 | PASS | `GET /entities/agent/<wid>.p3?asOf=T` returns the old value |
+| A1 | PASS | laptop span; box-side `decision` spans also verified (decision.trace.arize_trace_id on box runs) |
+| A2 | SKIP | experiments not exercised |
+| C1 | PASS ×3 | bedrock 8.3 s, anthropic 7.6 s, openrouter 6.6 s; all return `formal_register==true` verbal_tell on the canned history |
+| E1 | PASS | ElevenLabs TTS mp3 (default premade voice chosen via GET /v1/voices; logged in voice/manifest.json) |
+
+Notes for everyone:
+- settings.env has `SPECTRON_URL` and `SPECTRON_CONTEXT_ID` values swapped; `memory.conf()` detects and swaps them (fix the file when convenient).
+- Org limit: 10 GiB RAM total across sandboxes → `blab provision` clamps to 4 GiB/box for 2 boxes (2×4 vCPU/4 GiB + 1 GiB forge).
+- LLM provider order (`BLAB_LLM_PROVIDER=auto`): bedrock → anthropic → openrouter (`anthropic/claude-opus-5.5`), falls through on expired STS creds / refusals / errors. Bedrock + direct both use `messages.parse(output_format=ReflectionOut)`; direct adds server-side `fallbacks:"default"`.
+- Box world dirs are `/home/daytona/worlds/<run>/<wid>/`. `GET /export?run=` tars a run for `blab collect`.
+- worldd: `POST /worlds` extra fields `reflector: orchestrator|stub|claude|none` (non-LLM worlds run in the ProcessPool), `start: true`, `table`.
+
+Implemented + tested: spike, llm, reflect (local_reflector verified in `blab local --llm`: Bedrock + Surreal trace ids land in reflect_result), worldd (handshake / events / SSE / memory / surgery / replay / branch / results / checkpoints / export), boxes (provision, run_matrix boxes + `--local-only`, collect, ablate boxes + local, teardown, redeploy), tracing, memory, voice, forge_eval gate (`tests/test_forge_gate.py`).
+
+integrations → core: `run_local` hard-codes `run="local"` in events; please add a `run` kwarg (boxes passes run ids for `--local-only` runs). Also matrix.yaml is still missing — `blab run` needs it (scratch test matrix used: tables telltale, agents counter/bayes/profiler).
+- Verified end to end (13:2x): `blab run` on 2 boxes (t02: 8 worlds, Bedrock reflection via `blab reflect` handshake, Surreal trace ids, box decision spans) + `blab ablate` (10 branch worlds on boxes incl. false_memory/transplant) + `blab collect`; `--local-only` run + local ablate (t03); `blab forge w007 --run t02` → real forge sandbox id, gate ok, network BLOCKED, 100 games eval (promotion rule used: forge CI-lo > Profiler(stub) mean on same seeds).
+- After code changes on the laptop: `python -c "from blab.orchestrator.boxes import redeploy; redeploy()"` re-uploads the repo and restarts worldd on both boxes (kills running worlds).
+- Box-side decision spans add `decision.trace.arize_trace_id` + envelope `trace_id` (both stripped by `canonical()`); `BLAB_TRACE_DECISIONS=off|llm|all` (default llm = async/LLM worlds only).
