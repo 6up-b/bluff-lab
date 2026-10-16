@@ -765,7 +765,7 @@
    "median_discovery": 9.0
   },
   "rule": "profiler world on the telltale table (else longcon) whose verbal_tell discovery game is closest to the median discovery game over those worlds; ties broken by lowest seed",
-  "built": "2026-10-16T17:50:50Z",
+  "built": "2026-10-16T18:31:01Z",
   "files": {
    "world.jsonl": "events of w0002",
    "twin.jsonl": "events of w0146 (bayes, same seed 2)",
@@ -775,7 +775,7 @@
    "results.json": "`blab analyze --run r01` output (per-world rows omitted)",
    "memory.json": "'does memory help?' comparison from runs/mem01 (raw observations)",
    "forge.json": "runs/r01/forge.json (normalised: forge_result fields + source)",
-   "voice/": "TTS of w0002 ask events",
+   "voice/": "TTS of w0002 ask events and the Show rounds' claims/answers (voice/manifest.json)",
    "stack.json": "sponsor-stack facts from run artifacts (ids/trace ids only, no secrets)"
   }
  }

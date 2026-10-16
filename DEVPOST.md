@@ -76,6 +76,40 @@ back, remove a line), and by design it gives injected lines with no evidence zer
 
 All metric definitions, including the §6 versions and our corrected ones, are in `runs/r01/summary.md`.
 
+## Pre-registered follow-ups (raw observations, fresh seeds; every cell reported)
+
+`PREREG.md` was committed (2167c1a) before any of these worlds ran. The opponent roles were designed after r01.
+
+**Capability boundary (b01; seeds 4000–4023, 7 agents × 3 tables, Profiler with real Claude reflection).**
+None of the new hypotheses held. On the relational tell, a sentence-embedding classifier had *lower* Brier than
+the Profiler over the first 10 reveals (Δ +0.033, 95% CI +0.009 to +0.057), the opposite of H1. Important
+deviation: the Profiler's planned per-claim check of statements against the public record was not built in time,
+so H1 tested the Profiler without the capability it was meant to test. On the tell that flips mid-series, the
+Profiler did not beat the embedding classifier (Δ +0.024, CI −0.003 to +0.054) or discounted Bayes. H3 was not
+testable. The r01 control replicated: with real Claude reflection, `logreg_bow` beat the Profiler on win rate
+(+0.067, CI +0.008 to +0.125) and Brier. Full table: `show/bundle/boundary.json`.
+
+**Memory vs no memory, raw observations (mem01; seeds 3001–3012, real Claude reflection, threshold rule).**
+No engineered tell features: every agent sees the same raw utterances. `profiler_plus` turns Claude's hypotheses
+into features of a small per-opponent logistic model ("the LLM proposes, statistics weigh"). Pooled over four
+tables (n = 48 paired worlds), against a bag-of-words logistic classifier: win rate +0.108 (95% CI +0.066 to
++0.150), Brier −0.011 (CI −0.020 to −0.002). Against the no-memory card counter: win rate +0.076 (CI +0.040 to
++0.111). The same agent with reflection switched off only ties the classifier (win rate +0.014, CI −0.023 to
++0.048), so the gain comes from Claude's hypotheses. Caveats: the opponents and `profiler_plus` were designed
+after r01, the reflection-off control was added after pre-registration, the original `profiler` still loses to
+the classifier (win rate −0.080), and this comparison is against word counts, not sentence embeddings (the
+embedding classifier, built later for b01, beat the Profiler there). In a same-model test (Sonnet 5.5, only the
+memory block of the prompt differs, 4 seeds per table), a hypothesis dossier improved win rate over no memory
+by +0.064 (CI +0.009 to +0.127) and a raw transcript showed no detectable effect.
+
+**The Long Con at scale (lc02; seeds 6000–6119).** Sleeper bluffs let through after the turn (threshold rule,
+mean per world): counter 76.5, naive bayes 45.1, discounted bayes 30.5, `logreg_bow` 26.3, Profiler 37.9 (canned
+reflection) and 32.7 (real Claude, n = 24). Naive memory let through fewer bluffs than no memory, so we do not
+claim "naive memory is more exploitable". Within the same agent, though, memory of earned trust did make it more
+exploitable: restarting each Profiler world from a checkpoint just before the turn with its memory erased cut
+the bluffs it let through by 17.1 (CI 12.8 to 21.3; paired over 120 seeds). These are checkpoint branches;
+a live Daytona VM fork was not available for our org. Full table: `show/bundle/longcon2.json`.
+
 ## How we built it
 
 - **Daytona:** world boxes (4 vCPU) run many seeded worlds concurrently behind a FastAPI server. Each world
