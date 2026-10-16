@@ -25,10 +25,11 @@ ANTHROPIC_MODEL = "claude-opus-5-5"
 OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "anthropic/claude-opus-5.5")
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 TIMEOUT_S = 60.0
-MAX_CONCURRENT = 8
+MAX_CONCURRENT = int(os.environ.get("BLAB_LLM_CONCURRENCY", "8"))
 
 ASPECTS = ("baseline_bluff", "trigger", "verbal_tell", "pressure", "exploits_trust", "collusion")
 
+_rr = 0
 _sem: asyncio.Semaphore | None = None
 _sem_loop = None
 
@@ -360,6 +361,14 @@ async def reflect(payload: dict, wid: str = "", seat: str | None = None, only: s
     """One reflection call. Returns {"proposed", "dropped", "llm_trace_id", "backend", "latency_ms"} or
     {"proposed": None, "error": ...}; returns None when no LLM backend is configured."""
     chain = [p for p in providers() if only in (None, p)]
+    if only is None and os.environ.get("BLAB_LLM_SPREAD") and len(chain) > 1:
+        # spread load across the Claude providers (bedrock ⇄ anthropic), keep the rest as fallbacks
+        global _rr
+        claude = [p for p in chain if p in ("bedrock", "anthropic")]
+        if len(claude) == 2:
+            _rr += 1
+            first = claude[_rr % 2]
+            chain = [first] + [p for p in chain if p != first]
     be = chain[0] if chain else None
     if be is None:
         return None

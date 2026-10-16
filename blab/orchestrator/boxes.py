@@ -88,6 +88,15 @@ async def box_post(c: httpx.AsyncClient, b: dict, path: str, body: dict | None =
 
 # ------------------------------------------------------------------ provision
 
+def git_tarball(ref: str = "HEAD") -> bytes:
+    """Deploy from a commit, not the working tree (concurrent edits can't leak into boxes)."""
+    import subprocess
+    out = subprocess.run(["git", "-C", str(ROOT), "archive", "--format=tar.gz", ref], capture_output=True, check=True)
+    sha = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--short", ref], capture_output=True, text=True).stdout
+    print(f"[deploy] git archive {ref} = {sha.strip()} ({len(out.stdout) // 1024} KiB)")
+    return out.stdout
+
+
 KILL_WORLDD = """
 import os, signal, socket, time
 me = os.getpid()
@@ -115,8 +124,7 @@ for _ in range(40):
 
 def _start_worldd(sb, box_id: str) -> None:
     from daytona import SessionExecuteRequest
-    from blab.orchestrator.spike import repo_tarball
-    sb.fs.upload_file(repo_tarball(), "/home/daytona/app.tgz")
+    sb.fs.upload_file(git_tarball(), "/home/daytona/app.tgz")
     sb.process.exec(f"rm -rf {APP_DIR} && mkdir -p {APP_DIR} /home/daytona/worlds && "
                     f"tar xzf /home/daytona/app.tgz -C {APP_DIR}", timeout=120)
     killer = KILL_WORLDD
@@ -224,46 +232,59 @@ def _load_matrix(path: str) -> dict:
 
 def expand_matrix(m: dict, run: str) -> list[dict]:
     """matrix.yaml (§6) → world specs. Seeds 1..N shared across agents (paired by seed).
-    Caps: env BLAB_SEEDS_LLM / BLAB_SEEDS_NON_LLM, or matrix `limits: {llm: n, non_llm: n}`."""
+
+    - every (agent, table, seed) × respond_rule in `respond_rules` (default [threshold]); p1 params carry
+      `respond_rule` and `reflection` ("claude" | "stub" | "none") so they land in world_start.
+    - `llm_reflection: {agents, tables, seeds, ask_tables}` → extra worlds with REAL Claude reflection.
+    - agents in `llm_agents` otherwise reflect with the stub; others don't reflect.
+    - caps: `limits: {llm, non_llm, non_llm_on_boxes}` or env BLAB_SEEDS_LLM / BLAB_SEEDS_NON_LLM;
+      non-LLM seeds above `non_llm_on_boxes` get where="local" (run on the laptop in parallel).
+    """
     games = int(m.get("games", 20))
     reflect_every = int(m.get("reflect_every", 2))
     tables = m.get("tables") or {"telltale": ["control", "telltale"]}
     agents = list(m.get("agents") or ["profiler"])
+    reflecting = set(m.get("llm_agents") or ["profiler", "profiler_blind"])
+    rules = list(m.get("respond_rules") or ["threshold"])
     seeds = m.get("seeds") or {}
     lim = m.get("limits") or {}
-    n_llm = int(os.environ.get("BLAB_SEEDS_LLM") or lim.get("llm") or seeds.get("llm", 30))
+    n_stub = int(os.environ.get("BLAB_SEEDS_LLM") or lim.get("llm") or seeds.get("llm", 30))
     n_non = int(os.environ.get("BLAB_SEEDS_NON_LLM") or lim.get("non_llm") or seeds.get("non_llm", 300))
-    extra = m.get("llm_agents_extra") or {}
-    specs = []
-    i = 0
-
+    n_box = int(os.environ.get("BLAB_SEEDS_ON_BOXES") or lim.get("non_llm_on_boxes") or n_non)
+    lr = m.get("llm_reflection") or {}
     try:
         from blab.world import TABLES, make_seats
     except Exception:  # noqa: BLE001
         TABLES, make_seats = {}, None
+    specs: list[dict] = []
 
-    def add(agent, table, seed):
-        nonlocal i
-        i += 1
+    def add(agent, table, seed, rule, reflection, ask=False, where="box"):
         if make_seats is not None and table in TABLES:
             seats = make_seats(table, agent, seed)          # core's canonical seating (G0 etc.)
         else:
             roles = tables[table]
-            seats = [{"seat": "p1", "policy": agent},
-                     {"seat": "p2", "policy": "scripted", "role": roles[0]},
-                     {"seat": "p3", "policy": "scripted", "role": roles[1]}]
-        specs.append({"wid": f"w{i:03d}", "run": run, "agent": agent, "table": table, "seed": seed,
-                      "games": games, "reflect_every": reflect_every, "ask": bool(m.get("ask", False)),
-                      "llm": agent in LLM_AGENTS, "seats": seats})
+            seats = [{"seat": "p1", "policy": agent, "role": None, "params": {}},
+                     {"seat": "p2", "policy": "scripted", "role": roles[0], "params": {}},
+                     {"seat": "p3", "policy": "scripted", "role": roles[1], "params": {}}]
+        seats[0]["params"] = {**seats[0].get("params", {}), "respond_rule": rule, "reflection": reflection}
+        specs.append({"wid": f"w{len(specs) + 1:04d}", "run": run, "agent": agent, "table": table, "seed": seed,
+                      "respond_rule": rule, "reflection": reflection, "games": games,
+                      "reflect_every": reflect_every, "ask": bool(ask), "llm": reflection == "claude",
+                      "where": where, "seats": seats})
 
-    for table in tables:
-        for agent in agents:
-            n = n_llm if agent in LLM_AGENTS else n_non
-            for s in range(1, n + 1):
-                add(agent, table, s)
-        for agent, n in extra.items():
-            for s in range(1, min(int(n), n_llm) + 1):
-                add(agent, table, s)
+    for rule in rules:
+        for agent in lr.get("agents") or []:                       # real-Claude worlds first (longest)
+            for table in lr.get("tables") or []:
+                for s in range(1, int(lr.get("seeds", 12)) + 1):
+                    add(agent, table, s, rule, "claude", ask=table in (lr.get("ask_tables") or []))
+        for table in tables:
+            for agent in agents:
+                if agent in reflecting:
+                    for s in range(1, n_stub + 1):
+                        add(agent, table, s, rule, "stub")
+                else:
+                    for s in range(1, n_non + 1):
+                        add(agent, table, s, rule, "none", where="box" if s <= n_box else "local")
     return specs
 
 
@@ -275,7 +296,8 @@ def _run_local_one(spec: dict, out: str, use_llm: bool) -> dict:
     from blab.world import run_local
     r = run_local(table=spec["table"], agent=spec["agent"], seed=spec["seed"], games=spec["games"],
                   reflect_every=spec["reflect_every"], out=out, llm=use_llm, ask=spec.get("ask", False),
-                  wid=spec["wid"], quiet=True)
+                  wid=spec["wid"], quiet=True, run=spec.get("run", "local"),
+                  p1_params=spec["seats"][0].get("params"))
     if _i.iscoroutine(r):
         r = _a.run(r)
     return {"wid": spec["wid"], "result": r}
@@ -314,16 +336,27 @@ def _assign(specs: list[dict], boxes: list[dict]) -> dict[str, list[dict]]:
 
 
 async def _schedule(specs: list[dict], boxes: list[dict]) -> dict:
-    plan = _assign(specs, boxes)
-    placed = {}
-    for b in boxes:
-        async with box_client(b, timeout=60) as c:
-            for s in plan[b["box_id"]]:
-                body = {k: s[k] for k in ("wid", "run", "seats", "seed", "games", "reflect_every", "ask", "table")}
-                body["reflector"] = "orchestrator" if s["llm"] else "none"
-                body["start"] = True
+    plan = _assign([s for s in specs if s.get("where", "box") == "box"], boxes)
+    placed: dict = {}
+
+    async def one(c, b, s, sem):
+        body = {k: s[k] for k in ("wid", "run", "seats", "seed", "games", "reflect_every", "ask", "table")}
+        body["reflector"] = {"claude": "orchestrator", "stub": "stub"}.get(s.get("reflection"), "none")
+        body["start"] = True
+        async with sem:
+            r = await box_post(c, b, "/worlds", body)
+            if "wid" not in (r or {}):
+                await asyncio.sleep(1)
                 r = await box_post(c, b, "/worlds", body)
-                placed[s["wid"]] = {"box": b["box_id"], **({"error": r} if "wid" not in (r or {}) else {})}
+        placed[s["wid"]] = {"box": b["box_id"], **({"error": r} if "wid" not in (r or {}) else {})}
+
+    async def per_box(b):
+        sem = asyncio.Semaphore(16)
+        async with box_client(b, timeout=120) as c:
+            # real-Claude worlds first so the reflection pipeline fills up while CPU worlds run
+            todo = sorted(plan[b["box_id"]], key=lambda s: not s["llm"])
+            await asyncio.gather(*[one(c, b, s, sem) for s in todo])
+    await asyncio.gather(*[per_box(b) for b in boxes])
     return placed
 
 
@@ -346,53 +379,63 @@ def run_matrix(matrix: str = "matrix.yaml", run: str = "r01", local_only: bool =
         bad = [r for r in res if r.get("error")]
         print(f"[run] local done: {len(res) - len(bad)} ok, {len(bad)} errors")
         return {"worlds": len(specs), "errors": len(bad), "mode": "local"}
+    import threading
+    local_specs = [s for s in specs if s.get("where") == "local"]
+    local_res: list = []
+    th = None
+    if local_specs:
+        print(f"[run] {len(local_specs)} worlds run on the laptop in parallel (where=local)")
+        th = threading.Thread(target=lambda: local_res.extend(_run_specs_local(local_specs, run_dir, llm_ok=False)),
+                              daemon=True)
+        th.start()
+    t0 = time.time()
     placed = asyncio.run(_schedule(specs, boxes))
+    print(f"[run] scheduling took {time.time() - t0:.0f}s")
     (run_dir / "placement.json").write_text(json.dumps(placed, indent=1))
     errs = {w: p for w, p in placed.items() if p.get("error")}
     print(f"[run] scheduled {len(placed) - len(errs)} worlds on {len(boxes)} boxes ({len(errs)} errors)")
     if errs:
         print("[run] first error:", next(iter(errs.items())))
     if os.environ.get("BLAB_NO_WAIT"):
+        if th:
+            th.join()
         return {"worlds": len(specs), "scheduled": len(placed) - len(errs)}
     from blab.orchestrator.reflect import reflect_worker
     asyncio.run(reflect_worker(run))
+    print(f"[run] boxes done after {time.time() - t0:.0f}s")
+    if th:
+        th.join()
+        (run_dir / "local_results.json").write_text(json.dumps(local_res, indent=1, default=str))
+        print(f"[run] local part: {sum(1 for r in local_res if not r.get('error'))}/{len(local_specs)} ok")
     collect(run)
     return {"worlds": len(specs), "scheduled": len(placed) - len(errs), "mode": "boxes"}
 
 
 # ------------------------------------------------------------------ collect
 
-async def _collect_box(b: dict, run: str) -> int:
+async def _collect_box(b: dict, run: str, chunk: int = 150) -> int:
     import io
     import tarfile
-    async with box_client(b, timeout=600) as c:
-        try:
-            r = await c.get("/export", params={"run": run})
-            if r.status_code == 200:
-                dst = RUNS / run
-                dst.mkdir(parents=True, exist_ok=True)
-                with tarfile.open(fileobj=io.BytesIO(r.content), mode="r:gz") as tf:
-                    names = {m.name.split("/")[0] for m in tf.getmembers()}
-                    tf.extractall(dst, filter="data")
-                return len(names)
-            print(f"[collect] {b['box_id']}: /export → {r.status_code}; falling back to per-file")
-        except Exception as e:  # noqa: BLE001
-            print(f"[collect] {b['box_id']}: /export failed ({type(e).__name__}: {e}); per-file fallback")
+    dst = RUNS / run
+    dst.mkdir(parents=True, exist_ok=True)
+    async with box_client(b, timeout=900) as c:
+        worlds = [w for w in (await box_get(c, b, "/worlds") or []) if w.get("run") in (None, run)]
+        wids = [w["wid"] for w in worlds]
         n = 0
-        for w in await box_get(c, b, "/worlds") or []:
-            if w.get("run") not in (None, run):
-                continue
-            wid = w["wid"]
-            for f in await box_get(c, b, f"/worlds/{wid}/files") or []:
+        for k in range(0, len(wids), chunk):
+            part = wids[k:k + chunk]
+            for attempt in range(3):
                 try:
-                    r = await c.get(f"/worlds/{wid}/file", params={"path": f})
+                    r = await c.get("/export", params={"wids": ",".join(part)})
                     if r.status_code == 200:
-                        p = RUNS / run / wid / f
-                        p.parent.mkdir(parents=True, exist_ok=True)
-                        p.write_bytes(r.content)
-                except Exception:  # noqa: BLE001
-                    pass
-            n += 1
+                        with tarfile.open(fileobj=io.BytesIO(r.content), mode="r:gz") as tf:
+                            tf.extractall(dst, filter="data")
+                        n += len(part)
+                        break
+                    print(f"[collect] {b['box_id']}: /export → {r.status_code} {r.text[:120]}")
+                except Exception as e:  # noqa: BLE001
+                    print(f"[collect] {b['box_id']}: chunk {k} attempt {attempt} failed: {type(e).__name__}: {e}")
+        print(f"[collect] {b['box_id']}: {n}/{len(wids)} worlds")
         return n
 
 

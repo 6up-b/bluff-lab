@@ -106,30 +106,36 @@ async def reflect_worker(run: str = "r01", poll_s: float = 0.5, max_idle_s: floa
     t_start = time.time()
     clients = {b["box_id"]: box_client(b) for b in boxes}
     seen_any = False
+    last_check, last_print = 0.0, 0.0
     try:
         while time.time() - t_start < max_idle_s:
-            all_done = True
             for b in boxes:
                 c = clients[b["box_id"]]
-                worlds = await box_get(c, b, "/worlds") or []
-                if isinstance(worlds, dict):
-                    worlds = worlds.get("worlds", [])
-                worlds = [w for w in worlds if not run or w.get("run") in (None, run)]
-                if worlds:
-                    seen_any = True
+                worlds = await box_get(c, b, "/worlds", status="awaiting_reflection") or []
                 for w in worlds:
-                    st = w.get("status")
-                    if st != "done":
-                        all_done = False
+                    if run and w.get("run") not in (None, run):
+                        continue
                     key = f"{b['box_id']}:{w['wid']}"
-                    if st == "awaiting_reflection" and (key not in inflight or inflight[key].done()):
+                    if key not in inflight or inflight[key].done():
                         inflight[key] = asyncio.create_task(_handle(c, b, w["wid"], log))
             for k in [k for k, t in inflight.items() if t.done()]:
                 t = inflight.pop(k)
                 if t.exception():
                     print(f"[reflect] {k} failed: {t.exception()!r}")
-            if seen_any and all_done and not inflight:
-                break
+            if time.time() - last_check > 5:
+                last_check = time.time()
+                active = 0
+                for b in boxes:
+                    h = await box_get(clients[b["box_id"]], b, "/health") or {}
+                    cnt = h.get("worlds") or {}
+                    active += sum(cnt.get(k, 0) for k in ("running", "waiting", "created", "paused"))
+                    seen_any = seen_any or sum(cnt.values()) > 0
+                if time.time() - last_print > 60:
+                    last_print = time.time()
+                    print(f"[reflect] t+{time.time() - t_start:.0f}s active worlds={active} "
+                          f"reflections={len(log)} inflight={len(inflight)}", flush=True)
+                if seen_any and active == 0 and not inflight:
+                    break
             await asyncio.sleep(poll_s)
     finally:
         for c in clients.values():

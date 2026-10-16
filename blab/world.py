@@ -402,15 +402,19 @@ def _reflector_for(llm: bool) -> tuple[Reflector, str]:
 
 async def run_local(table: str = "telltale", agent: str = "profiler", seed: int = 7, games: int = 20,
                     reflect_every: int = 2, out: str = "runs/local", llm: bool = False, ask: bool = False,
-                    wid: str | None = None, quiet: bool = False, learning: bool = True) -> dict:
+                    wid: str | None = None, quiet: bool = False, learning: bool = True,
+                    run: str = "local", p1_params: dict | None = None) -> dict:
     if agent not in AGENTS:
         raise SystemExit(f"unknown agent {agent!r}; have {sorted(AGENTS)}")
     if table not in TABLES:
         raise SystemExit(f"unknown table {table!r}; have {sorted(TABLES)}")
     wid = wid or f"{table}-{agent}-s{seed}"
     refl, _ = _reflector_for(llm)
-    w = World(wid=wid, seats=make_seats(table, agent, seed), seed=seed, games=games, reflect_every=reflect_every,
-              ask=ask, out_dir=out, run="local", box="local", reflector=refl, table=table, learning=learning)
+    seats = make_seats(table, agent, seed)
+    if p1_params:
+        seats[0]["params"] = {**seats[0].get("params", {}), **p1_params}
+    w = World(wid=wid, seats=seats, seed=seed, games=games, reflect_every=reflect_every,
+              ask=ask, out_dir=out, run=run, box="local", reflector=refl, table=table, learning=learning)
     res = await w.run()
     if not quiet:
         print(json.dumps({"wid": wid, "dir": str(w.dir), **res}, indent=1))

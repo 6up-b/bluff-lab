@@ -229,6 +229,13 @@ def _run_world_proc(spec: dict) -> dict:
             pass
 
 
+def _run_branch_proc(world_dir: str, new_wid: str, from_game: int, games: int, variant: dict) -> dict:
+    import asyncio as _a
+    import blab.world as W
+    w = W.branch(Path(world_dir), new_wid, from_game, games, variant, learning=False)
+    return _a.run(w.run())
+
+
 def _write_meta(e: Entry) -> None:
     try:
         e.dir.mkdir(parents=True, exist_ok=True)
@@ -302,6 +309,7 @@ async def _run_task(e: Entry):
         raise
     finally:
         _write_meta(e)
+        e.world = None            # free the in-memory event log; disk is authoritative from here on
         try:
             from blab.orchestrator import tracing
             tracing.flush()
@@ -508,6 +516,15 @@ async def branch(wid: str, body: dict = Body(...)):
     W = _world_mod()
     new_wid = body.get("new_wid") or f"{wid}_b{int(time.time()) % 100000}"
     variant = body.get("memory_variant") or {"type": "full"}
+    if not body.get("learning", False):          # frozen-learning branch: CPU only → process pool
+        spec = {**e.spec, "wid": new_wid, "parent_world": wid, "from_game": body.get("from_game", 10),
+                "variant": variant, "learning": False, "mode": "process", "run": body.get("run") or e.spec.get("run")}
+        ne = Entry(wid=new_wid, spec=spec)
+        WORLDS[new_wid] = ne
+        loop = asyncio.get_running_loop()
+        ne.proc = loop.run_in_executor(pool(), _run_branch_proc, str(e.dir), new_wid, int(body.get("from_game", 10)),
+                                       int(body.get("games", e.spec.get("games", 20))), variant)
+        return {"wid": new_wid, "status": ne.cur_status()}
     w = W.branch(e.dir, new_wid, int(body.get("from_game", 10)), int(body.get("games", e.spec.get("games", 20))),
                  variant, learning=bool(body.get("learning", False)))
     spec = {**e.spec, "wid": new_wid, "parent_world": wid, "from_game": body.get("from_game", 10),
@@ -603,12 +620,15 @@ def file(wid: str, path: str):
 
 @app.get("/export")
 def export(run: Optional[str] = None, wids: Optional[str] = None):
-    """tar.gz of every world dir of `run` (or the comma-separated `wids`) — one request per box for collect."""
-    import io
+    """tar.gz (built on disk, streamed) of the world dirs of `run` or the comma-separated `wids`."""
     import tarfile
+    import tempfile
+    from fastapi.responses import FileResponse
+    from starlette.background import BackgroundTask
     want = set(wids.split(",")) if wids else None
-    buf = io.BytesIO()
-    with tarfile.open(fileobj=buf, mode="w:gz") as tf:
+    fd, tmp = tempfile.mkstemp(suffix=".tgz", dir=str(ROOT) if ROOT.exists() else None)
+    os.close(fd)
+    with tarfile.open(tmp, mode="w:gz", compresslevel=3) as tf:
         for e in list(WORLDS.values()):
             if want is not None and e.wid not in want:
                 continue
@@ -616,4 +636,4 @@ def export(run: Optional[str] = None, wids: Optional[str] = None):
                 continue
             if e.dir.exists():
                 tf.add(e.dir, arcname=e.wid)
-    return StreamingResponse(io.BytesIO(buf.getvalue()), media_type="application/gzip")
+    return FileResponse(tmp, media_type="application/gzip", background=BackgroundTask(os.unlink, tmp))

@@ -11,11 +11,19 @@ tables:
 agents: [counter, bayes, bayes_discount, profiler_amnesic, profiler, profiler_blind]   # logreg_bow, llm_episodic: not implemented
 llm_agents: [profiler, profiler_blind]          # agents that reflect (stub reflection unless --llm)
 llm_agents_extra: {llm_episodic: 10}
-seeds: {llm: 30, non_llm: 300}                  # profiler* = llm
+seeds: {llm: 30, non_llm: 300}                  # profiler* = llm (stub reflection)
+respond_rules: [threshold, ev]                  # every world is run under both respond rules (p1 params)
+llm_reflection:                                 # worlds with REAL Claude reflection (orchestrator handshake)
+  agents: [profiler]
+  tables: [telltale, longcon]
+  seeds: 12
+  ask_tables: [telltale]                        # ask=True there (the Show's cold open needs a real ask event)
+limits: {llm: 30, non_llm: 120, non_llm_on_boxes: 60}   # budget for r01: seeds > 60 of non-LLM agents run on the laptop
 ablate:
   agents: [profiler]
   at_game: 10
   learning: false
-  variants: [full, "as_of:0", "as_of:4", "as_of:6", "as_of:8", "minus:verbal_tell", false_memory,
-             "transplant:same_role", "transplant:other_role"]
+  tables: [telltale]
+  variants: [full, "as_of:0", "as_of:4", "as_of:6", "as_of:8", "minus:verbal_tell", false_memory]
+  # transplant:same_role / transplant:other_role supported by `blab ablate` but not in the r01 budget
 false_memory_text: {about: p3, aspect: baseline_bluff, text: "Player 3 never bluffs", q: 0.0}
