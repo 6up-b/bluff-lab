@@ -12,8 +12,9 @@ const RANKS = { K: "Kings", Q: "Queens", A: "Aces" };
 const RANK1 = { K: "King", Q: "Queen", A: "Ace" };
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const f2 = (x) => (x === null || x === undefined || Number.isNaN(+x)) ? "—" : (+x).toFixed(2);
-const fN = (x) => (x === null || x === undefined) ? "—" : (Number.isInteger(+x) ? String(+x) : (+x).toFixed(1));
+const MINUS = (t) => t.replace(/^-/, "\u2212");   // typographic minus for negative numbers
+const f2 = (x) => (x === null || x === undefined || Number.isNaN(+x)) ? "—" : MINUS((+x).toFixed(2));
+const fN = (x) => (x === null || x === undefined) ? "—" : MINUS(Number.isInteger(+x) ? String(+x) : (+x).toFixed(1));
 const pct = (x) => (x === null || x === undefined) ? "—" : Math.round(+x * 100) + "%";
 const SVGNS = "http://www.w3.org/2000/svg";
 
@@ -750,7 +751,7 @@ function renderDecisions() {
     const ext = Math.max(...rows.flatMap((r) => [Math.abs(r.delta.lo ?? r.delta.mean), Math.abs(r.delta.hi ?? r.delta.mean)])) * 1.25 || 0.1;
     const w = 820, x0 = 210, x1 = w - 40, rh = 96, h = rows.length * rh + 70;
     const X = (v) => x0 + (x1 - x0) * (v + ext) / (2 * ext);
-    const fmt = (v) => r0.fmt === "pct" ? `${v >= 0 ? "+" : ""}${(v * scale).toFixed(1)} pts` : `${v >= 0 ? "+" : ""}${v.toFixed(3)}`;
+    const fmt = (v) => MINUS(r0.fmt === "pct" ? `${v >= 0 ? "+" : ""}${(v * scale).toFixed(1)} pts` : `${v >= 0 ? "+" : ""}${v.toFixed(3)}`);
     let s = `<line x1="${X(0)}" x2="${X(0)}" y1="10" y2="${h - 50}" stroke="var(--bone-faint)" stroke-width="2" stroke-dasharray="6 6"/>
       <text x="${X(0)}" y="${h - 22}" fill="var(--bone-faint)" font-size="20" text-anchor="middle">no difference</text>
       <text x="${r0.better === "lower" ? x0 : x1}" y="${h - 22}" fill="var(--honest)" font-size="20" text-anchor="${r0.better === "lower" ? "start" : "end"}">${r0.better === "lower" ? "← memory better" : "memory better →"}</text>`;
