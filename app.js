@@ -92,6 +92,11 @@ async function markSkips() {
     const need = new Set(c.requires);
     for (const a of c.actions) {
       if (a.action === "audio" && a.file) a.missing = !(await exists(a.file));   // no mp3: the cue still runs, silently
+      if (a.action === "play_to") {   // opponent voice: claim/answer mp3 for the event this cue lands on, if bundled
+        const e = W.bySeq.get(a.seq);
+        const f = e && (e.type === "claim" || e.type === "answer") ? `voice/${e.type}_${e.seq}.mp3` : null;
+        a.voice = f && (await exists(f)) ? f : null;
+      }
       if (a.action === "view" && a.name === "forge") need.add("forge.json");
       if (a.action === "view" && a.name === "split") need.add("twin.jsonl");
       if (a.action === "view" && a.name === "stack") need.add("stack.json");
@@ -117,7 +122,7 @@ function applyAction(a, live) {
     case "dossier": S.dossierGame = a.game; if (a.about) S.dossierAbout = a.about; S.view = "dossier"; break;
     case "surgery": if (!S.surgery.includes(a.variant)) S.surgery.push(a.variant); S.view = "surgery"; break;
     case "flip": S.flipped = true; break;
-    case "audio": if (live && !a.missing) playAudio(a.file); break;
+    case "audio": if (live && !a.missing) AQ.push(a.file); break;
     case "caption": S.caption = a.text || ""; break;
     case "clear_caption": S.caption = ""; break;
     default: console.warn("unknown cue action", a);
@@ -126,7 +131,12 @@ function applyAction(a, live) {
 function applyCue(c, live) {
   if (c.skip) return;
   S.caption = c.keepCaption ? S.caption : "";
+  AQ.length = 0;
   for (const a of c.actions) applyAction(a, live);
+  if (live) {   // Profiler ask first, then the opponent's line; audio never advances cues
+    for (const a of c.actions) if (a.action === "play_to" && a.voice) AQ.push(a.voice);
+    playQueue();
+  }
 }
 function next() {
   if (idx >= cues.length) return;
@@ -148,10 +158,15 @@ function goto(n) {
   void document.body.offsetHeight;
   requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove("instant")));
 }
-function playAudio(file) {
-  const el = $("#audio"); el.src = `${BUNDLE}/${file}`; el.currentTime = 0; el.play().catch(() => {});
+const AQ = [];   // this cue's audio files, played in order
+function playQueue() {
+  const el = $("#audio"); const f = AQ.shift();
+  if (!f) return;
+  el.onended = () => playQueue();
+  el.src = `${BUNDLE}/${f}`; el.currentTime = 0; el.play().catch(() => {});
 }
-function stopAudio() { const el = $("#audio"); el.pause(); }
+function playAudio(file) { AQ.length = 0; AQ.push(file); playQueue(); }
+function stopAudio() { AQ.length = 0; const el = $("#audio"); el.onended = null; el.pause(); }
 
 /* Fallback when cues.json is missing: the FLOW.md order, built from reveal.json. */
 function defaultCues() {
