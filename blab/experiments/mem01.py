@@ -120,7 +120,8 @@ def run(seeds: list[int], tables: list[str], arms: list[str], launch_deadline: s
     load_env()
     apply_raw_reflection_prompt()
     OUT.mkdir(parents=True, exist_ok=True)
-    todo = specs(seeds, tables, arms)
+    todo = [sp for sp in specs(seeds, tables, arms) if _load(OUT / sp["wid"]) is None]   # resume: skip finished worlds
+    print(f"[mem01] {len(todo)} worlds to run (finished ones skipped); concurrency cap {L.MAX_CONCURRENT}", flush=True)
     t_launch = _at(launch_deadline) if launch_deadline else float("inf")
     t_stop = _at(hard_stop) if hard_stop else float("inf")
     done, skipped, failed = [], [], []
