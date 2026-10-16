@@ -360,6 +360,19 @@ def analyze() -> dict:
             dd[m] = _boot(diffs, rng)
         pooled[a] = dd
     res["pooled_delta_vs_" + BASELINE] = pooled
+    # raw transcript vs structured: llm_dossier − llm_episodic, paired by table×seed
+    dd = {}
+    for m in metrics:
+        diffs = [W[k][m] - W[(k[0], "llm_episodic", k[2])][m] for k in W if k[1] == "llm_dossier"
+                 and (k[0], "llm_episodic", k[2]) in W and W[k].get(m) is not None
+                 and W[(k[0], "llm_episodic", k[2])].get(m) is not None]
+        dd[m] = _boot(diffs, rng)
+    res["pooled_dossier_minus_episodic"] = dd
+    res["llm_totals"] = {a: {"calls": int(sum(w.get("llm_calls", 0) for k, w in W.items() if k[1] == a)),
+                             "errors": int(sum(w.get("llm_errors", 0) for k, w in W.items() if k[1] == a)),
+                             "reflections": int(sum(w["reflections"] for k, w in W.items() if k[1] == a)),
+                             "reflection_errors": int(sum(w["reflection_errors"] for k, w in W.items() if k[1] == a)),
+                             "worlds": sum(1 for k in W if k[1] == a)} for a in LLM_ARMS}
 
     def verdict(d, m):
         if d["n"] < 2 or d["lo"] is None:
@@ -423,6 +436,12 @@ def summary_md(res: dict) -> str:
         v = res["verdicts"][a]
         L.append(f"| {a} | {_f(d['win_rate'])} | {_f(d['win_rate_11_20'])} | {_f(d['brier'])} | "
                  f"{v['win_rate']} / {v['win_rate_11_20']} / {v['brier']} |")
+    d = res.get("pooled_dossier_minus_episodic") or {}
+    L += ["", f"Structured vs raw transcript (llm_dossier − llm_episodic, pooled paired): Δ win {_f(d.get('win_rate'))}, "
+          f"Δ win g11–20 {_f(d.get('win_rate_11_20'))}, Δ Brier {_f(d.get('brier'))}", "",
+          "LLM calls / errors (fallback p_bluff = p_cards) / reflections (errors): "
+          + "; ".join(f"{a} {v['calls']}/{v['errors']}/{v['reflections']}({v['reflection_errors']}) over {v['worlds']} worlds"
+                      for a, v in (res.get("llm_totals") or {}).items())]
     L += ["", "\"Helps\" = paired 95% CI excludes 0 in the better direction (pre-registered criterion)."]
     return "\n".join(L) + "\n"
 
