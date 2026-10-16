@@ -164,7 +164,7 @@ p.sub b { color: var(--brass-hi); font-weight: 600; }
 .seat.p2 { left: 420px; top: 420px; }
 .seat.p3 { left: 1500px; top: 420px; }
 .seat .glow { position: absolute; left: -330px; top: -260px; width: 660px; height: 520px; pointer-events: none;
-  background: radial-gradient(ellipse at 50% 55%, rgba(255,226,150,.26) 0%, rgba(255,226,150,.08) 40%, rgba(255,226,150,0) 68%);
+  background: radial-gradient(closest-side at 50% 55%, rgba(255,226,150,.26) 0%, rgba(255,226,150,.08) 55%, rgba(255,226,150,0) 100%);
   opacity: 0; transition: opacity .5s; }
 .seat.active .glow { opacity: 1; }
 .seat .plate { position: absolute; left: -200px; width: 400px; top: 96px; text-align: center; }
