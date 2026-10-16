@@ -145,7 +145,7 @@ The original Profiler does, in r01, under the spec's rule (−10.5 points). It o
 In the first run, yes: the reflection prompt's example was the formal-speech tell. We caught it, built a clean raw-mode prompt, made raw mode reject those features, and labelled every older world. That's why we don't claim the Show world found the tell unaided. The raw-text results (mem01, b01) use the clean prompt.
 
 **"Your control was added after pre-registration."**
-Yes, we say so. With Claude's reflection switched off, Profiler-plus still beat the sentence-embedding classifier (+9.8); with it on, +19.3. Both are exploratory, against the weaker of our two classifiers.
+Yes, we say so. Same agent, same seeds, reflection on vs off: Claude's hypotheses add +9.5 points of win rate [+5.9, +13.2] and improve Brier by 0.017 (48 paired worlds; source `show/bundle/mem01_core_results.txt`). Treat it as exploratory.
 
 **"Is the long con real?"**
 In the paired checkpoint branches, yes: erasing the trust it learned cut the bluffs it let through by 17 [12.8, 21.3] over 120 seeds. Across agents, naive Bayes let through fewer bluffs than no memory, so we don't claim "naive memory is more exploitable". These are checkpoint restores, not live forks; VM forking wasn't available to our org.
