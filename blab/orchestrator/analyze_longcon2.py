@@ -37,6 +37,9 @@ def _world(d: str, branches: bool = False) -> dict | None:
     if w["table"] == "falsealarm":
         out["false_alarm_belief"] = m.get("false_alarm_belief")
         out["false_alarm_any"] = m.get("false_alarm")
+        reasons = {e["payload"].get("reason") for e in w["events"] if e["type"] == "belief_superseded"}
+        out["false_alarm_drift"] = float("drift" in reasons)          # supplementary: drift-only belief change
+        out["superseded_reasons"] = sorted(r for r in reasons if r)
     sl = A.seat_with_role(w, "sleeper")
     if sl and w["table"] == "longcon":
         evs = w["events"]
@@ -114,6 +117,7 @@ def analyze_lc02(run: str = "lc02", root: str = "runs") -> dict:
             "lives_lost_after_g0": A.boot(w["lives_lost_after_g0"] for w in lc),
             "false_alarm_belief": A.boot(w["false_alarm_belief"] for w in fa),
             "false_alarm_any": A.boot(w["false_alarm_any"] for w in fa),
+            "false_alarm_drift_only": A.boot(w["false_alarm_drift"] for w in fa),
         }
         tb, hb = defaultdict(list), defaultdict(list)
         for w in lc:
@@ -162,8 +166,8 @@ def _f(x, pct=False):
 
 def summary(res: dict) -> str:
     lines = [f"# lc02 Long Con at scale — {res['n_worlds']} worlds, seeds {res['seeds']}", "",
-             "| arm | rule | n | detect rate | RTD median (detected) | KM median RTD [95% CI] | exploitation (bluffs let through ≥G0) | false alarm (belief) |",
-             "|---|---|---|---|---|---|---|---|"]
+             "| arm | rule | n | detect rate | RTD median (detected) | KM median RTD [95% CI] | exploitation (bluffs let through ≥G0) | false alarm (belief, prereg) | false alarm (drift only, suppl.) |",
+             "|---|---|---|---|---|---|---|---|---|"]
     for a in res["arms"].values():
         km = a["rtd_km_median"]
         kms = "—" if km["median"] is None else f"{km['median']:.0f}"
@@ -172,7 +176,7 @@ def summary(res: dict) -> str:
         md = a["rtd_median_detected"]
         lines.append(f"| {a['label']} | {a['rule']} | {a['n_longcon']}/{a['n_falsealarm']} | "
                      f"{_f(a['detection_rate'], True)} | {md['median'] if md['median'] is not None else '—'} (n={md['n']}) | "
-                     f"{kms} | {_f(a['exploitation'])} | {_f(a['false_alarm_belief'], True)} |")
+                     f"{kms} | {_f(a['exploitation'])} | {_f(a['false_alarm_belief'], True)} | {_f(a['false_alarm_drift_only'], True)} |")
     return "\n".join(lines) + "\n"
 
 
