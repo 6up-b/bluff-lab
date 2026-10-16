@@ -28,7 +28,8 @@ BOX_PIP = ["anthropic[bedrock]", "boto3", "fastapi", "uvicorn", "numpy", "pydant
            "arize-otel", "openinference-instrumentation", "openinference-instrumentation-anthropic"]
 BOX_ENV_KEYS = ("ARIZE_SPACE_ID", "ARIZE_API_KEY", "ARIZE_PROJECT_NAME",
                 # in-box Claude (user preference: Bedrock in boxes; Anthropic direct as fallback)
-                "AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN",
+                "AWS_DEFAULT_REGION", "AWS_OPUS_API_KEY", "AWS_SONNET_API_KEY",
+                "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN",
                 "ANTHROPIC_API_KEY", "BLAB_LLM_PROVIDER")
 
 

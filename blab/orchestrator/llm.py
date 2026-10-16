@@ -210,9 +210,15 @@ def to_proposed(out: ReflectionOut) -> tuple[list[dict], list[dict]]:
 BEDROCK_MODEL = os.environ.get("BLAB_BEDROCK_MODEL", "us.anthropic.claude-opus-5-5")
 
 
+def _bedrock_api_key() -> str | None:
+    """Long-lived Bedrock API keys (bearer tokens) per model family; preferred over expiring STS creds."""
+    fam = "SONNET" if "sonnet" in BEDROCK_MODEL else "OPUS"
+    return os.environ.get(f"AWS_{fam}_API_KEY") or os.environ.get("AWS_BEARER_TOKEN_BEDROCK")
+
+
 def _have(p: str) -> bool:
     if p == "bedrock":
-        return bool(os.environ.get("AWS_ACCESS_KEY_ID") or os.environ.get("AWS_PROFILE"))
+        return bool(_bedrock_api_key() or os.environ.get("AWS_ACCESS_KEY_ID") or os.environ.get("AWS_PROFILE"))
     if p == "anthropic":
         return bool(os.environ.get("ANTHROPIC_API_KEY"))
     if p == "openrouter":
@@ -247,9 +253,11 @@ def _client(p: str):
     if p not in _clients:
         import anthropic
         if p == "bedrock":
-            _clients[p] = anthropic.AsyncAnthropicBedrock(
-                aws_region=os.environ.get("AWS_DEFAULT_REGION") or os.environ.get("AWS_REGION") or "us-west-2",
-                timeout=TIMEOUT_S, max_retries=1)
+            region = os.environ.get("AWS_DEFAULT_REGION") or os.environ.get("AWS_REGION") or "us-west-2"
+            key = _bedrock_api_key()
+            _clients[p] = (anthropic.AsyncAnthropicBedrock(api_key=key, aws_region=region, timeout=TIMEOUT_S, max_retries=1)
+                           if key else
+                           anthropic.AsyncAnthropicBedrock(aws_region=region, timeout=TIMEOUT_S, max_retries=1))
         else:
             _clients[p] = anthropic.AsyncAnthropic(timeout=TIMEOUT_S, max_retries=2)
     return _clients[p]
