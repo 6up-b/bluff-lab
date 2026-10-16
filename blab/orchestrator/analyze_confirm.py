@@ -11,6 +11,7 @@ Usage: python -m blab.orchestrator.analyze_confirm [runs_root]
 from __future__ import annotations
 
 import json
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -25,6 +26,7 @@ ARMS = ("logreg_bow", "logreg_embed", "bayes_discount_pp", "profiler_plus_c01", 
         "profiler_plus_noreflect")
 LABEL = {"bayes_discount_pp": "bayes_discount (+population prior)", "profiler_plus_c01": "profiler_plus (c01)"}
 SEEDS = list(range(5000, 5024))
+RW = {"Kings": "K", "Queens": "Q", "Aces": "A"}
 METRICS = ("win_rate", "brier", "brier_first10")
 
 
@@ -53,6 +55,7 @@ def confirm(root: str | Path = "runs") -> dict:
     cells: dict = defaultdict(lambda: defaultdict(dict))       # table -> arm -> seed -> metrics
     status: dict = defaultdict(lambda: defaultdict(dict))
     reflect = defaultdict(lambda: {"calls": 0, "errors": 0, "proposed": 0})
+    rc_acc = defaultdict(lambda: defaultdict(int))             # arm -> (truth, answer) -> count
     for d in world_dirs(root / "c01"):
         p = _parse(d.name)
         if not p:
@@ -68,6 +71,21 @@ def confirm(root: str | Path = "runs") -> dict:
         m = w["m"]
         cells[t][a][s] = {"win_rate": m["win_rate"], "brier": m["brier"], "brier_first10": _brier_window(w)}
         status[t][a][s] = "done"
+        if t == "tell_relational_v2":
+            rk = {(e["game"], e["round"]): e["payload"]["table_rank"] for e in w["events"] if e["type"] == "deal"}
+            for e in w["events"]:
+                pl = e["payload"]
+                if e["type"] != "decision" or pl.get("kind") != "respond" or not pl.get("record_check"):
+                    continue
+                parts = (pl["claim"]["utterance"] or "").split(". ", 1)
+                if len(parts) < 2:
+                    continue
+                named = [RW[x] for x in re.findall(r"(Kings|Queens|Aces)", parts[1])]
+                prev = rk.get((e["game"], e["round"] - 1))
+                if not named or prev is None:
+                    continue
+                truth = "true" if named[-1] != prev else "false"      # "true" = contradicted by the record
+                rc_acc[a][(truth, pl["record_check"]["value"])] += 1
         for e in w["events"]:
             if e["type"] == "reflect_result":
                 r = reflect[a]
@@ -156,6 +174,14 @@ def confirm(root: str | Path = "runs") -> dict:
             for k in ("in", "out", "cache_read", "cache_write"):
                 rc[k] += int((r.get("usage") or {}).get(k) or 0)
     rc["values"] = dict(rc["values"])
+    acc = {}
+    for a, cm in rc_acc.items():
+        n = sum(cm.values())
+        acc[a] = {"n": n, "confusion(truth|answer)": {f"{k[0]}|{k[1]}": v for k, v in sorted(cm.items())},
+                  "accuracy": (cm[("true", "true")] + cm[("false", "false")]) / n if n else None}
+    rc["accuracy_on_test_decisions"] = acc
+    rc["accuracy_note"] = ("descriptive, computed after the run from god-view deal events (truth = named rank != "
+                           "previous round's rank); not used for any choice")
     return {"run": "c01", "prereg": "PREREG_c01.md", "info": "raw", "respond_rule": "threshold", "games": 20,
             "seeds": [5000, 5023], "resamples": 2000, "tables": list(TABLES), "arms": list(ARMS), "labels": LABEL,
             "definitions": {"brier_first10": "mean (p_final - was_bluff)^2 over p1's first 10 revealed claims by p3",
