@@ -102,6 +102,15 @@ embedding classifier, built later for b01, beat the Profiler there). In a same-m
 memory block of the prompt differs, 4 seeds per table), a hypothesis dossier improved win rate over no memory
 by +0.064 (CI +0.009 to +0.127) and a raw transcript showed no detectable effect.
 
+**The Long Con with the stronger agent (lc03; `PREREG_lc03.md` committed first; seeds 10000–10011, real Claude
+reflection).** Both pre-registered hypotheses failed, one in the opposite direction. With Claude's reflection on,
+`profiler_plus` let through *more* of the betrayer's bluffs after the turn than the same agent with reflection
+off (+23.8 per world, 95% CI +17.8 to +29.8) and detected the turn later (Kaplan–Meier median 32 vs 14 rounds).
+It did not beat discounted Bayes (+6.3, CI −4.2 to +17.7). It still won slightly more games (0.40 vs 0.36) and
+lost fewer lives after the turn. Our reading: hypotheses written during the honest phase are themselves memory of
+earned trust, and the agent leans on them after the turn. That is the Long Con's point, now measured on our own
+strongest agent. Full table: `show/bundle/longcon3.json`.
+
 **The Long Con at scale (lc02; seeds 6000–6119).** Sleeper bluffs let through after the turn (threshold rule,
 mean per world): counter 76.5, naive bayes 45.1, discounted bayes 30.5, `logreg_bow` 26.3, Profiler 37.9 (canned
 reflection) and 32.7 (real Claude, n = 24). Naive memory let through fewer bluffs than no memory, so we do not
