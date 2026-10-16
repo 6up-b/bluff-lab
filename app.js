@@ -922,20 +922,22 @@ function renderBranches() {
 function renderBoundary() {
   const el = $("#v-boundary"); const Bd = B.boundary; const M = Bd?.capability_map;
   const head = `<h2 class="title">Where memory helps: the capability map</h2>`;
-  if (!M) { el.innerHTML = head + `<p class="sub">Pre-registered experiment b01: raw observations for every agent, fresh seeds 4000–4023.</p>` + awaiting("Awaiting data", "No <code>bundle/boundary.json</code> (capability_map) yet."); return; }
-  const rowsIn = Array.isArray(M) ? M : (M.rows || Object.entries(M).map(([k, v]) => ({ cue: k, ...v })));
-  const fmtD = (r) => (r.fmt === "pct" || r.metric === "win_rate") ? dPts : (v) => sgn(v, (x) => Math.abs(x) < 1 ? x.toFixed(3) : x.toFixed(1));
-  const ok = (h) => h === true ? '<span class="honestword">✓ holds</span>' : h === false ? '<span class="bluffword">✗ did not hold</span>' : "—";
-  const rows = rowsIn.map((r) => { const d = r.delta || r.diff || {}; const f = fmtD(r);
-    return `<tr><td>${esc(r.cue_type || r.cue || r.label || "")}${r.table ? `<small>${esc(r.table)}${r.run ? `, ${esc(r.run)}` : ""}</small>` : ""}</td><td>${esc(r.winner || "—")}</td>
-      <td>${dCI(d, f)}</td><td>${esc(r.metric || "")}</td><td>${ok(r.holds)}</td></tr>`; }).join("");
-  const H = Bd.hypotheses || M.hypotheses || [];
-  const hyp = (Array.isArray(H) ? H : Object.entries(H).map(([k, v]) => ({ id: k, ...v }))).map((h) => { const d = h.delta || h.diff || h.ci || null;
-    return `<div class="hyp ${h.holds ? "yes" : "no"}"><b>${esc(h.id || "")}</b> ${esc(h.text || h.claim || "")} <span>${ok(h.holds)}${d && d.mean !== undefined ? ` · ${dCI(d, (v) => sgn(v, (x) => x.toFixed(3)))}` : ""}</span></div>`; }).join("");
-  el.innerHTML = head + `<p class="sub">${esc(Bd.note || "Pre-registered experiment b01: raw observations for every agent, fresh seeds 4000–4023, paired bootstrap 95% CIs; a claim holds only if the CI excludes 0.")}</p>
-    <table class="grid lc2"><thead><tr><th>Cue type</th><th>Winner</th><th>Δ (95% CI)</th><th>Metric</th><th>Holds</th></tr></thead><tbody>${rows}</tbody></table>
-    ${hyp ? `<div class="hyps">${hyp}</div>` : ""}`;
-  where(`Capability map${Bd.run ? `, ${esc(Bd.run)}` : ""}`);
+  if (!M?.rows) { el.innerHTML = head + `<p class="sub">Pre-registered experiment b01: raw observations for every agent, fresh seeds 4000–4023.</p>` + awaiting("Awaiting data", "No <code>bundle/boundary.json</code> (capability_map) yet."); return; }
+  const fx = (metric) => metric === "win_rate" ? dPts : metric === "revealed_to_discovery" ? (v) => sgn(v, (x) => x.toFixed(1)) : (v) => sgn(v, (x) => x.toFixed(3));
+  const ok = (h, st) => st === "not run" ? '<span class="na">not run</span>' : h === true ? '<span class="honestword">✓ holds</span>' : h === false ? '<span class="bluffword">✗ did not hold</span>' : '<span class="na">no CI</span>';
+  const MET = { win_rate: "win rate", brier_first10: "Brier, first 10 reveals", brier_after_flip10: "Brier, 10 after the flip", revealed_to_discovery: "reveals to discovery", brier: "Brier" };
+  const rows = M.rows.map((r) => { const f = fx(r.metric); const ci = Array.isArray(r.ci) ? r.ci : [];
+    return `<tr class="${r.status === "not run" ? "notrun" : ""}"><td>${esc(r.cue || "")}<small>${esc(r.hypothesis || "")}${r.a ? ` · ${esc(r.a)} vs ${esc(r.b)}` : ""}</small></td>
+      <td>${esc(r.winner ?? "—")}</td>
+      <td>${r.delta === null || r.delta === undefined ? "—" : `${f(r.delta)}<span class="ci">${ci[0] != null ? `${f(ci[0])} to ${f(ci[1])}` : "no CI"}${r.n !== undefined ? ` · n ${esc(r.n)}` : ""}</span>`}</td>
+      <td>${esc(MET[r.metric] || r.metric || "—")}</td><td>${ok(r.holds, r.status)}</td></tr>`; }).join("");
+  const H = Bd.hypotheses || {};
+  const hyp = Object.keys(H).sort().flatMap((k) => (Array.isArray(H[k]) ? H[k] : [H[k]])).map((h) => { const f = fx(h.metric);
+    return `<div class="hyp"><b>${esc(h.name || "")}</b>${esc(h.text || "")}<span>${ok(h.holds, h.status)}${h.mean != null ? ` <span class="ci">Δ ${f(h.mean)}${h.lo != null ? `, CI ${f(h.lo)} to ${f(h.hi)}` : ""}${h.n !== undefined ? `, n ${esc(h.n)}` : ""}</span>` : ""}</span></div>`; }).join("");
+  el.innerHTML = head + `<p class="sub">Pre-registered (${esc(Bd.prereg || "PREREG.md")}), run ${esc(Bd.run || "")}, ${esc(Bd.info || "raw")} observations, paired 95% CIs. Holds only if the CI excludes 0 in the predicted direction.</p>
+    <table class="grid lc2 cmap"><thead><tr><th>Cue type</th><th>Winner</th><th>Δ (95% CI)</th><th>Metric</th><th>Pre-registered claim</th></tr></thead><tbody>${rows}</tbody></table>
+    ${hyp ? `<div class="hyps">${hyp}</div>` : ""}<div class="foot" style="margin-top:8px">${esc(M.note || "")}</div>`;
+  where(`Capability map, ${esc(Bd.run || "")}`);
 }
 
 function renderMemory() {

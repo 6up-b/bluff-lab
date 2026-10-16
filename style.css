@@ -495,5 +495,18 @@ table.grid.mem td .br { margin-top: 2px; color: var(--ivory-dim); font-size: 21p
 .hyps { margin-top: 26px; display: grid; gap: 10px; }
 .hyp { font-size: 22px; color: var(--ivory-dim); padding: 8px 0; border-top: 1px solid var(--rule); }
 .hyp b { color: var(--brass-hi); margin-right: 8px; }
-.hyp span { display: inline-block; margin-left: 10px; color: var(--ivory); }
+.hyp > span { display: inline-block; margin-left: 10px; color: var(--ivory); }
 .hyp .ci { display: inline; margin-left: 6px; font-size: 18px; color: var(--ivory-dim); }
+table.grid.cmap td { font-size: 24px; padding: 7px 22px; }
+table.grid.cmap tr.notrun td { color: var(--ivory-dim); }
+table.grid .na, .hyp .na { color: var(--ivory-dim); }
+.hyps { gap: 0; margin-top: 16px; }
+.hyp { font-size: 19px; padding: 5px 0; }
+table.grid.cmap { margin-top: 14px; }
+table.grid.cmap td { padding: 4px 22px; font-size: 23px; }
+table.grid.cmap td small { font-size: 15px; }
+table.grid.cmap td .ci { font-size: 15px; }
+#v-boundary .hyps { grid-template-columns: 1fr 1fr; column-gap: 40px; margin-top: 12px; }
+#v-boundary .hyp { font-size: 16px; padding: 4px 0; line-height: 1.3; }
+#v-boundary .hyp .ci { font-size: 15px; }
+#v-boundary .foot { font-size: 16px; }
