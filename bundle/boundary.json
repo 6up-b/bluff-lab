@@ -994,13 +994,14 @@
     "note": "logreg_embed has no discovery statistic (no interpretable tell coefficient on a 64-dim projection; analyze.tell_discovery needs logreg.tell_coef), so no paired seeds exist. Profiler's revealed_to_discovery is reported descriptively in per_cell."
    }
   ],
-  "note": "\u0394 = profiler \u2212 baseline (H1\u2013H3, lower Brier/claims is better) or logreg_bow \u2212 profiler (r01 win rate). Roles designed after r01 (PREREG disclosure). 'not run' cells were not run. Deviation: the Profiler's planned per-claim LLM contradiction check was not built, so on the relational tell it could not read statements against the public record (the capability H1 meant to test); H1 tests the Profiler without it."
+  "note": "\u0394 = profiler \u2212 baseline (H1\u2013H3, lower Brier/claims is better) or logreg_bow \u2212 profiler (r01 win rate). Roles designed after r01 (PREREG disclosure). 'not run' cells were not run. Deviation: the Profiler's planned per-claim LLM contradiction check was not built, so on the relational tell it could not read statements against the public record (the capability H1 meant to test); H1 tests the Profiler without it. Leak audit (c01, after b01): on the b01 relational templates, wording alone predicted false statements (text-only AUC 0.67), so the embedding classifier could win from template wording; c01 rebuilt the templates (AUC 0.50\u20130.56)."
  },
  "deviations": [
   "llm_contradiction (PREREG: the Profiler 'may use' a per-claim LLM check of utterances against the public record) was not built; H1 therefore tests the Profiler without its reading capability.",
   "H3 is not testable: logreg_embed has no discovery statistic.",
   "H2 'not worse' had no pre-registered margin; scored strictly (CI excludes 0).",
   "Runs executed on the laptop process pool, not box1.",
-  "Claude reflections used the raw-mode prompt (no formal_register / no_contractions; tagged raw_patched)."
+  "Claude reflections used the raw-mode prompt (no formal_register / no_contractions; tagged raw_patched).",
+  "c01 audit (14:26, dev seeds 7000-7099, PREREG_c01.md): the tell_relational cell LEAKS through wording. A text-only L2 logreg (BoW + logreg_embed embedding, 5-fold CV by seed) predicts \"statement is false\" from the utterance alone with AUC 0.667 [0.660, 0.674] (count 0.63, hand 0.69, same/different 0.68). H1a (logreg_embed better than the Profiler on tell_relational) may partly reflect this leak. b01 is not re-run; c01 uses a rebuilt tell_relational_v2 (statement-only AUC 0.501 [0.491, 0.511])."
  ]
 }
