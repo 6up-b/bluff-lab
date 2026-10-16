@@ -468,6 +468,12 @@ table.grid td.na { color: var(--ink-faint); }
 /* polish: short scenes sit in the middle of the space under their title, not the top */
 #v-split, #v-decisions { display: flex; flex-direction: column; }
 #v-split .split { flex: 1; align-content: center; margin-top: 0; padding-bottom: 40px; }
-#v-split .strip-games div { font-size: 20px; }
+#v-split .strip-games div { font-size: 17px; letter-spacing: -.03em; }
 #v-decisions .dec-grid { margin-top: auto !important; }
 #v-decisions > .foot { margin-bottom: auto; }
+#v-split .split .side { padding: 40px 44px 44px; }
+#v-split .split .side h3 { font-size: 46px; }
+#v-split .split .side .meta { font-size: 24px; margin-bottom: 26px; }
+#v-split .strip-games { gap: 6px; }
+#v-split .split .total { font-size: 120px; margin-top: 34px; line-height: 1; }
+#v-split .split .total span { font-size: 30px; }
