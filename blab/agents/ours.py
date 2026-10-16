@@ -316,7 +316,7 @@ class Profiler(Bayes):
         sup = H.supersede(hyps, game, rnd)
         opps = sorted({e["by"] for e in mem["revealed"]})
         new_ids = []
-        for opp in opps:
+        for opp in (opps if self.params.get("drift", True) else []):     # drift=False: detector off (lc02 fork)
             nh, evs, p = H.apply_drift(hyps, mem["revealed"], wid=self.params.get("wid", "w000"), about=opp,
                                       idx=mem["next_idx"], now_game=game, now_round=rnd, rng=rng)
             if nh is not None:
