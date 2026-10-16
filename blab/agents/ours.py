@@ -17,6 +17,9 @@ from __future__ import annotations
 
 import copy
 import json
+import math
+import re
+import zlib
 
 import numpy as np
 
@@ -77,8 +80,7 @@ class Counter:
         f = dict(pc["features"])
         cm = dict(f.get("card_math") or {})
         p_c = float(cm["p_cards"])
-        q, src, mem = self.estimate(obs, about, f)
-        p_final = p_c + (1.0 - p_c) * q
+        q, src, mem, p_final, extra = self.predict(obs, about, f, p_c)
         forced = "play" not in obs["legal_actions"]
         rule = self.params.get("respond_rule", "threshold")
         if rule == "ev":
@@ -101,7 +103,7 @@ class Counter:
         return {"kind": "respond", "target": about,
                 "claim": {"count": pc["count"], "rank": obs["table_rank"], "utterance": pc["utterance"],
                           "features": claim_f},
-                "card_math": cm, "memory_used": mem, "q_used": float(q), "q_source": src,
+                "card_math": cm, "memory_used": mem, "q_used": (float(q) if q is not None else None), "q_source": src,
                 "p_final": float(p_final),
                 "ev": ev,
                 "action": action, "explore": explore, "propensity": prop, "rng_u": float(rng_u),
@@ -110,7 +112,13 @@ class Counter:
                 "ask": copy.deepcopy(obs.get("ask")) if obs.get("ask") else None,
                 **({"respond_rule": "ev", "ev_detail": {"L": L, "L_n": L_n, "L_k": L_k, "threshold": thr,
                                                          "formula": "challenge iff p_final > 1 - L; L=(k+1)/(n+3)"}}
-                   if rule == "ev" else {})}
+                   if rule == "ev" else {}),
+                **extra}
+
+    def predict(self, obs: dict, about: str, features: dict, p_c: float):
+        """(q_used, q_source, memory_used, p_final, extra payload fields). §5.1: p_final = p_c + (1−p_c)·E[q]."""
+        q, src, mem = self.estimate(obs, about, features)
+        return q, src, mem, p_c + (1.0 - p_c) * q, {}
 
     # P(lose a life later in the round | I played on): prior Beta(1,2) (mean 1/3: one of three
     # players loses each round). Memoryless agents use the prior; memory agents use their checkpoint.
@@ -390,7 +398,118 @@ class ProfilerAmnesic(Profiler):
         super().set_memory(None)
 
 
-AGENTS = {c.id: c for c in (Counter, Bayes, BayesDiscount, Profiler, ProfilerBlind, ProfilerAmnesic)}
+# ------------------------------------------------------------------ logreg_bow (§5.1, P1)
+
+LR, L2 = 0.1, 1e-3
+N_HASH = 256
+NUMERIC = (("hand_size", 5.0), ("claim_count", 3.0), ("trusted_streak", 10.0), ("lives_self", 3.0),
+           ("lives_target", 3.0), ("game_index", 20.0), ("round_index", 30.0))
+FEAT_NAMES = (["bias", "logit_p_cards"] + [n for n, _ in NUMERIC]
+              + ["was_challenged_last_round", "formal_register"] + [f"h{i}" for i in range(N_HASH)])
+DIM = len(FEAT_NAMES)
+I_FORMAL = FEAT_NAMES.index("formal_register")
+Z80 = 1.2815515655446004
+_TOK = re.compile(r"[a-z0-9']+")
+
+
+def stable_bucket(tok: str) -> int:
+    """Stable across processes (crc32), unlike Python's salted hash()."""
+    return zlib.crc32(tok.encode("utf-8")) % N_HASH
+
+
+def featurize(features: dict, p_cards: float) -> np.ndarray:
+    """[1, logit(p_cards), numeric features scaled to ~[0,1], was_challenged_last_round, formal_register,
+    256-dim hashed unigram+bigram presence (lowercased, apostrophes kept)]."""
+    x = np.zeros(DIM)
+    pc = min(max(float(p_cards), 1e-3), 1 - 1e-3)
+    x[0], x[1] = 1.0, math.log(pc / (1 - pc))
+    for i, (n, scale) in enumerate(NUMERIC):
+        x[2 + i] = float(features.get(n, 0) or 0) / scale
+    x[2 + len(NUMERIC)] = float(bool(features.get("was_challenged_last_round")))
+    x[I_FORMAL] = float(bool(features.get("formal_register")))
+    toks = _TOK.findall(str(features.get("utterance", "")).lower())
+    grams = toks + [f"{a} {b}" for a, b in zip(toks, toks[1:])]
+    for g in grams:
+        x[I_FORMAL + 1 + stable_bucket(g)] = 1.0
+    return x
+
+
+def _sig(z: float) -> float:
+    return 1.0 / (1.0 + math.exp(-max(-35.0, min(35.0, z))))
+
+
+class LogregBow(Bayes):
+    """Online L2 logistic regression per opponent (lr 0.1, λ 1e-3) on revealed claims; fit only at game end
+    (memory timing rule). Predicts P(bluff) directly: p_final = σ(w·x); q_used = None, q_source "logreg".
+    Tell coefficient (discovery statistic, memory.logreg[opp].tell_coef = [coef, lo80, hi80]): formal_register
+    coefficient of a reduced L2-MAP logistic model with a Laplace interval — see on_game_end for why."""
+    id = "logreg_bow"
+
+    def predict(self, obs, about, features, p_c):
+        m = (self.memory.get("logreg") or {}).get(about)
+        w = np.asarray(m["w"]) if m else np.zeros(DIM)
+        p = _sig(float(w @ featurize(features, p_c)))
+        tell = list(m["tell_coef"]) if m else [0.0, 0.0, 0.0]
+        return None, "logreg", [], p, {"logreg": {"p_bluff": p, "n_fit": int(m["n"]) if m else 0,
+                                                 "tell_coef": tell, "tell_feature": "formal_register",
+                                                 "discovery_game": (m or {}).get("discovery_game")}}
+
+    def estimate(self, obs, about, features):     # used only by generic helpers
+        p_c = float(features["card_math"]["p_cards"])
+        p = self.predict(obs, about, features, p_c)[3]
+        return (max(0.0, (p - p_c) / (1 - p_c)) if p_c < 1 else 0.0), "logreg", []
+
+    def on_game_end(self, obs: dict, game: int) -> list[tuple[str, dict]]:
+        if not self.learning:
+            return []
+        new = self._absorb(obs, game)
+        lr_mem = self.memory.setdefault("logreg", {})
+        for e in sorted(new, key=lambda e: (e["game"], e["round"])):
+            m = lr_mem.setdefault(e["by"], {"w": [0.0] * DIM, "n": 0, "tell_coef": [0.0, 0.0, 0.0],
+                                            "tell_history": [], "discovery_game": None})
+            w = np.asarray(m["w"])
+            x = featurize(e["features"], e["p_cards"])
+            g = (_sig(float(w @ x)) - float(e["was_bluff"])) * x
+            reg = L2 * w
+            reg[0] = 0.0
+            m["w"] = list(map(float, w - LR * (g + reg)))
+            m["n"] += 1
+        for about, m in lr_mem.items():
+            es = sorted([e for e in self.memory["revealed"] if e["by"] == about], key=lambda e: (e["game"], e["round"]))
+            if not es:
+                continue
+            # Discovery statistic. The BoW weight w[formal_register] is not identifiable on its own (it is
+            # collinear with the hashed tokens of formal lines): a Laplace interval is ~1/λ wide, and a
+            # bootstrap of the online fit gave 16/20 false discoveries in a null test (formal independent of
+            # bluffing). So the reported tell coefficient comes from a reduced logistic model
+            # [bias, logit(p_cards), formal_register], fitted to the L2-MAP (λ=1e-3) by Newton's method on
+            # the same revealed claims, with an 80% Wald/Laplace interval. The BoW weight is kept as
+            # tell_coef_bow.
+            Xr = np.stack([[1.0, featurize(e["features"], e["p_cards"])[1], float(bool(e["features"].get("formal_register")))]
+                           for e in es])
+            y = np.array([float(e["was_bluff"]) for e in es])
+            wr = np.zeros(3)
+            for _ in range(25):
+                pr = 1.0 / (1.0 + np.exp(-np.clip(Xr @ wr, -35, 35)))
+                Hm = (Xr * (pr * (1 - pr))[:, None]).T @ Xr + L2 * np.eye(3)
+                gr = Xr.T @ (pr - y) + L2 * wr
+                wr = wr - np.linalg.solve(Hm, gr)
+            pr = 1.0 / (1.0 + np.exp(-np.clip(Xr @ wr, -35, 35)))
+            Hm = (Xr * (pr * (1 - pr))[:, None]).T @ Xr + L2 * np.eye(3)
+            se = math.sqrt(max(float(np.linalg.inv(Hm)[2, 2]), 0.0))
+            c = float(wr[2])
+            lo, hi = c - Z80 * se, c + Z80 * se
+            m["tell_coef_bow"] = float(m["w"][I_FORMAL])
+            m["tell_coef"] = [c, lo, hi]
+            m["tell_history"].append({"game": game, "coef": m["tell_coef"]})
+            if m.get("discovery_game") is None and c > 0 and m["tell_coef"][1] > 0:
+                m["discovery_game"] = game
+        self.memory["memory_version"] += 1
+        self.memory = _jsonable(self.memory)
+        return []
+
+
+AGENTS = {c.id: c for c in (Counter, Bayes, BayesDiscount, Profiler, ProfilerBlind, ProfilerAmnesic, LogregBow)}
 
 
 def make_agent(agent_id: str, seat: str, rng, params: dict | None = None):
