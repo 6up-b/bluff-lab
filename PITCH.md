@@ -9,7 +9,7 @@
 **Numbers:**
 - Every number below was read from the frozen bundle (Show world `r01/w0002`, seed 2, decision #1026; plus
   `memory.json` = mem01, `longcon2.json` = lc02, `boundary.json` = b01, `forge.json`, `arize_experiment.json`).
-- Never say a number that isn't on the screen or in this file.
+- Never say a number that isn't on the screen or in this file. (The screen shows probabilities as decimals, 0.24; saying "24%" is the same number.)
 - **Prompt caveat:** the Show world comes from r01, whose reflection prompt contained a formal-speech example.
   So on the table scenes we never say the agent found the tell on its own. The "found it from raw text" claims
   belong to mem01 (clean prompt) only.
@@ -104,7 +104,7 @@
 > Daytona boxes run the worlds in parallel, Claude reflects between games, SurrealDB keeps every superseded belief, Arize traces every decision and replays memory surgery as experiments, and ElevenLabs gives the table its voices.
 
 **[cue 30 — forge]** *(cut first if over time)*
-> It can also compile its memory into code, run as untrusted in a network-blocked sandbox. Two of four forges beat the agent that wrote them; the one shown won 60% to 35%.
+> It can also compile its memory into code, run as untrusted in a network-blocked sandbox. On the Telltale table, two of four forges beat the agent that wrote them; the one shown won 60% to 35%. The one Long Con forge didn't.
 
 **[cue 31 — close]** · 3:00
 > The question isn't how much an agent remembers. It's which memories it should trust.
