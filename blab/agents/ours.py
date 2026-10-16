@@ -767,3 +767,5 @@ class LogregEmbed(LogregBow):
 
 
 AGENTS[LogregEmbed.id] = LogregEmbed
+
+import blab.agents.c01  # noqa: E402,F401  (c01 registry hook: bayes_discount_pp, profiler_plus_c01, profiler_hybrid, profiler_plus_noreflect)

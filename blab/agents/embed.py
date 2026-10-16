@@ -61,6 +61,9 @@ def enumerate_texts() -> list[str]:
         for h in banks.REL_H_RANGE:
             out.append(t.format(h=h))
     out += banks.REL_SAME + banks.REL_DIFF
+    for t in banks.REL2_PREV:
+        for r in RANKS:
+            out.append(t.format(R=banks.ranks_word(r, 2)))
     out += banks.ANSWER_CASUAL + banks.ANSWER_FORMAL + banks.ANSWER_EVASIVE + banks.ANSWER_PLAIN
     sents: list[str] = []
     seen = set()
@@ -121,7 +124,32 @@ def build(model: str = MODEL) -> None:
     print(f"cached {len(vecs)} sentence embeddings ({model}) -> {CACHE}")
 
 
+def add_missing(model: str = MODEL) -> int:
+    """Embed only the enumerated sentences missing from the cache (same model), keeping existing vectors."""
+    import httpx
+    from blab.env import load_env
+    load_env()
+    d = json.loads(CACHE.read_text())
+    assert d["model"] == model, d["model"]
+    miss = [t for t in enumerate_texts() if sha1(t) not in d["vectors"]]
+    if miss:
+        r = httpx.post("https://openrouter.ai/api/v1/embeddings", timeout=120,
+                       headers={"Authorization": f"Bearer {os.environ['OPENROUTER_API_KEY']}"},
+                       json={"model": model, "input": miss})
+        r.raise_for_status()
+        data = sorted(r.json()["data"], key=lambda x: x["index"])
+        assert len(data) == len(miss)
+        for t, x in zip(miss, data):
+            d["vectors"][sha1(t)] = base64.b64encode(np.asarray(x["embedding"], dtype=np.float16).tobytes()).decode()
+        d["n"] = len(d["vectors"])
+        CACHE.write_text(json.dumps(d, sort_keys=True))
+    return len(miss)
+
+
 if __name__ == "__main__":
+    if sys.argv[1:] == ["add"]:
+        print(f"added {add_missing()} sentence embeddings")
+        sys.exit(0)
     if sys.argv[1:] == ["build"]:
         try:
             build(MODEL)

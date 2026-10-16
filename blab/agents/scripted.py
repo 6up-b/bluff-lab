@@ -11,7 +11,7 @@ from blab.agents import banks
 from blab.engine import matches
 
 ROLES = ("sleeper", "control", "telltale", "telltale_overt", "colluder",
-         "tell_conjunctive", "tell_flipper", "answer_tell", "tell_relational")
+         "tell_conjunctive", "tell_flipper", "answer_tell", "tell_relational", "tell_relational_v2")
 # The last three roles were DESIGNED AFTER seeing logreg_bow's weakness (plus01 experiment, INTERFACES.md):
 # - tell_conjunctive: the tell is an interaction (formal ⇔ bluff XOR hand_size > 2). A model that is linear in
 #   formal_register and hand_size cannot represent it; a conjunctive DSL predicate can.
@@ -41,7 +41,7 @@ class Scripted:
             return 0.0 if game < g0 else (0.3 if game == g0 else 0.6)
         if r == "control":
             return 0.0
-        if r in ("telltale", "telltale_overt", "tell_conjunctive", "tell_flipper", "answer_tell", "tell_relational"):
+        if r in ("telltale", "telltale_overt", "tell_conjunctive", "tell_flipper", "answer_tell", "tell_relational", "tell_relational_v2"):
             return 0.35
         if r == "colluder":
             return 0.3
@@ -112,7 +112,31 @@ class Scripted:
         else:
             same = (rank == prev) != false
             stmt = (banks.REL_SAME if same else banks.REL_DIFF)[ti]
+        self.rel_last = {"kind": kind, "false": bool(false), "bluff": bool(bluff)}     # audit only (no RNG use)
         return f"{claim} {stmt}"
+
+    def relational_v2_utterance(self, obs: dict, n: int, bluff: bool) -> str:
+        """c01 (PREREG_c01.md) rebuilt relational tell. Same mechanism as tell_relational (statement false w.p. 0.7
+        when bluffing, 0.1 when honest) but true and false statements use IDENTICAL wording: the only statement
+        names the previous round's table rank, and a false one names one of the two other ranks (uniformly).
+        Table ranks are iid uniform, so the named rank is uniform and independent of the current rank whether the
+        statement is true or false. Round 1 of a game has no previous round in the game: claim line only.
+        RNG order: claim bank, claim line, [template, truth, alternative] (bracket only when round >= 2)."""
+        rank, g, r = obs["table_rank"], obs["game"], obs["round"]
+        self._ranks[(g, r)] = rank
+        bank = banks.FORMAL if float(self.rng.random()) < 0.5 else banks.CASUAL
+        claim = banks.pick(bank, self.rng, n, rank)
+        prev = self._ranks.get((g, r - 1))
+        if prev is None:
+            self.rel_last = {"kind": "none", "false": None, "bluff": bool(bluff)}
+            return claim
+        ti = int(self.rng.integers(0, len(banks.REL2_PREV)))
+        false = float(self.rng.random()) < (0.7 if bluff else 0.1)
+        others = [x for x in ("K", "Q", "A") if x != prev]
+        alt = others[int(self.rng.integers(0, 2))]
+        named = alt if false else prev
+        self.rel_last = {"kind": "prev", "false": bool(false), "bluff": bool(bluff)}
+        return f"{claim} {banks.REL2_PREV[ti].format(R=banks.ranks_word(named, 2))}"
 
     def play(self, obs: dict) -> dict:
         hand, rank = obs["my_hand"], obs["table_rank"]
@@ -137,6 +161,7 @@ class Scripted:
         self._last_bluff = bluff
         return {"type": "play", "cards": sorted(int(i) for i in idx),
                 "utterance": (self.relational_utterance(obs, len(idx), bluff) if self.role == "tell_relational"
+                              else self.relational_v2_utterance(obs, len(idx), bluff) if self.role == "tell_relational_v2"
                               else self.utterance(len(idx), rank, bluff, len(hand) - len(idx), obs["game"])),
                 "meta": {"bluff_kind": kind}}
 
