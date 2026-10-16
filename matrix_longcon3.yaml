@@ -1,0 +1,15 @@
+# lc03 — Long Con with profiler_plus (PREREG_lc03.md). Fresh seeds 10000-10011 (10012-10023 reserved, unused).
+games: 20
+reflect_every: 2
+seeds: [10000, 10011]
+info: raw
+respond_rule: threshold
+tables:
+  longcon:    [telltale, sleeper]      # sleeper at p3 (as lc02)
+  falsealarm: [control, control]
+agents: [counter, bayes_discount, logreg_embed, profiler_plus_noreflect, profiler_plus]
+llm_agents: [profiler_plus]            # Bedrock us.anthropic.claude-opus-5-5, effort low, STABLE_SYSTEM_RAW
+max_concurrent_claude: 6
+launch_deadline: "15:30"
+hard_stop: "15:38"
+# usage: PYTHONPATH=. .venv/bin/python scripts/lc03_run.py
