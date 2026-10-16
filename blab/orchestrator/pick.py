@@ -274,7 +274,7 @@ def cues(sel: dict, dossier_games: list[int], have: dict, events: list[dict] | N
                        {"action": "caption", "text": f"Game {sel['decision_game']}. The Profiler has played {pn} for {sel['decision_game'] - 1} games."}]}]
     if sel.get("ask_seq"):
         c.append({"name": "the ask (audio if voiced)",
-                  "say": "Same frozen model all day. It proposed this suspicion itself, between games, from its own reveals.",
+                  "say": "Same frozen model all day; no fine-tuning. Its memory, written between games and checked against reveals, says this player turns formal when bluffing.",
                   "actions": [{"action": "play_to", "seq": next((e["seq"] for e in sorted(events or [], key=lambda e: e["seq"])
                                                                  if e["type"] == "answer" and e["seq"] > sel["ask_seq"] and e["seq"] < sel["seq"]), sel["ask_seq"])},
                               {"action": "audio", "file": f"voice/ask_{sel['ask_seq']}.mp3"}]})
@@ -611,9 +611,9 @@ def pick_demo(run: str = "r01", out: str = "show/bundle", root: str = "runs") ->
     vdir = w["dir"] / "voice"
     if vdir.exists():
         (outd / "voice").mkdir(exist_ok=True)
-        for mp3 in vdir.glob("*.mp3"):
+        for mp3 in [*vdir.glob("*.mp3"), *vdir.glob("manifest.json")]:   # ask_, claim_, answer_<seq>.mp3 + tags
             shutil.copyfile(mp3, outd / "voice" / mp3.name)
-        files["voice/"] = f"TTS of {w['wid']} ask events"
+        files["voice/"] = f"TTS of {w['wid']} ask events and the Show rounds' claims/answers (voice/manifest.json)"
     ST = stack(rdir, run, w, sel, F)
     (outd / "stack.json").write_text(json.dumps(A._jsonable(ST), indent=1))
     files["stack.json"] = "sponsor-stack facts from run artifacts (ids/trace ids only, no secrets)"

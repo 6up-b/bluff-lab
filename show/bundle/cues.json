@@ -129,7 +129,7 @@
  },
  {
   "name": "the ask (audio if voiced)",
-  "say": "Same frozen model all day. It proposed this suspicion itself, between games, from its own reveals.",
+  "say": "Same frozen model all day; no fine-tuning. Its memory, written between games and checked against reveals, says this player turns formal when bluffing.",
   "actions": [
    {
     "action": "play_to",
@@ -268,6 +268,32 @@
   ]
  },
  {
+  "name": "long con at scale (lc02)",
+  "requires": [
+   "longcon2.json"
+  ],
+  "say": "Pre-registered, at scale: who notices the turn, how fast, and how much it costs before they do.",
+  "actions": [
+   {
+    "action": "view",
+    "name": "longcon2"
+   }
+  ]
+ },
+ {
+  "name": "checkpoint branches",
+  "requires": [
+   "longcon2.json"
+  ],
+  "say": "Restore the checkpoint from just before the turn, change one memory, replay the same seeds.",
+  "actions": [
+   {
+    "action": "view",
+    "name": "branches"
+   }
+  ]
+ },
+ {
   "name": "split screen",
   "requires": [
    "twin.jsonl"
@@ -297,6 +323,29 @@
    {
     "action": "view",
     "name": "decisions"
+   }
+  ]
+ },
+ {
+  "name": "does memory help?",
+  "requires": [
+   "memory.json"
+  ],
+  "say": "Same model, same prompt, same observation: only the memory differs.",
+  "actions": [
+   {
+    "action": "view",
+    "name": "memory"
+   }
+  ]
+ },
+ {
+  "name": "capability map",
+  "say": "Where memory helps and where it doesn't: pre-registered, raw observations, fresh seeds.",
+  "actions": [
+   {
+    "action": "view",
+    "name": "boundary"
    }
   ]
  },

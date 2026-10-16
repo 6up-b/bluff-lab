@@ -1,6 +1,6 @@
 # Show bundle provenance (honesty record)
 
-Built 2026-10-16T17:50:50Z by `blab pick-demo --run r01` from real event logs. No number in this bundle was written by hand.
+Built 2026-10-16T18:35:28Z by `blab pick-demo --run r01` from real event logs. No number in this bundle was written by hand.
 
 - **Run:** `r01`
 - **World:** `w0002` (`runs/r01/w0002`)
@@ -38,7 +38,7 @@ Built 2026-10-16T17:50:50Z by `blab pick-demo --run r01` from real event logs. N
 - `results.json`: `blab analyze --run r01` output (per-world rows omitted)
 - `memory.json`: 'does memory help?' comparison from runs/mem01 (raw observations)
 - `forge.json`: runs/r01/forge.json (normalised: forge_result fields + source)
-- `voice/`: TTS of w0002 ask events
+- `voice/`: TTS of w0002 ask events and the Show rounds' claims/answers (voice/manifest.json)
 - `stack.json`: sponsor-stack facts from run artifacts (ids/trace ids only, no secrets)
 - `reveal.json`: Surgery Reveal decision + replay_decision outputs
 - `cues.json`: director script generated from the picked seqs (show/FLOW.md order)

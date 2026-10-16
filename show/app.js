@@ -92,6 +92,11 @@ async function markSkips() {
     const need = new Set(c.requires);
     for (const a of c.actions) {
       if (a.action === "audio" && a.file) a.missing = !(await exists(a.file));   // no mp3: the cue still runs, silently
+      if (a.action === "play_to") {   // opponent voice: claim/answer mp3 for the event this cue lands on, if bundled
+        const e = W.bySeq.get(a.seq);
+        const f = e && (e.type === "claim" || e.type === "answer") ? `voice/${e.type}_${e.seq}.mp3` : null;
+        a.voice = f && (await exists(f)) ? f : null;
+      }
       if (a.action === "view" && a.name === "forge") need.add("forge.json");
       if (a.action === "view" && a.name === "split") need.add("twin.jsonl");
       if (a.action === "view" && a.name === "stack") need.add("stack.json");
@@ -117,7 +122,7 @@ function applyAction(a, live) {
     case "dossier": S.dossierGame = a.game; if (a.about) S.dossierAbout = a.about; S.view = "dossier"; break;
     case "surgery": if (!S.surgery.includes(a.variant)) S.surgery.push(a.variant); S.view = "surgery"; break;
     case "flip": S.flipped = true; break;
-    case "audio": if (live && !a.missing) playAudio(a.file); break;
+    case "audio": if (live && !a.missing) AQ.push(a.file); break;
     case "caption": S.caption = a.text || ""; break;
     case "clear_caption": S.caption = ""; break;
     default: console.warn("unknown cue action", a);
@@ -126,7 +131,12 @@ function applyAction(a, live) {
 function applyCue(c, live) {
   if (c.skip) return;
   S.caption = c.keepCaption ? S.caption : "";
+  AQ.length = 0;
   for (const a of c.actions) applyAction(a, live);
+  if (live) {   // Profiler ask first, then the opponent's line; audio never advances cues
+    for (const a of c.actions) if (a.action === "play_to" && a.voice) AQ.push(a.voice);
+    playQueue();
+  }
 }
 function next() {
   if (idx >= cues.length) return;
@@ -148,10 +158,15 @@ function goto(n) {
   void document.body.offsetHeight;
   requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove("instant")));
 }
-function playAudio(file) {
-  const el = $("#audio"); el.src = `${BUNDLE}/${file}`; el.currentTime = 0; el.play().catch(() => {});
+const AQ = [];   // this cue's audio files, played in order
+function playQueue() {
+  const el = $("#audio"); const f = AQ.shift();
+  if (!f) return;
+  el.onended = () => playQueue(); el.onerror = () => playQueue();   // a file that fails to load is skipped silently
+  el.src = `${BUNDLE}/${f}`; el.currentTime = 0; el.play().catch(() => {});
 }
-function stopAudio() { const el = $("#audio"); el.pause(); }
+function playAudio(file) { AQ.length = 0; AQ.push(file); playQueue(); }
+function stopAudio() { AQ.length = 0; const el = $("#audio"); el.onended = null; el.onerror = null; el.pause(); }
 
 /* Fallback when cues.json is missing: the FLOW.md order, built from reveal.json. */
 function defaultCues() {
@@ -712,8 +727,7 @@ function renderTrust() {
   const stat = Object.keys(ec).concat(Object.keys(rtd)).filter((v, i, a) => a.indexOf(v) === i).map((a) => `
     <div class="kv" style="font-size:28px;padding:12px 0;border-top:1px solid var(--rule)"><b style="color:${COL[a] || "var(--bone)"}">${esc(a)}</b>
       <span style="display:block;font-size:22px;color:var(--bone-dim)">${ec[a] && ec[a].n ? `${esc(L.exploitation_label || "exploitation cost")}: ${fN(ec[a].mean)}${ec[a].lo !== null && ec[a].lo !== undefined ? ` (${fN(ec[a].lo)}–${fN(ec[a].hi)})` : ""}` : ""}${rtd[a] ? `<br>rounds to detection, median ${fN(rtd[a].median)} (detected in ${esc(rtd[a].detected ?? rtd[a].n)} of ${esc(rtd[a].worlds ?? "?")} worlds)` : ""}</span></div>`).join("");
-  const twist = L.twist?.holds ? `<div style="font-family:var(--voice);font-style:italic;font-size:38px;line-height:1.2;margin-top:24px">Naive memory was more exploitable than no memory.</div>
-     <div class="foot">${esc(L.twist.metric || "bayes − counter")}: ${fN(L.twist.diff?.mean)} (${fN(L.twist.diff?.lo)}–${fN(L.twist.diff?.hi)})</div>` : "";
+  const twist = "";   // the "naive memory more exploitable" line is not shown: lc02 at scale does not support it
   el.innerHTML = head + `<p class="sub">${sl} plays honest, then turns. Every memory of it is true; the attack is assuming people don't change.</p>
     <div style="display:grid;grid-template-columns:${w}px 1fr;gap:48px"><div class="chart">${svg(w, h, s)}<div class="legend">${leg}</div></div>
     <div style="margin-top:26px">${stat}${twist}<div class="foot">n = ${esc(L.n_worlds ?? "?")} longcon worlds. ${esc(L.estimate_note || "")}</div></div></div>`;
@@ -848,7 +862,7 @@ function renderStack(live) {
     ["arize", "Arize AX", "traces and experiments", "A span for every decision and reflection, and an experiment per agent scoring its frozen decisions (Brier).",
       `project <b>${dash(az.project)}</b>, <b>${dash(az.decision_spans_in_picked_world)}</b> decision spans in this world`],
     ["daytona", "Daytona", "world boxes and forge sandbox", "Stateful boxes where many worlds play at once: events, checkpoints, live memory. AI-written strategy code runs in a separate network-blocked sandbox.",
-      `<b>${dash(d.worlds_total)}</b> worlds on boxes ${boxes || "—"}${(() => { const f = d.forge_sandbox_id || B.forge?.sandbox_id || B.forge?.entry?.sandbox_id || B.forge?.entry?.forge_result?.sandbox_id; return f ? `; forge sandbox <b>${esc(String(f).slice(0, 8))}</b>` : ""; })()}`],
+      `<b>${dash(Object.values(d.worlds_per_box || {}).reduce((a, b) => a + b, 0) || null)}</b> worlds on boxes ${boxes || "—"}${d.worlds_total ? ` (of ${esc(d.worlds_total)} in the run)` : ""}${(() => { const f = d.forge_sandbox_id || B.forge?.sandbox_id || B.forge?.entry?.sandbox_id || B.forge?.entry?.forge_result?.sandbox_id; return f ? `; forge sandbox <b>${esc(String(f).slice(0, 8))}</b>` : ""; })()}`],
   ];
   const at = (k) => ({ claim: "daytona", decide: "daytona", trace: "arize", reveal: "daytona", reflect: "claude", store: "surreal", back: "surreal" })[k];
   const steps = [
@@ -936,7 +950,9 @@ function renderBoundary() {
     return `<div class="hyp"><b>${esc(h.name || "")}</b>${esc(h.text || "")}<span>${ok(h.holds, h.status)}${h.mean != null ? ` <span class="ci">Δ ${f(h.mean)}${h.lo != null ? `, CI ${f(h.lo)} to ${f(h.hi)}` : ""}${h.n !== undefined ? `, n ${esc(h.n)}` : ""}</span>` : ""}</span></div>`; }).join("");
   el.innerHTML = head + `<p class="sub">Pre-registered (${esc(Bd.prereg || "PREREG.md")}), run ${esc(Bd.run || "")}, ${esc(Bd.info || "raw")} observations, paired 95% CIs. Holds only if the CI excludes 0 in the predicted direction.</p>
     <table class="grid lc2 cmap"><thead><tr><th>Cue type</th><th>Winner</th><th>Δ (95% CI)</th><th>Metric</th><th>Pre-registered claim</th></tr></thead><tbody>${rows}</tbody></table>
-    ${hyp ? `<div class="hyps">${hyp}</div>` : ""}<div class="foot" style="margin-top:8px">${esc(M.note || "")}</div>`;
+    ${hyp ? `<div class="hyps">${hyp}</div>` : ""}${(() => { const n = String(M.note || ""); const k = n.indexOf("Deviation:");
+      return k < 0 ? `<div class="foot" style="margin-top:8px">${esc(n)}</div>`
+        : `<div class="deviation"><b>Deviation from the pre-registration.</b> ${esc((t => t.charAt(0).toUpperCase() + t.slice(1))(n.slice(k + 10).trim()))}</div><div class="foot" style="margin-top:6px">${esc(n.slice(0, k).trim())}</div>`; })()}`;
   where(`Capability map, ${esc(Bd.run || "")}`);
 }
 
@@ -952,7 +968,7 @@ function renderMemory() {
   const cell = (t, a) => { const d = R[t]?.delta_vs_baseline?.[a]; if (!d || (d.win_rate?.mean == null && d.brier?.mean == null)) return `<td class="na">—</td>`;
     const one = (m, f) => !m || m.mean == null ? "—" : `${f(m.mean)} <span class="ci">${m.lo != null ? `${f(m.lo)} to ${f(m.hi)}` : "no CI"}</span>`;
     return `<td><div>${one(d.win_rate, dPts)}</div><div class="br">${one(d.brier, brier)}</div></td>`; };
-  const rows = arms.map((a) => `<tr class="${a.startsWith("llm_") ? "ours" : ""}"><td>${esc(a)}</td>${tables.map((t) => cell(t, a)).join("")}</tr>`).join("");
+  const rows = arms.map((a) => `<tr class="${a.startsWith("llm_") || a === "profiler_plus" ? "ours" : ""}"><td>${esc(a)}</td>${tables.map((t) => cell(t, a)).join("")}</tr>`).join("");
   const setting = M.setting === "raw" ? "raw observations" : M.setting === "engineered" ? "engineered-feature setting" : esc(M.setting || "");
   el.innerHTML = head + `<div class="memhead"><span class="setting">${setting}</span><span class="hl">${esc(M.headline || "")}</span></div>
     <p class="sub">Paired Δ vs the no-memory arm <b>${esc(M.baseline || "")}</b> on the same seeds, ${esc(rule)} rule, run ${esc(M.run || "")}. Win rate higher is better; Brier lower is better. 95% bootstrap CI where n allows.</p>

@@ -261,3 +261,11 @@ integrations → show/polish: `show/bundle/longcon_fork.json` has `real_vm_fork:
   - (a) Both runner processes started before f869ce6 (14:06). Each called `apply_raw_reflection_prompt()` before its first world. Applied to the pre-f869ce6 llm.py, that patch gives text byte-identical to main's `llm.STABLE_SYSTEM_RAW`: no "formal", no "contraction" (checked), and validation uses `validate_predicate(pred, "raw")`.
   - (b) Profiler-family `reflect_payload` carries `info: self.params["info"]`, and the mem01 p1 params set `info: "raw"`.
   - Per-decision prompts: the system prompt and the observation text (public_obs_text, stripped obs) contain no "formal" or "contraction". 733 cached dossier prompts do contain "formal". In every one, the word is inside a dossier line that Claude reflection wrote itself from raw utterances (e.g. "Player 3 bluffs more when the utterance uses formal phrasing like 'Please accept'…", with regex/contains predicates). That is discovered memory, not a leak. nomem and episodic prompts contain 0 such mentions.
+- **mem01 LLM-arms RESULT (14:23).**
+  - **What ran:** 35 complete LLM-arm worlds, seeds 3001–3004 on telltale / longcon / tell_flipper. tell_flipper llm_nomem s3004 did not launch before the deadline. 8,442 Sonnet calls with 0 errors; 120 dossier reflections with 0 errors. 5 worlds that were in flight when I stopped for the cap change are in runs/mem01_incomplete/ and are excluded.
+  - **Pooled paired Δ vs llm_nomem (n = 11 table×seed pairs):**
+    - llm_dossier: win rate +0.064 [0.009, 0.127], which meets the pre-registered "helps" criterion; games 11–20 +0.073 [−0.036, 0.200]; Brier −0.014 [−0.032, 0.005].
+    - llm_episodic: win rate +0.027 [−0.036, 0.086]; Brier −0.015 [−0.035, 0.006]. No detectable difference.
+    - Dossier − episodic: win rate +0.017 [−0.062, 0.092]. No detectable difference.
+  - **Caveat:** with only 4 seeds per table, the bootstrap CIs are optimistic. Treat the dossier "helps" as weak evidence.
+  - Files: runs/mem01/results.json and runs/mem01/summary.md.
