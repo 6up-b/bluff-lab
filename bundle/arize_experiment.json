@@ -1,0 +1,72 @@
+{
+  "dataset_name": "frozen-decisions-r01",
+  "datasets": [
+    {
+      "agent": "bayes",
+      "dataset_id": "RGF0YXNldDozNzAyODQ6aCtCeA==",
+      "dataset_name": "frozen-decisions-r01-bayes-135108"
+    },
+    {
+      "agent": "counter",
+      "dataset_id": "RGF0YXNldDozNzAyODU6djVkSA==",
+      "dataset_name": "frozen-decisions-r01-counter-135108"
+    },
+    {
+      "agent": "logreg_bow",
+      "dataset_id": "RGF0YXNldDozNzAyODY6YXRXbA==",
+      "dataset_name": "frozen-decisions-r01-logreg_bow-135108"
+    },
+    {
+      "agent": "profiler",
+      "dataset_id": "RGF0YXNldDozNzAyODc6NnVTOA==",
+      "dataset_name": "frozen-decisions-r01-profiler-135108"
+    }
+  ],
+  "experiments": [
+    {
+      "agent": "bayes",
+      "dataset_id": "RGF0YXNldDozNzAyODQ6aCtCeA==",
+      "experiment_id": "RXhwZXJpbWVudDoxNjI0NTE6MEJaNA==",
+      "n_rows": 515,
+      "n_scored": 515,
+      "mean_brier_arize": 0.29968006457535495,
+      "mean_brier_local": 0.29968006457535495,
+      "visible_in_listing": true
+    },
+    {
+      "agent": "counter",
+      "dataset_id": "RGF0YXNldDozNzAyODU6djVkSA==",
+      "experiment_id": "RXhwZXJpbWVudDoxNjI0NTU6L285cQ==",
+      "n_rows": 395,
+      "n_scored": 395,
+      "mean_brier_arize": 0.30312523909849115,
+      "mean_brier_local": 0.30312523909849115,
+      "visible_in_listing": true
+    },
+    {
+      "agent": "logreg_bow",
+      "dataset_id": "RGF0YXNldDozNzAyODY6YXRXbA==",
+      "experiment_id": "RXhwZXJpbWVudDoxNjI0NTY6ZjVwcQ==",
+      "n_rows": 529,
+      "n_scored": 529,
+      "mean_brier_arize": 0.26323938530743857,
+      "mean_brier_local": 0.26323938530743857,
+      "visible_in_listing": true
+    },
+    {
+      "agent": "profiler",
+      "dataset_id": "RGF0YXNldDozNzAyODc6NnVTOA==",
+      "experiment_id": "RXhwZXJpbWVudDoxNjI0NTg6N05lOA==",
+      "n_rows": 555,
+      "n_scored": 555,
+      "mean_brier_arize": 0.27676038977124234,
+      "mean_brier_local": 0.27676038977124234,
+      "visible_in_listing": true
+    }
+  ],
+  "selection": "r01 base worlds, telltale table, threshold rule; profiler+claude seeds and same-seed counter/bayes/logreg_bow; revealed p1 respond decisions",
+  "dataset_layout": "one dataset per agent (experiments.run has no row filter)",
+  "dataset_id": "RGF0YXNldDozNzAyODQ6aCtCeA==",
+  "ax_url": null,
+  "created": "2026-10-16T13:54:12"
+}

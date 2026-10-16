@@ -845,7 +845,7 @@ function renderStack(live) {
       `<b>${dash(c.reflections)}</b> real reflections, <b>${dash(c.proposed_hypotheses)}</b> beliefs proposed`],
     ["surreal", "SurrealDB", "Agent Memory", "Holds each belief about each opponent, with its history: what replaced what, valid from game to game. Dossiers are read as of a game.",
       `<b>${dash(sd.supersessions_in_logs)}</b> supersessions; e.g. <b>${dash(sd.supersession_example?.entity)}</b>`],
-    ["arize", "Arize AX", "traces", "A span for every decision and reflection, with the recorded numbers attached.",
+    ["arize", "Arize AX", "traces and experiments", "A span for every decision and reflection, and an experiment per agent scoring its frozen decisions (Brier).",
       `project <b>${dash(az.project)}</b>, <b>${dash(az.decision_spans_in_picked_world)}</b> decision spans in this world`],
     ["daytona", "Daytona", "world boxes and forge sandbox", "Stateful boxes where many worlds play at once: events, checkpoints, live memory. AI-written strategy code runs in a separate network-blocked sandbox.",
       `<b>${dash(d.worlds_total)}</b> worlds on boxes ${boxes || "—"}${(() => { const f = d.forge_sandbox_id || B.forge?.sandbox_id || B.forge?.entry?.sandbox_id || B.forge?.entry?.forge_result?.sandbox_id; return f ? `; forge sandbox <b>${esc(String(f).slice(0, 8))}</b>` : ""; })()}`],
