@@ -477,3 +477,23 @@ table.grid td.na { color: var(--ink-faint); }
 #v-split .strip-games { gap: 6px; }
 #v-split .split .total { font-size: 120px; margin-top: 34px; line-height: 1; }
 #v-split .split .total span { font-size: 30px; }
+
+/* polish: lc02, checkpoint branches, capability map, memory tables */
+table.grid.lc2 { width: 100%; margin-top: 24px; }
+table.grid.lc2 th { font-size: 24px; line-height: 1.2; }
+table.grid.lc2 th small, table.grid.lc2 td small { display: block; font-family: var(--sans); font-style: normal; font-size: 17px; color: var(--ivory-dim); font-weight: 400; }
+table.grid.lc2 td { font-size: 28px; padding: 9px 26px; vertical-align: top; line-height: 1.2; }
+table.grid.lc2 td .ci { font-size: 17px; color: var(--ivory-dim); white-space: nowrap; }
+table.grid.lc2 td.dl { font-weight: 600; color: var(--brass-hi); }
+table.grid.mem td { font-size: 24px; padding: 8px 22px; white-space: nowrap; }
+table.grid.mem td .ci { display: inline; font-size: 16px; }
+table.grid.mem th { font-size: 22px; }
+table.grid.mem td .br { margin-top: 2px; color: var(--ivory-dim); font-size: 21px; }
+.memhead { display: flex; align-items: baseline; gap: 28px; margin: 6px 0 14px; }
+.memhead .setting { font-size: 24px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink); background: var(--brass-hi); padding: 4px 14px; white-space: nowrap; }
+.memhead .hl { font-family: var(--display); font-style: italic; font-size: 34px; color: var(--ivory); }
+.hyps { margin-top: 26px; display: grid; gap: 10px; }
+.hyp { font-size: 22px; color: var(--ivory-dim); padding: 8px 0; border-top: 1px solid var(--rule); }
+.hyp b { color: var(--brass-hi); margin-right: 8px; }
+.hyp span { display: inline-block; margin-left: 10px; color: var(--ivory); }
+.hyp .ci { display: inline; margin-left: 6px; font-size: 18px; color: var(--ivory-dim); }
