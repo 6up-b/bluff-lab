@@ -341,6 +341,7 @@ class Profiler(Bayes):
         mem = self.memory
         new = mem["revealed"][mem.get("reflected_upto", 0):][-40:]
         return {"seat": self.seat, "agent": self.id, "wid": self.params.get("wid"),
+                "info": self.params.get("info", "engineered"),
                 "memory_version": mem["memory_version"], "new_obs": copy.deepcopy(new),
                 "hypotheses": [H.hypothesis_event(h) for h in mem["hypotheses"]],
                 "drift_notes": copy.deepcopy(mem.get("drift_notes", [])[-4:]),
@@ -367,7 +368,8 @@ class Profiler(Bayes):
                                      text=str(p.get("text", ""))[:300], predicate=p["predicate"],
                                      created_game=game, idx=mem["next_idx"],
                                      supersedes=p.get("supersedes_id"), origin=p.get("origin", "llm"),
-                                     rationale=str(p.get("rationale", ""))[:500])
+                                     rationale=str(p.get("rationale", ""))[:500],
+                                     mode=self.params.get("info", "engineered"))
             except (ValueError, KeyError, TypeError) as e:
                 self.last_dropped.append({"proposal": p, "reason": str(e)})
                 continue
@@ -405,7 +407,8 @@ N_HASH = 256
 NUMERIC = (("hand_size", 5.0), ("claim_count", 3.0), ("trusted_streak", 10.0), ("lives_self", 3.0),
            ("lives_target", 3.0), ("game_index", 20.0), ("round_index", 30.0))
 FEAT_NAMES = (["bias", "logit_p_cards"] + [n for n, _ in NUMERIC]
-              + ["was_challenged_last_round", "formal_register"] + [f"h{i}" for i in range(N_HASH)])
+              + ["was_challenged_last_round", "formal_register"] + [f"h{i}" for i in range(N_HASH)]
+              + ["word_count"])        # raw mode only (0 in engineered mode ⇒ engineered fits unchanged)
 DIM = len(FEAT_NAMES)
 I_FORMAL = FEAT_NAMES.index("formal_register")
 Z80 = 1.2815515655446004
@@ -426,12 +429,20 @@ def featurize(features: dict, p_cards: float) -> np.ndarray:
     for i, (n, scale) in enumerate(NUMERIC):
         x[2 + i] = float(features.get(n, 0) or 0) / scale
     x[2 + len(NUMERIC)] = float(bool(features.get("was_challenged_last_round")))
-    x[I_FORMAL] = float(bool(features.get("formal_register")))
+    x[I_FORMAL] = float(bool(features.get("formal_register")))      # absent in raw mode ⇒ 0
+    if "word_count" in features:                                      # present only in raw mode
+        x[DIM - 1] = float(features["word_count"]) / 10.0
     toks = _TOK.findall(str(features.get("utterance", "")).lower())
     grams = toks + [f"{a} {b}" for a, b in zip(toks, toks[1:])]
     for g in grams:
         x[I_FORMAL + 1 + stable_bucket(g)] = 1.0
     return x
+
+
+def _padw(w: list[float]) -> np.ndarray:
+    """Weights saved before the word_count column existed are zero-padded (engineered fits unchanged)."""
+    a = np.asarray(w, dtype=float)
+    return np.concatenate([a, np.zeros(DIM - len(a))]) if len(a) < DIM else a
 
 
 def _sig(z: float) -> float:
@@ -447,9 +458,9 @@ class LogregBow(Bayes):
 
     def predict(self, obs, about, features, p_c):
         m = (self.memory.get("logreg") or {}).get(about)
-        w = np.asarray(m["w"]) if m else np.zeros(DIM)
+        w = _padw(m["w"]) if m else np.zeros(DIM)
         p = _sig(float(w @ featurize(features, p_c)))
-        tell = list(m["tell_coef"]) if m else [0.0, 0.0, 0.0]
+        tell = (list(m["tell_coef"]) if m.get("tell_coef") is not None else None) if m else None
         return None, "logreg", [], p, {"logreg": {"p_bluff": p, "n_fit": int(m["n"]) if m else 0,
                                                  "tell_coef": tell, "tell_feature": "formal_register",
                                                  "discovery_game": (m or {}).get("discovery_game")}}
@@ -467,7 +478,7 @@ class LogregBow(Bayes):
         for e in sorted(new, key=lambda e: (e["game"], e["round"])):
             m = lr_mem.setdefault(e["by"], {"w": [0.0] * DIM, "n": 0, "tell_coef": [0.0, 0.0, 0.0],
                                             "tell_history": [], "discovery_game": None})
-            w = np.asarray(m["w"])
+            w = _padw(m["w"])
             x = featurize(e["features"], e["p_cards"])
             g = (_sig(float(w @ x)) - float(e["was_bluff"])) * x
             reg = L2 * w
@@ -477,6 +488,11 @@ class LogregBow(Bayes):
         for about, m in lr_mem.items():
             es = sorted([e for e in self.memory["revealed"] if e["by"] == about], key=lambda e: (e["game"], e["round"]))
             if not es:
+                continue
+            if self.params.get("info") == "raw":
+                m["tell_coef"] = None            # n/a: no formal_register input in raw mode (BoW only)
+                m["tell_coef_bow"] = None
+                m["tell_history"].append({"game": game, "coef": None})
                 continue
             # Discovery statistic. The BoW weight w[formal_register] is not identifiable on its own (it is
             # collinear with the hashed tokens of formal lines): a Laplace interval is ~1/λ wide, and a
@@ -509,10 +525,190 @@ class LogregBow(Bayes):
         return []
 
 
-AGENTS = {c.id: c for c in (Counter, Bayes, BayesDiscount, Profiler, ProfilerBlind, ProfilerAmnesic, LogregBow)}
+# ------------------------------------------------------------------ profiler_plus (plus01)
+
+PLUS_GAMMA = 0.9          # likelihood weight 0.9^(games ago)
+PLUS_PRIOR_VAR = 1.0      # prior N(w0, I)
+Z95 = 1.959963984540054
+BASE_NAMES = ["bias", "logit_p_cards"] + [n for n, _ in NUMERIC] + ["was_challenged_last_round"]
+
+
+def base_x(features: dict, p_cards: float) -> list[float]:
+    pc = min(max(float(p_cards), 1e-3), 1 - 1e-3)
+    return ([1.0, math.log(pc / (1 - pc))] + [float(features.get(n, 0) or 0) / sc for n, sc in NUMERIC]
+            + [float(bool(features.get("was_challenged_last_round")))])
+
+
+class ProfilerPlus(Profiler):
+    """"LLM proposes, statistics disposes." Every usable hypothesis (open, not refuted, not always-true,
+    evidence provenance — untrusted only if independently confirmed) is a binary feature in a per-opponent
+    L2-MAP logistic calibrator with logit(p_cards) and the base numeric features (no formal_register, no BoW:
+    the LLM's predicates are the only lexical channel). Prior N(w0, I), w0 = [0, 1, 0…] ⇒ with no data
+    p_final = p_cards (counter). Likelihood weights 0.9^(games ago). Fit at game end (and right after a
+    reflection adds lines) — memory timing rule, so replay is exact.
+    False-discovery guard: a line is scored (status) on ALL reveals about its opponent EXCEPT the batch the
+    LLM was shown when it proposed the line (h["holdout_obs"]); refuted lines drop out of the calibrator.
+    Caveat: SurrealDB retrieval notes may show the LLM summaries of older reveals; those are not held out.
+    No supersession between non-drift lines: correlated lines simply share weight in the regression."""
+    id = "profiler_plus"
+
+    def wants_reflection(self, game: int) -> bool:
+        k = int(self.params.get("plus_reflect_every", 1) or 0)
+        return self.reflects and self.learning and k > 0 and game % k == 0
+
+    # ----- feature set
+    def usable(self, about: str) -> list[dict]:
+        out = []
+        for h in self.memory.get("hypotheses", []):
+            if h.get("about") != about or h.get("valid_until_game") is not None or h.get("status") == "refuted":
+                continue
+            if H.is_always_true(h["predicate"]):
+                continue
+            if h.get("provenance") == "untrusted" and not H._independently_confirmed(h):
+                continue
+            out.append(h)
+        return out
+
+    def predict(self, obs, about, features, p_c):
+        cal = (self.memory.get("plus") or {}).get(about) or {}
+        coefs = dict(zip(cal.get("names", []), cal.get("w", [])))
+        ivs = dict(zip(cal.get("names", []), cal.get("iv", [])))
+        xb = base_x(features, p_c)
+        w0 = [0.0, 1.0] + [0.0] * (len(BASE_NAMES) - 2)
+        z, terms = 0.0, {}
+        for i, n in enumerate(BASE_NAMES):
+            c = coefs.get(n, w0[i])
+            z += c * xb[i]
+            terms[n] = c * xb[i]
+        mem = []
+        for h in self.usable(about):
+            on = bool(H.eval_predicate(h["predicate"], features))
+            c = coefs.get(h["id"])           # None: proposed after the last fit (or removed) → no weight yet
+            contrib = (c if c is not None else 0.0) * float(on)
+            z += contrib
+            e = H._mem_entry(h, "feature", on)
+            e.update(coef=c, coef_iv=ivs.get(h["id"]), contribution=contrib)
+            mem.append(e)
+        p = 1.0 / (1.0 + math.exp(-max(-35.0, min(35.0, z))))
+        return None, f"plus:{about}", mem, p, {"plus": {"logit": z, "base_terms": terms, "n_fit": int(cal.get("n", 0)),
+                                                       "fit_game": cal.get("game")}}
+
+    def estimate(self, obs, about, features):      # for want_ask
+        p_c = float(features["card_math"]["p_cards"])
+        p = self.predict(obs, about, features, p_c)[3]
+        return (max(0.0, (p - p_c) / (1 - p_c)) if p_c < 1 else 0.0), f"plus:{about}", \
+            self.predict(obs, about, features, p_c)[2]
+
+    # ----- fitting
+    def _fit(self, about: str, game: int) -> None:
+        es = [e for e in self.memory["revealed"] if e["by"] == about]
+        hs = self.usable(about)
+        names = BASE_NAMES + [h["id"] for h in hs]
+        d = len(names)
+        w0 = np.zeros(d)
+        w0[1] = 1.0
+        if es:
+            X = np.array([base_x(e["features"], e["p_cards"]) + [float(bool(H.eval_predicate(h["predicate"], e["features"])))
+                                                               for h in hs] for e in es])
+            y = np.array([float(e["was_bluff"]) for e in es])
+            sw = np.array([PLUS_GAMMA ** max(0, game - e["game"]) for e in es])
+        else:
+            X, y, sw = np.zeros((0, d)), np.zeros(0), np.zeros(0)
+        w = w0.copy()
+        P = np.eye(d) / PLUS_PRIOR_VAR
+
+        def obj(v):
+            z = X @ v
+            return float(np.sum(sw * (np.logaddexp(0.0, z) - y * z)) + 0.5 * (v - w0) @ P @ (v - w0))
+
+        f = obj(w)
+        for _ in range(50):                      # damped Newton (backtracking) on the convex MAP objective
+            pr = 1.0 / (1.0 + np.exp(-np.clip(X @ w, -35, 35)))
+            Hm = (X * (sw * pr * (1 - pr))[:, None]).T @ X + P
+            g = X.T @ (sw * (pr - y)) + P @ (w - w0)
+            step = np.linalg.solve(Hm, g)
+            t = 1.0
+            while t > 1e-6:
+                wn = w - t * step
+                fn = obj(wn)
+                if fn <= f - 1e-4 * t * float(g @ step):
+                    break
+                t *= 0.5
+            if t <= 1e-6:
+                break
+            w, f = wn, fn
+            if float(np.abs(t * step).max()) < 1e-9:
+                break
+        pr = 1.0 / (1.0 + np.exp(-np.clip(X @ w, -35, 35)))
+        Hm = (X * (sw * pr * (1 - pr))[:, None]).T @ X + P
+        se = np.sqrt(np.clip(np.diag(np.linalg.inv(Hm)), 0, None))
+        self.memory.setdefault("plus", {})[about] = {
+            "names": names, "w": [float(v) for v in w],
+            "iv": [[float(w[i] - Z95 * se[i]), float(w[i] + Z95 * se[i])] for i in range(d)],
+            "n": len(es), "game": game}
+
+    def _refit_all(self, game: int) -> None:
+        opps = sorted({e["by"] for e in self.memory["revealed"]} | {h["about"] for h in self.memory["hypotheses"]})
+        for o in opps:
+            self._fit(o, game)
+
+    def _score_all(self, game: int) -> None:
+        rng = self._score_rng(game)
+        for h in self.memory["hypotheses"]:
+            if h.get("valid_until_game") is not None or h.get("origin") == "drift":
+                continue
+            hold = set(h.get("holdout_obs") or [])
+            H.score_hypothesis(h, [e for e in self.memory["revealed"] if e.get("obs_id") not in hold], rng,
+                               now_game=game)
+
+    def on_game_end(self, obs: dict, game: int) -> list[tuple[str, dict]]:
+        if not self.learning:
+            return []
+        self._absorb(obs, game)
+        mem = self.memory
+        before = {h["id"]: self._sig(h) for h in mem["hypotheses"]}
+        self._score_all(game)
+        rng = self._score_rng(game)
+        rnd = int(obs.get("round", 0))
+        sup, new_ids = [], []
+        for opp in sorted({e["by"] for e in mem["revealed"]}):
+            nh, evs, p = H.apply_drift(mem["hypotheses"], mem["revealed"], wid=self.params.get("wid", "w000"),
+                                      about=opp, idx=mem["next_idx"], now_game=game, now_round=rnd, rng=rng)
+            if nh is not None:
+                mem["next_idx"] += 1
+                new_ids.append(nh["id"])
+                mem["drift_notes"].append({"about": opp, "game": game, "p": round(p, 4), "hyp_id": nh["id"]})
+                sup += evs
+        self._refit_all(game)
+        events = [("hypothesis", H.hypothesis_event(h)) for h in mem["hypotheses"]
+                  if h["id"] in new_ids or before.get(h["id"]) != self._sig(h)]
+        mem["memory_version"] += 1
+        self.memory = _jsonable(mem)
+        return events + sup
+
+    def apply_reflection(self, proposed, game):
+        start = self.memory.get("reflected_upto", 0)
+        batch = [e["obs_id"] for e in self.memory["revealed"][start:][-40:]]
+        n0 = len(self.memory["hypotheses"])
+        events = super().apply_reflection(proposed, game)
+        for h in self.memory["hypotheses"][n0:]:
+            h["holdout_obs"] = batch
+            h["score_from_game"] = 0
+        if len(self.memory["hypotheses"]) > n0:
+            self._score_all(game)
+            self._refit_all(game)
+            events = [("hypothesis", H.hypothesis_event(h)) for h in self.memory["hypotheses"][n0:]]
+        self.memory = _jsonable(self.memory)
+        return events
+
+
+AGENTS = {c.id: c for c in (Counter, Bayes, BayesDiscount, Profiler, ProfilerBlind, ProfilerAmnesic, LogregBow,
+                            ProfilerPlus)}
 
 
 def make_agent(agent_id: str, seat: str, rng, params: dict | None = None):
     if agent_id not in AGENTS:
         raise KeyError(f"unknown agent {agent_id!r}; have {sorted(AGENTS)}")
     return AGENTS[agent_id](seat, rng, params)
+
+import blab.agents.llm_agents  # noqa: E402,F401  (llm-arms registry hook: registers llm_* agents in AGENTS)

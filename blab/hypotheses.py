@@ -56,7 +56,11 @@ FEATURES: dict[str, type] = {
     "table_rank": str,
     "utterance": str,
     "formal_register": bool,
+    "word_count": int,          # generic text statistic (raw-information mode; see blab/agents/common.py)
 }
+# raw-information mode: features/ops that encode our knowledge of the telltale are not allowed
+RAW_FORBIDDEN_FEATURES = frozenset({"formal_register", "answer_formal_register", "answer_has_contraction"})
+RAW_FORBIDDEN_OPS = frozenset({"no_contractions"})
 
 OPS = ("==", "!=", "<", "<=", ">", ">=", "contains", "regex", "no_contractions")
 _CMP_OPS = ("<", "<=", ">", ">=")
@@ -251,12 +255,34 @@ def _validate(p: Any, depth: int, counter: list[int]) -> tuple[bool, str]:
     return _validate_leaf(p)
 
 
-def validate_predicate(pred: dict) -> tuple[bool, str]:
-    """(ok, reason). Rejects unknown features/ops, type mismatches, unsafe/long regex, depth > 6."""
+def _raw_violation(p: Any) -> str | None:
+    if isinstance(p, dict):
+        if p.get("f") in RAW_FORBIDDEN_FEATURES:
+            return f"feature {p['f']!r} is not available in raw-information mode"
+        if p.get("op") in RAW_FORBIDDEN_OPS:
+            return f"op {p['op']!r} is not available in raw-information mode"
+        for k in ("all", "any"):
+            for c in p.get(k) or []:
+                r = _raw_violation(c)
+                if r:
+                    return r
+        if "not" in p:
+            return _raw_violation(p["not"])
+    return None
+
+
+def validate_predicate(pred: dict, mode: str = "engineered") -> tuple[bool, str]:
+    """(ok, reason). Rejects unknown features/ops, type mismatches, unsafe/long regex, depth > 6.
+    mode="raw" additionally rejects formal_register (and answer_ tell flags) and the no_contractions op."""
     try:
-        return _validate(pred, 1, [0])
+        ok, why = _validate(pred, 1, [0])
     except RecursionError:
         return False, f"nesting depth > {MAX_DEPTH}"
+    if ok and mode == "raw":
+        bad = _raw_violation(pred)
+        if bad:
+            return False, bad
+    return ok, why
 
 
 def _eval_leaf(p: dict, features: dict) -> bool:
@@ -331,7 +357,7 @@ def _uniform_iv() -> list[float]:
 def new_hypothesis(*, wid: str, about: str, aspect: str, text: str, predicate: dict,
                    created_game: int, provenance: str = "evidence", idx: int,
                    supersedes: str | None = None, score_from_game: int | None = None,
-                   origin: str = "llm", **extra: Any) -> dict:
+                   origin: str = "llm", mode: str = "engineered", **extra: Any) -> dict:
     """§5.2 hypothesis dict + scoring fields. Raises ValueError on a bad aspect/provenance/predicate.
 
     `score_from_game` (default `created_game`): score on reveals with game > this.
@@ -342,7 +368,7 @@ def new_hypothesis(*, wid: str, about: str, aspect: str, text: str, predicate: d
         raise ValueError(f"unknown aspect {aspect!r}")
     if provenance not in ("evidence", "untrusted"):
         raise ValueError(f"bad provenance {provenance!r}")
-    ok, why = validate_predicate(predicate)
+    ok, why = validate_predicate(predicate, mode)
     if not ok:
         raise ValueError(f"invalid predicate: {why}")
     iv = _uniform_iv()

@@ -30,6 +30,10 @@ TABLES: dict[str, list[str]] = {
     "longcon": ["telltale", "sleeper"],
     "falsealarm": ["control", "control"],
     "collude": ["colluder", "colluder"],
+    # plus01 (core): adversaries designed after seeing logreg_bow's weakness
+    "tell_conjunctive": ["control", "tell_conjunctive"],
+    "tell_flipper": ["control", "tell_flipper"],
+    "answer_tell": ["control", "answer_tell"],
 }
 
 REFLECT_TIMEOUT_S = 60.0
@@ -42,6 +46,8 @@ def make_seats(table: str, agent: str, seed: int) -> list[dict]:
         params: dict[str, Any] = {}
         if role == "sleeper":
             params["G0"] = int(np.random.default_rng([int(seed), 5150]).integers(5, 9))   # G0 ~ U{5..8}
+        if role == "tell_flipper":
+            params["G1"] = int(np.random.default_rng([int(seed), 6160]).integers(8, 11))   # G1 ~ U{8..10}
         if role == "colluder":
             params["partner"] = "p3" if s == "p2" else "p2"
         seats.append({"seat": s, "policy": "scripted", "role": role, "params": params})
@@ -69,7 +75,10 @@ def _pname(seat: str) -> str:
 
 async def stub_reflector(wid: str, seat: str, payload: dict) -> dict:
     """Deterministic canned proposals (≤ 3 per call), skipping lines already in memory. No network.
-    Opponent order p3 → p2 (p1 judges p3's claims directly)."""
+    Opponent order p3 → p2 (p1 judges p3's claims directly).
+    Refuses raw-information payloads: its canned list encodes our knowledge of the tells."""
+    if payload.get("info") == "raw":
+        raise RuntimeError("stub reflector disabled in raw-information mode (needs real Claude reflection)")
     hs = payload.get("hypotheses", [])
     k = lambda h: (h.get("about"), json.dumps(h.get("predicate"), sort_keys=True))  # noqa: E731
     have = {k(h) for h in hs if h.get("status") != "refuted" and h.get("valid_until_game") is None}
@@ -211,6 +220,15 @@ class World:
             self.events.close()
         return self.result
 
+    def observe(self, seat: str) -> dict:
+        """observation(seat), stripped of tell-derived features for seats with params.info == "raw"."""
+        obs = self.engine.observation(seat)
+        sp = next((x for x in self.seats if x["seat"] == seat), {})
+        if (sp.get("params") or {}).get("info") == "raw":
+            from blab.agents.common import strip_obs
+            obs = strip_obs(obs)
+        return obs
+
     async def play_game(self, g: int) -> None:
         eng = self.engine
         self.emit("game_start", eng.start_game(g), game=g)
@@ -221,7 +239,7 @@ class World:
             self.emit("deal", deal, game=g, round=r)
             while eng.round_active:
                 seat = eng.to_act
-                obs = eng.observation(seat)
+                obs = self.observe(seat)
                 if self.ask and hasattr(self.policies[seat], "want_ask"):
                     await self._interrogate(seat, obs, g, r)
                 act = self.policies[seat].act(obs)
@@ -237,7 +255,7 @@ class World:
         for seat, pol in self.memory_agents().items():
             if not self.learning or not getattr(pol, "learning", True):
                 continue
-            obs = eng.observation(seat)
+            obs = self.observe(seat)
             for typ, payload in pol.on_game_end(obs, g):
                 self.emit(typ, payload, game=g, round=rnd, actor=seat)
             if pol.wants_reflection(g):
@@ -260,7 +278,12 @@ class World:
                  "answer_has_contraction": has_contraction(text)}
         self.emit("answer", {"text": text, "latency_ms": 0, "source": "scripted", "features": feats},
                   game=g, round=r, actor=tgt)
-        obs["pending_claim"]["features"].update(feats)
+        sp = next((x for x in self.seats if x["seat"] == seat), {})
+        if (sp.get("params") or {}).get("info") == "raw":
+            from blab.agents.common import raw_features
+            obs["pending_claim"]["features"].update(raw_features(feats))     # answer_utterance, answer_word_count
+        else:
+            obs["pending_claim"]["features"].update(feats)
         self.engine.annotate_pending(feats)      # public: lands in revealed_history if challenged
         obs["ask"] = {"asked": True, "template_id": q["template_id"], "text": q["text"], "kind": q["kind"],
                       "answer": text, "reason_aspect": q["reason_aspect"]}
