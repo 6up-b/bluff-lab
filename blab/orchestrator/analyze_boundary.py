@@ -183,7 +183,17 @@ def boundary(root: str | Path = "runs") -> dict:
             "per_cell": per_cell, "hypotheses": hyps, "capability_map": {
                 "columns": ["cue", "winner", "delta", "ci", "holds"], "rows": cmap,
                 "note": "Δ = profiler − baseline (H1–H3, lower Brier/claims is better) or logreg_bow − profiler (r01 "
-                        "win rate). Roles designed after r01 (PREREG disclosure). 'not run' cells were not run."}}
+                        "win rate). Roles designed after r01 (PREREG disclosure). 'not run' cells were not run. "
+                        "Deviation: the Profiler's planned per-claim LLM contradiction check was not built, so on "
+                        "the relational tell it could not read statements against the public record (the capability "
+                        "H1 meant to test); H1 tests the Profiler without it."},
+            "deviations": [
+                "llm_contradiction (PREREG: the Profiler 'may use' a per-claim LLM check of utterances against the "
+                "public record) was not built; H1 therefore tests the Profiler without its reading capability.",
+                "H3 is not testable: logreg_embed has no discovery statistic.",
+                "H2 'not worse' had no pre-registered margin; scored strictly (CI excludes 0).",
+                "Runs executed on the laptop process pool, not box1.",
+                "Claude reflections used the raw-mode prompt (no formal_register / no_contractions; tagged raw_patched)."]}
 
 
 def _clean(o):

@@ -36,3 +36,26 @@ Analysis:
 - Agents: counter, bayes, bayes_discount, logreg_bow, profiler (stub reflection on 6000–6119; real Claude reflection on 6000–6023, analyzed separately), profiler_blind; logreg_embed if available before the run starts.
 - Metrics, defined before running: detection rate; median RTD among detected worlds; Kaplan-Meier median RTD with undetected worlds censored at game 20; false alarm = belief change on the falsealarm table (`false_alarm_belief`); exploitation = sleeper bluffs let through after G₀.
 - Respond rule: threshold (primary); ev secondary if time allows. All cells reported.
+
+---
+
+## Post-run record (appended after the runs; the text above is unchanged from commit 2167c1a)
+
+**b01 outcome:** all 504 cells ran (24 seeds × 3 tables × 7 agents). No b01 hypothesis held; H1a held in the
+opposite direction (logreg_embed had lower Brier than the Profiler on tell_relational). H4 (control) held for
+Claude reflection on win rate and Brier. Full numbers: `show/bundle/boundary.json`.
+
+**Deviations, recorded honestly:**
+- The Profiler's per-claim LLM contradiction check (`llm_contradiction`) was not built in time. On
+  `tell_relational` the Profiler therefore had no way to read statements against the public record, which is the
+  capability H1 was meant to test. H1 as run tests the Profiler without it.
+- H3 is not testable: `logreg_embed` has no discovery statistic.
+- H2's "not worse" had no pre-registered margin; it was scored strictly (CI excludes 0).
+- b01 ran on the laptop process pool, not box1.
+- The shared reflection prompt in `blab/orchestrator/llm.py` leaked the engineered tell (`formal_register`, the
+  `no_contractions` op, and a formal-speech example). b01's runner patched it in-process and asserted no leak
+  (reflections tagged `raw_patched`); the permanent fix is commit f869ce6.
+
+**lc02 outcome:** see `show/bundle/longcon2.json`. The planned Daytona VM fork was NO-GO (no VM regions for this
+org; container sandboxes do not support fork). The fallback restarts from checkpoints and is called a
+"checkpoint branch", never a fork (`longcon_fork.json`, `real_vm_fork: false`).
