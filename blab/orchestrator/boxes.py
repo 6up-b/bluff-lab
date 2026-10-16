@@ -389,8 +389,19 @@ def run_matrix(matrix: str = "matrix.yaml", run: str = "r01", local_only: bool =
                               daemon=True)
         th.start()
     t0 = time.time()
-    placed = asyncio.run(_schedule(specs, boxes))
-    print(f"[run] scheduling took {time.time() - t0:.0f}s")
+    from blab.orchestrator.reflect import reflect_worker
+    no_wait = bool(os.environ.get("BLAB_NO_WAIT"))
+
+    async def _go():
+        # the reflect worker must run WHILE scheduling, or early reflections time out (58 s) on the boxes
+        refl = None if no_wait else asyncio.create_task(reflect_worker(run))
+        placed_ = await _schedule(specs, boxes)
+        print(f"[run] scheduling took {time.time() - t0:.0f}s", flush=True)
+        (run_dir / "placement.json").write_text(json.dumps(placed_, indent=1))
+        if refl is not None:
+            await refl
+        return placed_
+    placed = asyncio.run(_go())
     (run_dir / "placement.json").write_text(json.dumps(placed, indent=1))
     errs = {w: p for w, p in placed.items() if p.get("error")}
     print(f"[run] scheduled {len(placed) - len(errs)} worlds on {len(boxes)} boxes ({len(errs)} errors)")
@@ -400,8 +411,6 @@ def run_matrix(matrix: str = "matrix.yaml", run: str = "r01", local_only: bool =
         if th:
             th.join()
         return {"worlds": len(specs), "scheduled": len(placed) - len(errs)}
-    from blab.orchestrator.reflect import reflect_worker
-    asyncio.run(reflect_worker(run))
     print(f"[run] boxes done after {time.time() - t0:.0f}s")
     if th:
         th.join()
@@ -523,7 +532,8 @@ def ablate(run: str = "r01", matrix: str = "matrix.yaml") -> dict:
     at = int(ab.get("at_game", 10))
     agents = set(ab.get("agents") or ["profiler"])
     variants = ab.get("variants") or ["full", "as_of:0"]
-    targets = [s for s in specs if s["agent"] in agents]
+    tables_ = set(ab.get("tables") or [])
+    targets = [s for s in specs if s["agent"] in agents and (not tables_ or s["table"] in tables_)]
     jobs = []
     for s in targets:
         for v in variants:
