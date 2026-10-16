@@ -294,6 +294,19 @@
   ]
  },
  {
+  "name": "long con, full Profiler (lc03)",
+  "requires": [
+   "longcon3.json"
+  ],
+  "say": "Same agent, same seeds: Claude's reflection on vs off against a betrayer.",
+  "actions": [
+   {
+    "action": "view",
+    "name": "longcon3"
+   }
+  ]
+ },
+ {
   "name": "split screen",
   "requires": [
    "twin.jsonl"

@@ -42,7 +42,7 @@ async function load() {
   HAVE["world.jsonl"] = world !== null; HAVE["twin.jsonl"] = twin !== null;
   if (world) indexWorld(parseJSONL(world));
   if (twin) B.twin = parseJSONL(twin);
-  const names = ["reveal", "dossier", "ablation", "longcon", "results", "forge", "stack", "cues", "longcon2", "boundary", "memory", "embed_exploratory"];
+  const names = ["reveal", "dossier", "ablation", "longcon", "results", "forge", "stack", "cues", "longcon2", "boundary", "memory", "embed_exploratory", "longcon3"];
   const got = await Promise.all(names.map((n) => getJSON(`${n}.json`)));
   names.forEach((n, i) => { B[n] = got[i]; HAVE[`${n}.json`] = got[i] !== null; });
   cues = normalizeCues(B.cues || defaultCues());
@@ -1002,19 +1002,41 @@ function renderTitle() {
   where("");
 }
 function renderClose() {
-  $("#v-close").innerHTML = `<div class="line">The question isn’t how much an agent remembers. It’s which memories it should trust.</div>
+  $("#v-close").innerHTML = `<div class="line">The question isn’t how much an agent remembers. It’s which memories it should trust, and when to stop.</div>
     <div class="line2">Every decision recorded and replayable, every belief tied to the reveals behind it.</div>`;
   where("");
+}
+
+function renderLongcon3() {
+  const el = $("#v-longcon3"); const L = B.longcon3;
+  const head = `<h2 class="title">The long con, full Profiler: reflection on vs off</h2>`;
+  if (!L?.arms) { el.innerHTML = head + awaiting("Awaiting data", "No <code>bundle/longcon3.json</code> yet."); return; }
+  const lab = { counter: "no memory <small>counter</small>", bayes_discount: "discounted Bayes", logreg_embed: "embedding classifier",
+    profiler_plus_noreflect: "profiler_plus <small>Claude reflection OFF</small>", profiler_plus: "profiler_plus <small>Claude reflection ON</small>" };
+  const rows = ["counter", "bayes_discount", "logreg_embed", "profiler_plus_noreflect", "profiler_plus"].filter((k) => L.arms[k]).map((k) => {
+    const a = L.arms[k];
+    return `<tr class="${k.startsWith("profiler_plus") ? "ours" : ""}"><td>${lab[k]}</td><td>${ciNum(a.exploitation)}</td><td>${kmTxt(a.rtd_km_median)}</td>
+      <td>${ciPct(a.false_alarm_belief)}</td><td>${ciPct(a.win_rate_longcon)}</td></tr>`;
+  }).join("");
+  const H = L.hypotheses || {}; const h32 = H.H32 || {}; const h31 = H.H31 || {}; const h33 = H.H33 || {};
+  const verdict = (h) => h.holds ? "held" : h.opposite_direction ? "did not hold: opposite direction" : h.holds === false ? "did not hold" : "report only";
+  el.innerHTML = head + `<p class="sub">Pre-registered run ${esc(L.run || "lc03")}: ${esc(L.n_worlds ?? "?")} worlds, ${Array.isArray(L.seeds) ? `${L.seeds.length} fresh seeds` : `fresh seeds ${esc(L.seeds || "?")} (n = 12)`}, raw observations, threshold respond rule. A sleeper plays honest, then turns. Means with 95% bootstrap CIs over seeds.</p>
+    <table class="grid lc2"><thead><tr><th>Agent</th><th>Sleeper bluffs let through<br><small>after the turn, per world</small></th><th>Rounds to detection<br><small>Kaplan–Meier median</small></th><th>False alarm<br><small>belief change, honest table</small></th><th>Win rate<br><small>long con table</small></th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="foot" style="margin-top:16px;font-size:20px;line-height:1.45;color:var(--ivory)"><b>Takeaway:</b> with Claude's reflection switched on, the same agent let through
+      <b>${h32.mean !== undefined ? sgn(h32.mean, (v) => v.toFixed(1)) : "?"}</b> more of the betrayer's bluffs
+      (95% CI ${h32.lo !== undefined ? `${sgn(h32.lo, (v) => v.toFixed(1))} to ${sgn(h32.hi, (v) => v.toFixed(1))}` : "?"}, ${esc(h32.n ?? "?")} paired seeds). The memory that helps against consistent players is what a long con exploits.</div>
+    <div class="foot" style="margin-top:10px">Pre-registered: H31 (beats discounted Bayes) ${esc(verdict(h31))}; H32 (reflection on lets through fewer) ${esc(verdict(h32))}; H33 false alarms ${h33.mean !== undefined ? pct(h33.mean) : "?"} (report only, mostly from the drift detector). Mechanism (our reading, not measured): hypotheses written during the honest phase encode earned trust.</div>`;
+  where(`Long con, full Profiler, ${esc(L.run || "lc03")}`);
 }
 
 /* ================================================================ render */
 function where(t) { $("#strip-where").innerHTML = t; }
 const RENDER = { title: renderTitle, table: renderTable, inspector: renderInspector, dossier: renderDossier, surgery: renderSurgery,
   ablation: renderAblation, trust: renderTrust, split: renderSplit, results: renderResults, decisions: renderDecisions, forge: renderForge, stack: renderStack, close: renderClose,
-  longcon2: renderLongcon2, branches: renderBranches, boundary: renderBoundary, memory: renderMemory };
+  longcon2: renderLongcon2, branches: renderBranches, boundary: renderBoundary, memory: renderMemory, longcon3: renderLongcon3 };
 const SCENE = { title: "", table: "The table", inspector: "Mind inspector", dossier: "Dossier", surgery: "Memory surgery",
   ablation: "Ablation", trust: "Long con", split: "Split screen", results: "Results", decisions: "Beliefs and decisions", forge: "Strategy forge", stack: "How it's built", close: "",
-  longcon2: "Long con at scale", branches: "Checkpoint branches", boundary: "Capability map", memory: "Does memory help?" };
+  longcon2: "Long con at scale", branches: "Checkpoint branches", boundary: "Capability map", memory: "Does memory help?", longcon3: "Long con, full Profiler" };
 let lastView = null;
 function render(live = false) {
   const prevView = lastView; lastView = S.view;
