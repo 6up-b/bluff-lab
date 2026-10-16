@@ -8,7 +8,7 @@ tables:
   longcon:        [telltale, sleeper]          # Long Con + tell together
   falsealarm:     [control, control]
   telltale_overt: [control, telltale_overt]    # stronger, lexical tell (backup for the Show)
-agents: [counter, bayes, bayes_discount, profiler_amnesic, profiler, profiler_blind]   # logreg_bow, llm_episodic: not implemented
+agents: [counter, bayes, bayes_discount, logreg_bow, profiler_amnesic, profiler, profiler_blind]   # llm_episodic: see blab/agents/llm_agents.py (mem01)
 llm_agents: [profiler, profiler_blind]          # agents that reflect (stub reflection unless --llm)
 llm_agents_extra: {llm_episodic: 10}
 seeds: {llm: 30, non_llm: 300}                  # profiler* = llm (stub reflection)
