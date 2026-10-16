@@ -42,9 +42,11 @@ async function load() {
   HAVE["world.jsonl"] = world !== null; HAVE["twin.jsonl"] = twin !== null;
   if (world) indexWorld(parseJSONL(world));
   if (twin) B.twin = parseJSONL(twin);
-  const names = ["reveal", "dossier", "ablation", "longcon", "results", "forge", "stack", "cues", "longcon2", "boundary", "memory", "embed_exploratory", "longcon3"];
+  const names = ["reveal", "dossier", "ablation", "longcon", "results", "forge", "stack", "cues", "longcon2", "boundary", "memory", "embed_exploratory", "longcon3", "c02_confirm", "confirm"];
   const got = await Promise.all(names.map((n) => getJSON(`${n}.json`)));
   names.forEach((n, i) => { B[n] = got[i]; HAVE[`${n}.json`] = got[i] !== null; });
+  const deck = new URLSearchParams(location.search).get("deck");      // ?deck=pitch → curated 3-minute cue list
+  if (deck && /^[a-z0-9_-]+$/i.test(deck)) { const alt = await getJSON(`cues_${deck}.json`); if (alt) B.cues = alt; }
   cues = normalizeCues(B.cues || defaultCues());
   await markSkips();
 }
@@ -1029,14 +1031,42 @@ function renderLongcon3() {
   where(`Long con, full Profiler, ${esc(L.run || "lc03")}`);
 }
 
+function renderTwoSided() {
+  const el = $("#v-twosided"); const C = B.c02_confirm; const L = B.longcon3;
+  const head = `<h2 class="title">Better and more exploitable, at once</h2>`;
+  const on = C?.deltas?.["profiler_plus-profiler_plus_noreflect"]?.pooled_by_seed?.win; const h32 = L?.hypotheses?.H32;
+  if (!on || !h32) { el.innerHTML = head + awaiting("Awaiting data", "Needs <code>bundle/c02_confirm.json</code> and <code>bundle/longcon3.json</code>."); return; }
+  const h13 = (B.confirm?.hypotheses || []).find((h) => h.name === "H13" && h.holds);
+  const a = L.arms || {}; const km = (k) => a[k]?.rtd_km_median?.median; const wr = (k) => a[k]?.win_rate_longcon?.mean;
+  const card = (kicker, big, unit, ci, note, tone) => `<div style="flex:1;border:1px solid ${tone};border-radius:6px;padding:34px 38px;background:rgba(10,20,15,.6)">
+      <div style="font-family:var(--display);font-style:italic;font-size:30px;color:var(--ivory-dim)">${kicker}</div>
+      <div style="font-family:var(--display);font-weight:700;font-size:150px;line-height:1.05;color:${tone}">${big}</div>
+      <div style="font-size:26px;color:var(--ivory)">${unit}</div>
+      <div style="font-size:20px;color:var(--ivory-dim);margin-top:8px">${ci}</div>
+      <div style="font-size:19px;color:var(--ivory-dim);margin-top:14px;line-height:1.4">${note}</div></div>`;
+  const f1 = (v) => (v * 100).toFixed(1);
+  el.innerHTML = head + `<p class="sub">Fresh seeds, raw observations, threshold respond rule. 95% bootstrap CIs over seeds.</p>
+    <div style="display:flex;gap:40px;margin-top:22px">
+      ${h13 ? card("Overall, on fresh seeds (c01)", `+${f1(h13.mean)}`, "points of win rate vs a word-count classifier",
+        `95% CI +${f1(h13.lo)} to +${f1(h13.hi)} · ${esc(h13.n)} fresh seeds · pre-registered`, `Raw text only, four opponent types. Claude's reflection on vs off: +${f1(on.mean)} (CI +${f1(on.lo)} to +${f1(on.hi)}, c02, fresh seeds; not pre-registered there), +9.5 earlier (mem01).`, "#8fd18f")
+      : card("Across four opponent types (c02)", `+${f1(on.mean)}`, "points of win rate with reflection on",
+        `95% CI +${f1(on.lo)} to +${f1(on.hi)} · ${esc(on.n)} fresh seeds`, "Replicates the earlier +9.5 (mem01). Not one of c02's pre-registered hypotheses; labelled as such.", "#8fd18f")}
+      ${card("Against a long con (lc03)", `+${h32.mean.toFixed(1)}`, "more of the betrayer's bluffs let through",
+        `95% CI +${h32.lo.toFixed(1)} to +${h32.hi.toFixed(1)} · ${esc(h32.n)} fresh seeds · pre-registered`, `Noticed the turn later (${esc(km("profiler_plus") ?? "?")} vs ${esc(km("profiler_plus_noreflect") ?? "?")} rounds). Win rate held (${wr("profiler_plus") !== undefined ? pct(wr("profiler_plus")) : "?"} vs ${wr("profiler_plus_noreflect") !== undefined ? pct(wr("profiler_plus_noreflect")) : "?"}).`, "#e2735f")}
+    </div>
+    <div class="foot" style="margin-top:22px;font-size:22px;line-height:1.45;color:var(--ivory)"><b>Takeaway:</b> Claude's hypotheses are earned trust. They win more games, and they're exactly what a long con exploits.
+      <span style="color:var(--ivory-dim);font-size:18px">Mechanism is our reading, not measured.</span></div>`;
+  where("Fresh-seed results: c01, c02, lc03");
+}
+
 /* ================================================================ render */
 function where(t) { $("#strip-where").innerHTML = t; }
 const RENDER = { title: renderTitle, table: renderTable, inspector: renderInspector, dossier: renderDossier, surgery: renderSurgery,
   ablation: renderAblation, trust: renderTrust, split: renderSplit, results: renderResults, decisions: renderDecisions, forge: renderForge, stack: renderStack, close: renderClose,
-  longcon2: renderLongcon2, branches: renderBranches, boundary: renderBoundary, memory: renderMemory, longcon3: renderLongcon3 };
+  longcon2: renderLongcon2, branches: renderBranches, boundary: renderBoundary, memory: renderMemory, longcon3: renderLongcon3, twosided: renderTwoSided };
 const SCENE = { title: "", table: "The table", inspector: "Mind inspector", dossier: "Dossier", surgery: "Memory surgery",
   ablation: "Ablation", trust: "Long con", split: "Split screen", results: "Results", decisions: "Beliefs and decisions", forge: "Strategy forge", stack: "How it's built", close: "",
-  longcon2: "Long con at scale", branches: "Checkpoint branches", boundary: "Capability map", memory: "Does memory help?", longcon3: "Long con, full Profiler" };
+  longcon2: "Long con at scale", branches: "Checkpoint branches", boundary: "Capability map", memory: "Does memory help?", longcon3: "Long con, full Profiler", twosided: "One memory, two opponents" };
 let lastView = null;
 function render(live = false) {
   const prevView = lastView; lastView = S.view;

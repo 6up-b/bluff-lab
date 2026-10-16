@@ -307,6 +307,20 @@
   ]
  },
  {
+  "name": "one memory, two opponents (c02 + lc03)",
+  "requires": [
+   "c02_confirm.json",
+   "longcon3.json"
+  ],
+  "say": "Same agent, same seeds, reflection on vs off: more wins overall, more exploitable by a long con.",
+  "actions": [
+   {
+    "action": "view",
+    "name": "twosided"
+   }
+  ]
+ },
+ {
   "name": "split screen",
   "requires": [
    "twin.jsonl"
