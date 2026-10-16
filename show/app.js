@@ -164,7 +164,7 @@ function defaultCues() {
   for (const gg of [4, 8, g]) c.push({ name: `dossier g${gg}`, actions: [{ action: "dossier", game: gg, about: r.decision?.target }] });
   for (const v of ["full", "as_of:0", "false_memory", "profiler_blind"]) c.push({ name: `surgery ${v}`, actions: [{ action: "surgery", variant: v }] });
   c.push({ name: "flip", actions: [{ action: "flip" }] });
-  for (const v of ["ablation", "trust", "split", "results", "forge", "close"]) c.push({ name: v, actions: [{ action: "view", name: v }] });
+  for (const v of ["ablation", "trust", "split", "results", "decisions", "forge", "close"]) c.push({ name: v, actions: [{ action: "view", name: v }] });
   return c;
 }
 
@@ -337,6 +337,7 @@ function qSourceText(d) {
   const src = d.q_source || "";
   if (src.startsWith("base:")) return `From memory: ${seatName(src.slice(5))}'s base bluff rate q = ${f2(d.q_used)}.`;
   if (src.startsWith("drift:")) return `From memory: ${seatName(src.slice(6))}'s recent bluff rate after a detected shift, q = ${f2(d.q_used)}.`;
+  if (src === "logreg" || String(d.agent || "").startsWith("logreg")) return "Predicted directly by the logistic-regression baseline (no q).";
   if (!src) return d.q_used === null || d.q_used === undefined ? "No memory: card math only." : `q = ${f2(d.q_used)}.`;
   const m = (d.memory_used || []).find((x) => x.hyp_id === src);
   return m ? `From the memory line below: q = ${f2(d.q_used)}.` : `From memory (${esc(src)}): q = ${f2(d.q_used)}.`;
@@ -539,16 +540,52 @@ function renderResults() {
   const grid = R?.show_grid;
   if (!grid?.rows?.length) { el.innerHTML = head + awaiting("Awaiting data", "No <code>bundle/results.json</code> yet (<code>blab analyze</code>)."); return; }
   const th = grid.columns.map((c) => `<th>${esc(c.label)}</th>`).join("");
-  const rows = grid.rows.map((r) => `<tr class="${r.agent.startsWith("profiler") && r.agent === "profiler" ? "ours" : ""}"><td>${esc(r.agent)}</td>${grid.columns.map((c) => {
+  const rows = grid.rows.map((r) => `<tr class="${r.agent === "profiler" || r.agent.startsWith("profiler+") ? "ours" : ""}"><td>${esc(r.agent)}</td>${grid.columns.map((c) => {
     const m = r.cells?.[c.key];
     if (!m || m.mean === null || m.mean === undefined) return `<td class="na">—</td>`;
     const v = c.fmt === "pct" ? pct(m.mean) : f2(m.mean);
     const ci = (m.lo !== null && m.lo !== undefined) ? (c.fmt === "pct" ? `${pct(m.lo)}–${pct(m.hi)}` : `${f2(m.lo)}–${f2(m.hi)}`) : "";
     return `<td>${v}<span class="ci">${ci}${m.n !== undefined ? ` n ${m.n}` : ""}</span></td>`;
   }).join("")}</tr>`).join("");
-  el.innerHTML = head + `<p class="sub">${esc(R.n_worlds ?? "?")} worlds, run ${esc(R.run ?? "")}. Means with 95% bootstrap CIs over seeds.</p>
+  el.innerHTML = head + `<p class="sub">${esc(R.n_worlds ?? "?")} worlds, run ${esc(R.run ?? "")}${grid.respond_rule ? `, ${esc(grid.respond_rule)} respond rule` : ""}. Means with 95% bootstrap CIs over seeds.</p>
     <table class="grid"><thead><tr><th>Agent</th>${th}</tr></thead><tbody>${rows}</tbody></table>`;
   where(`Results, run ${esc(R.run ?? "")}`);
+}
+
+/* ================================================================ beliefs vs decisions */
+function renderDecisions() {
+  const el = $("#v-decisions"); const R = B.results; const D = R?.decisions;
+  const head = `<h2 class="title">Better beliefs, better decisions?</h2>`;
+  if (!D?.rows?.length) { el.innerHTML = head + awaiting("Awaiting data", "No paired profiler − counter comparison in <code>bundle/results.json</code> yet."); return; }
+  const metrics = [...new Set(D.rows.map((r) => r.metric))];
+  const panel = (m) => {
+    const rows = D.rows.filter((r) => r.metric === m);
+    const r0 = rows[0]; const scale = r0.fmt === "pct" ? 100 : 1;
+    const ext = Math.max(...rows.flatMap((r) => [Math.abs(r.delta.lo ?? r.delta.mean), Math.abs(r.delta.hi ?? r.delta.mean)])) * 1.25 || 0.1;
+    const w = 820, x0 = 210, x1 = w - 40, rh = 96, h = rows.length * rh + 70;
+    const X = (v) => x0 + (x1 - x0) * (v + ext) / (2 * ext);
+    const fmt = (v) => r0.fmt === "pct" ? `${v >= 0 ? "+" : ""}${(v * scale).toFixed(1)} pts` : `${v >= 0 ? "+" : ""}${v.toFixed(3)}`;
+    let s = `<line x1="${X(0)}" x2="${X(0)}" y1="10" y2="${h - 50}" stroke="var(--bone-faint)" stroke-width="2" stroke-dasharray="6 6"/>
+      <text x="${X(0)}" y="${h - 22}" fill="var(--bone-faint)" font-size="20" text-anchor="middle">no difference</text>
+      <text x="${r0.better === "lower" ? x0 : x1}" y="${h - 22}" fill="var(--honest)" font-size="20" text-anchor="${r0.better === "lower" ? "start" : "end"}">${r0.better === "lower" ? "← memory better" : "memory better →"}</text>`;
+    rows.forEach((r, i) => {
+      const y = 30 + i * rh + 20, d = r.delta;
+      const good = r.better === "lower" ? (d.hi !== null && d.hi < 0) : (d.lo !== null && d.lo > 0);
+      const bad = r.better === "lower" ? (d.lo !== null && d.lo > 0) : (d.hi !== null && d.hi < 0);
+      const col = good ? "var(--honest)" : bad ? "var(--bluff)" : "var(--amber)";
+      s += `<text x="0" y="${y + 8}" fill="var(--bone)" font-size="26" font-weight="600">${esc(r.rule)} rule</text>
+        <text x="0" y="${y + 34}" fill="var(--bone-faint)" font-size="19">n = ${esc(d.n)} paired seeds</text>`;
+      if (d.lo !== null && d.lo !== undefined) s += `<line x1="${X(d.lo)}" x2="${X(d.hi)}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="5"/>`;
+      s += `<circle cx="${X(d.mean)}" cy="${y}" r="11" fill="${col}"/>
+        <text x="${X(d.mean)}" y="${y - 22}" fill="var(--bone)" font-size="26" font-weight="700" text-anchor="middle">${fmt(d.mean)}</text>`;
+    });
+    return `<div><h3 style="font-size:30px;margin:0 0 6px">${esc(r0.label)}</h3><div class="foot" style="margin:0 0 14px">Profiler − no-memory counter, same seeds; whiskers 95% CI</div>${svg(w, h, s)}</div>`;
+  };
+  const hl = D.headline?.holds ? `<div style="font-family:var(--voice);font-style:italic;font-size:52px;line-height:1.15;margin-top:30px;max-width:1500px">${esc(D.headline.text)}</div>` : "";
+  el.innerHTML = head + `<p class="sub">Does memory sharpen its beliefs, and do sharper beliefs win more games? Paired against the no-memory counter on the same seeds, per respond rule.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:80px;margin-top:34px">${metrics.map(panel).join("")}</div>${hl}
+    <div class="foot" style="margin-top:18px">${(D.texts || []).map(esc).join("<br>")}</div>`;
+  where(`Run ${esc(R.run ?? "")}`);
 }
 
 /* ================================================================ forge */
@@ -605,9 +642,9 @@ function renderClose() {
 /* ================================================================ render */
 function where(t) { $("#strip-where").innerHTML = t; }
 const RENDER = { title: renderTitle, table: renderTable, inspector: renderInspector, dossier: renderDossier, surgery: renderSurgery,
-  ablation: renderAblation, trust: renderTrust, split: renderSplit, results: renderResults, forge: renderForge, close: renderClose };
+  ablation: renderAblation, trust: renderTrust, split: renderSplit, results: renderResults, decisions: renderDecisions, forge: renderForge, close: renderClose };
 const SCENE = { title: "", table: "The table", inspector: "Mind inspector", dossier: "Dossier", surgery: "Memory surgery",
-  ablation: "Ablation", trust: "Long con", split: "Split screen", results: "Results", forge: "Strategy forge", close: "" };
+  ablation: "Ablation", trust: "Long con", split: "Split screen", results: "Results", decisions: "Beliefs and decisions", forge: "Strategy forge", close: "" };
 function render() {
   for (const el of document.querySelectorAll(".view")) el.classList.toggle("on", el.id === `v-${S.view}`);
   (RENDER[S.view] || renderTitle)();

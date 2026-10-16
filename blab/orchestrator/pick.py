@@ -225,6 +225,8 @@ def cues(sel: dict, dossier_games: list[int], have: dict) -> list[dict]:
            "actions": [{"action": "view", "name": "split"}]},
           {"name": "results", "say": "All of it from real worlds; every decision recorded.",
            "actions": [{"action": "view", "name": "results"}]},
+          {"name": "beliefs vs decisions", "say": "Memory sharpens beliefs; the rule that turns belief into action matters too.",
+           "actions": [{"action": "view", "name": "decisions"}]},
           {"name": "forge", "requires": ["forge.json"], "say": "It compiles memory into code, run as untrusted in a sandbox.",
            "actions": [{"action": "view", "name": "forge"}]},
           {"name": "close", "say": "Memory makes agents better, and exploitable. Which memories should it trust?",

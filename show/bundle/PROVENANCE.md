@@ -1,6 +1,6 @@
 # Show bundle provenance (honesty record)
 
-Built 2026-10-16T17:05:15Z by `blab pick-demo --run local` from real event logs. No number in this bundle was written by hand.
+Built 2026-10-16T17:17:05Z by `blab pick-demo --run local` from real event logs. No number in this bundle was written by hand.
 
 - **Run:** `local`
 - **World:** `telltale-profiler-s1` (`runs/local/telltale-profiler-s1`)
