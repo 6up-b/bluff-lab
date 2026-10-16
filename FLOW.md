@@ -80,3 +80,10 @@ The HUD lists every cue; cues whose data is missing are marked "skipped: no data
   - The Show uses the corrected versions, labelled as such.
 - **logreg_bow decisions** have `q_used: null` and `q_source: "logreg"`. They have no memory segment in the
   waterfall.
+- **Two settings.** r01 observations include engineered tell features, notably the precomputed `formal_register`
+  boolean. Label any r01 comparison (logreg_bow, the results grid) "engineered-feature setting". mem01 (if present)
+  is the raw-observation experiment: same model (Claude Sonnet 5.5), same prompt, same observation, different
+  memory. `bundle/memory.json` gives `setting`, `baseline` (llm_nomem, or counter as a fallback, with `note`), and
+  `rules[rule][table|"all"]` → `{arms, metrics[arm], delta_vs_baseline[arm][metric], curves[arm].{win_rate,brier}[bucket]}`.
+  It also has `buckets` and data-generated `claims` (`holds` + `text`). If mem01 isn't there, memory.json comes from
+  r01 and says `setting: "engineered"`.
