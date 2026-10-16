@@ -100,3 +100,17 @@ forgotten surgically without touching what the agent knows about everyone else?
 
 - The `surgery` event stores the SurrealDB response in optional fields only (event schema frozen).
 - "Brier per arm by encounter index" uses the definition above.
+
+---
+
+## Post-run record (appended 14:46 after the runs; the text above is unchanged from commit 1e43a74)
+
+- All 24 seeds (8000–8023) ran; no seed cut. 7 arms x 24 seasons + 2 x 24 forget branches. 1152 Sonnet 5.5 reflections, 0 errors.
+- **H8: does not hold.** Returns win rate, profiler_plus − profiler_plus_noid −0.023 [−0.051, +0.006]; − logreg_pooled +0.032 [+0.007, +0.058].
+- **H9 (report only):** profiler_plus − logreg_identity, returns win rate +0.034 [+0.008, +0.059], Brier +0.006 [−0.001, +0.014].
+- **H10a (forget:Avery): does not hold.** Avery Δwin −0.069 [−0.208, +0.069]; others' CIs not within ±5 pts. Supplementary Brier Δ: Avery +0.112 [+0.086, +0.140], others within ±0.01 (CIs span 0).
+- **H10b (forget:Blake): does not hold.** Blake Δwin −0.083 [−0.194, +0.014]; Brier Δ +0.094 [+0.066, +0.122].
+- Relearning: by match 20, every seed had new hypotheses about the forgotten regular (mean 2.7 vs 8.5 before). The same predicate was re-proposed in 13/24 seeds (Avery) and 12/24 (Blake).
+- Decision replays: Avery 24/24 shifted (mean |Δp| 0.27, 6 flipped); Casey 24/24 Δp = 0 exactly; every unchanged replay reproduced the logged p_final.
+- SurrealDB: semantic /forget dryRun → {deleted: 0} for both names. DELETE /entities/person/<name> soft-deleted Avery (after one 500 + retry) and Blake; Casey and Drew were untouched.
+- Deviations: runs/reg01/deviations.json (also in regulars.json).
