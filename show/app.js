@@ -585,8 +585,9 @@ const VARIANT_TEXT = {
   "false_memory": ["False memory planted", null],
   "profiler_blind": ["Provenance-blind agent", null],
 };
-function renderSurgery() {
+function renderSurgery(live) {
   const el = $("#v-surgery"); const R = B.reveal;
+  const animFlip = !!live && !!S.flipped && !el.classList.contains("flipped");   // the flip keypress: turn the cards on screen
   if (!R) { el.innerHTML = `<h2 class="title">Memory surgery</h2>` + awaiting("Awaiting data", "No <code>bundle/reveal.json</code>. It holds real <code>replay_decision</code> outputs; nothing is drawn without it."); return; }
   const d = R.decision || {}; const cl = d.claim || {};
   const rv = R.reveal; const tr = cl.rank;
@@ -620,6 +621,12 @@ function renderSurgery() {
     <div class="cols">${cols}</div>
     ${R.selection && R.selection.exact === false ? `<div class="selnote">Closest match, not exact: ${esc(R.selection.note || "")}</div>` : ""}`;
   where(`Decision #${R.seq}, world ${R.world}`);
+  if (animFlip) {   // start face down, then turn: cards, verdict and right/wrong all follow the existing transitions
+    const pcs = [...el.querySelectorAll(".surg-head .cards .pc.up")]; const v2 = el.querySelector(".verdict2");
+    el.classList.add("instant"); el.classList.remove("flipped"); pcs.forEach((c) => c.classList.remove("up")); v2?.classList.remove("on");
+    void el.offsetWidth; el.classList.remove("instant");
+    requestAnimationFrame(() => requestAnimationFrame(() => { el.classList.add("flipped"); pcs.forEach((c) => c.classList.add("up")); v2?.classList.add("on"); }));
+  }
 }
 
 /* ================================================================ ablation */
