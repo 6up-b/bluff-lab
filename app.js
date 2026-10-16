@@ -836,7 +836,7 @@ function renderStack(live) {
     ["arize", "Arize AX", "traces and experiments", "A span for every decision and reflection, and experiments that compare agents on the same seeds.",
       `project <b>${dash(az.project)}</b>, <b>${dash(az.decision_spans_in_picked_world)}</b> decision spans in this world`],
     ["daytona", "Daytona", "world boxes and forge sandbox", "Stateful boxes where many worlds play at once: events, checkpoints, live memory. AI-written strategy code runs in a separate network-blocked sandbox.",
-      `<b>${dash(d.worlds_total)}</b> worlds on boxes ${boxes || "—"}; forge sandbox ${dash(d.forge_sandbox_id)}`],
+      `<b>${dash(d.worlds_total)}</b> worlds on boxes ${boxes || "—"}${(() => { const f = d.forge_sandbox_id || B.forge?.sandbox_id || B.forge?.entry?.sandbox_id || B.forge?.entry?.forge_result?.sandbox_id; return f ? `; forge sandbox <b>${esc(String(f).slice(0, 8))}</b>` : ""; })()}`],
   ];
   const at = (k) => ({ claim: "daytona", decide: "daytona", trace: "arize", reveal: "daytona", reflect: "claude", store: "surreal", back: "surreal" })[k];
   const steps = [
