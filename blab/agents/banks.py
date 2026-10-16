@@ -100,6 +100,14 @@ REL_DIFF = [
     "New rank, not like last round.",
     "This rank differs from the last round.",
 ]
+# c01 rebuilt relational tell (PREREG_c01.md): identical wording for true and false statements; only the rank
+# word differs. {R}: plural rank name of the rank the claimant says the PREVIOUS round had.
+REL2_PREV = [
+    "Last round's rank was {R}.",
+    "The previous round was {R}.",
+    "Last round we played {R}.",
+    "The round before this one was {R}.",
+]
 REL_N_RANGE = range(0, 17)          # 15 cards max in play (3 x 5), perturbed by +-1
 REL_H_RANGE = range(0, 6)
 

@@ -194,6 +194,14 @@ for _a, _b in _RAW_REPL:
     assert _a in STABLE_SYSTEM_RAW, _a
     STABLE_SYSTEM_RAW = STABLE_SYSTEM_RAW.replace(_a, _b)
 assert "formal" not in STABLE_SYSTEM_RAW.lower() and "contraction" not in STABLE_SYSTEM_RAW.lower()
+# c01 (PREREG_c01.md): raw prompt + ONE neutral feature row for the generic per-claim record check. Selected only
+# when a raw payload also carries record_check: true (c01 profiler arms); every other raw payload is unchanged.
+_RC_ROW = ('| llm_record_check | str | "true", "false" or "none": answer of a generic LLM check, "does any factual '
+           'statement in this utterance contradict the public game record?" ("none" = nothing checkable) |\n')
+_WC_ROW = "| word_count | int | number of whitespace-separated words in the utterance |\n"
+assert _WC_ROW in STABLE_SYSTEM_RAW
+STABLE_SYSTEM_RAW_RC = STABLE_SYSTEM_RAW.replace(_WC_ROW, _WC_ROW + _RC_ROW)
+assert "formal" not in STABLE_SYSTEM_RAW_RC.lower() and "contraction" not in STABLE_SYSTEM_RAW_RC.lower()
 
 
 def _validate_pred(pred, mode: str | None = None) -> tuple[bool, str]:
@@ -393,7 +401,8 @@ async def reflect(payload: dict, wid: str = "", seat: str | None = None, only: s
         return None
     msg = user_message(payload)
     raw = payload.get("info") == "raw"
-    sysp = STABLE_SYSTEM_RAW if raw else None      # None → STABLE_SYSTEM looked up at call time
+    sysp = (STABLE_SYSTEM_RAW_RC if payload.get("record_check") else STABLE_SYSTEM_RAW) if raw else None
+    # None → STABLE_SYSTEM looked up at call time
     t0 = time.time()
     try:
         from blab.orchestrator import tracing

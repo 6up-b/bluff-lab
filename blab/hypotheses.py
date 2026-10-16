@@ -57,6 +57,7 @@ FEATURES: dict[str, type] = {
     "utterance": str,
     "formal_register": bool,
     "word_count": int,          # generic text statistic (raw-information mode; see blab/agents/common.py)
+    "llm_record_check": str,    # c01: generic per-claim LLM record check, "true"|"false"|"none" (blab/agents/c01.py)
 }
 # raw-information mode: features/ops that encode our knowledge of the telltale are not allowed
 RAW_FORBIDDEN_FEATURES = frozenset({"formal_register", "answer_formal_register", "answer_has_contraction"})

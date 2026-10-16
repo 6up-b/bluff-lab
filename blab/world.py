@@ -36,6 +36,8 @@ TABLES: dict[str, list[str]] = {
     "answer_tell": ["control", "answer_tell"],
     # b01 (capability boundary, PREREG.md): designed after r01
     "tell_relational": ["control", "tell_relational"],
+    # c01 (PREREG_c01.md): rebuilt relational tell (identical wording for true/false statements)
+    "tell_relational_v2": ["control", "tell_relational_v2"],
 }
 
 REFLECT_TIMEOUT_S = 60.0
