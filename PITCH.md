@@ -71,7 +71,7 @@
 > **Takeaway:** it isn't having the history that helps. It's how the memory is structured.
 
 **[one memory, two opponents]** · 2:10
-> Then we tested it the strict way: pre-registered, fresh seeds, raw text only. It beat a word-count classifier by 8 points, and switching Claude's hypotheses off costs about 7. But against a long con, those same hypotheses let through 24 more of the betrayer's bluffs.
+> Then we tested it the strict way: pre-registered, fresh seeds, raw text only. It beat a word-count classifier by 8 points, and switching Claude's hypotheses off costs about 7. But a long con brings real evidence, and that's the attack that gets through: those same hypotheses let through 24 more of the betrayer's bluffs.
 > **Takeaway:** Claude's hypotheses are earned trust. They win more games, and they're exactly what a long con exploits.
 
 **[capability map]** · 2:35
@@ -108,6 +108,15 @@ Use it only in Q&A (see below).
 ---
 
 ## Q&A prep (answer in one or two sentences, then stop)
+
+**"Why did it ignore the false memory?"** *(say this one almost word for word)*
+> Every line in its memory records where it came from. Lines only count once real reveals confirm them. The planted line had no evidence behind it, so it got zero weight. Turn that check off and the same false line flips 146 decisions. The catch: it only stops claims without evidence. A long con brings real evidence, and that's the attack that gets through.
+
+*(If pressed: it's a rule we designed, not something the agent discovered. The experiment shows the rule works and what happens without it. The check lives in our agent; SurrealDB stores the provenance it reads. Don't say SurrealDB flagged the line; that spike failed.)*
+
+**"Your results say the hypotheses made it more exploitable. Why deploy this?"**
+> Yes, and that's exactly why we measured it. The risk is specific: someone who earns trust and then changes. Memory is still a net win. It won more games on fresh seeds, and even with the hypotheses on, it let through half as many of the betrayer's bluffs as an agent with no memory (42 vs 81). And because this memory is readable, we can see the exact belief being exploited and put an expiry on it, which you can't do with weights. That's our next experiment.
+
 
 **"Beat what, exactly?"** (c01, pre-registered)
 On fresh seeds 5000–5023, raw text only, the agent beat a bag-of-words classifier by 8.1 points of win rate [+5.7, +10.4], replicating mem01. That classifier wasn't handed the tell, and on raw text it's the stronger of our two classifiers. The record check we added was right 80–83% of the time but added nothing on top; the gain comes from Claude's hypotheses.
