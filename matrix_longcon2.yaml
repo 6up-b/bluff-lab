@@ -1,0 +1,16 @@
+# lc02 — Long Con at scale (PREREG.md, commit 2167c1a). Fresh seeds 6000–6119.
+games: 20
+reflect_every: 2
+seed_start: 6000
+tables:
+  longcon:    [telltale, sleeper]      # sleeper at p3 (p1 judges p3's claims)
+  falsealarm: [control, control]
+agents: [counter, bayes, bayes_discount, logreg_bow, profiler, profiler_blind]   # logreg_embed: not on exp/boundary by launch
+llm_agents: [profiler, profiler_blind]   # stub reflection on all 120 seeds
+respond_rules: [threshold, ev]           # threshold primary (PREREG); ev secondary
+llm_reflection:                          # real Claude reflection, analysed separately from stub
+  agents: [profiler]
+  tables: [longcon, falsealarm]
+  seeds: 24                              # 6000–6023
+  respond_rules: [threshold]
+limits: {llm: 120, non_llm: 120, non_llm_on_boxes: 0}   # non-LLM agents run on the laptop; box2 runs profiler*

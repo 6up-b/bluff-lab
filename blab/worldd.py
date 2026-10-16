@@ -209,6 +209,18 @@ def instrument(world, wid: str) -> None:
     world.events._blab_traced = True
 
 
+def _pause_before(world, game: int) -> None:
+    """Pause the world right before game `game` starts (after ckpt g<game-1> is on disk)."""
+    orig = world.play_game
+
+    async def play_game(g):
+        if g == game:
+            world.pause()
+            await world._gate()
+        return await orig(g)
+    world.play_game = play_game
+
+
 def _run_world_proc(spec: dict) -> dict:
     """Process-pool entry point: CPU-only world (stub or no reflection)."""
     import asyncio as _a
@@ -293,6 +305,8 @@ async def create_world(spec: dict = Body(...)):
         e.world = W.World(**_world_kwargs(spec), reflector=_pick_reflector(spec.get("reflector", "orchestrator"), wid))
         if os.environ.get("BLAB_TRACE_DECISIONS", "llm") != "off":
             instrument(e.world, wid)
+        if spec.get("pause_before_game"):
+            _pause_before(e.world, int(spec["pause_before_game"]))
     _write_meta(e)
     if spec.get("start"):
         await run_world(wid)
@@ -637,3 +651,34 @@ def export(run: Optional[str] = None, wids: Optional[str] = None):
             if e.dir.exists():
                 tf.add(e.dir, arcname=e.wid)
     return FileResponse(tmp, media_type="application/gzip", background=BackgroundTask(os.unlink, tmp))
+
+
+
+@app.post("/worlds/{wid}/continue")
+async def continue_world(wid: str, body: dict = Body(...)):
+    """Fork Reality: continue a (forked) world from checkpoint g<from_game> with LEARNING ON, applying one
+    intervention to p1's memory: none | erase (as_of:0) | false_memory {about,text} | drift_off.
+    {new_wid, from_game, games?, intervention, about?, text?}"""
+    e = _get(wid)
+    W = _world_mod()
+    iv = body.get("intervention", "none")
+    variant = {"none": {"type": "full"}, "drift_off": {"type": "full"},
+               "erase": {"type": "as_of", "game": 0},
+               "false_memory": {"type": "false_memory", "about": body.get("about", "p3"),
+                                "aspect": "baseline_bluff", "text": body.get("text", "Player 3 never bluffs"),
+                                "q": 0.0}}[iv]
+    new_wid = body.get("new_wid") or f"{wid}_{iv}"
+    w = W.branch(e.dir, new_wid, int(body["from_game"]), int(body.get("games", e.spec.get("games", 20))),
+                 variant, learning=True, reflector=getattr(W, "stub_reflector", None))
+    if iv == "drift_off":
+        for sp in w.seats:
+            if sp["seat"] == "p1":
+                sp.setdefault("params", {})["drift"] = False
+        w.policies["p1"].params["drift"] = False
+    spec = {**e.spec, "wid": new_wid, "parent_world": wid, "from_game": int(body["from_game"]),
+            "variant": {**variant, "intervention": iv}, "learning": True, "mode": "async"}
+    spec.pop("pause_before_game", None)
+    ne = Entry(wid=new_wid, spec=spec, world=w)
+    WORLDS[new_wid] = ne
+    await run_world(new_wid)
+    return {"wid": new_wid, "status": ne.cur_status(), "intervention": iv}

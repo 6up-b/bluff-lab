@@ -40,7 +40,8 @@ def load_boxes(run: str | None = None) -> list[dict]:
         return []
     d = json.loads(BOXES_JSON.read_text())
     key = d.get("blab_key")
-    return [{**b, "blab_key": key} for b in d.get("boxes", [])]
+    only = {x for x in os.environ.get("BLAB_BOXES", "").split(",") if x}     # e.g. BLAB_BOXES=box2 (lane split)
+    return [{**b, "blab_key": key} for b in d.get("boxes", []) if not only or b["box_id"] in only]
 
 
 def _save_boxes(boxes: list[dict], key: str) -> None:
@@ -250,8 +251,9 @@ def expand_matrix(m: dict, run: str) -> list[dict]:
     lim = m.get("limits") or {}
     n_stub = int(os.environ.get("BLAB_SEEDS_LLM") or lim.get("llm") or seeds.get("llm", 30))
     n_non = int(os.environ.get("BLAB_SEEDS_NON_LLM") or lim.get("non_llm") or seeds.get("non_llm", 300))
-    n_box = int(os.environ.get("BLAB_SEEDS_ON_BOXES") or lim.get("non_llm_on_boxes") or n_non)
+    n_box = int(os.environ.get("BLAB_SEEDS_ON_BOXES") or lim.get("non_llm_on_boxes", n_non))
     lr = m.get("llm_reflection") or {}
+    s0 = int(m.get("seed_start", 1))
     try:
         from blab.world import TABLES, make_seats
     except Exception:  # noqa: BLE001
@@ -273,18 +275,19 @@ def expand_matrix(m: dict, run: str) -> list[dict]:
                       "where": where, "seats": seats})
 
     for rule in rules:
-        for agent in lr.get("agents") or []:                       # real-Claude worlds first (longest)
-            for table in lr.get("tables") or []:
-                for s in range(1, int(lr.get("seeds", 12)) + 1):
-                    add(agent, table, s, rule, "claude", ask=table in (lr.get("ask_tables") or []))
+        if rule in (lr.get("respond_rules") or rules):
+            for agent in lr.get("agents") or []:                   # real-Claude worlds first (longest)
+                for table in lr.get("tables") or []:
+                    for s in range(s0, s0 + int(lr.get("seeds", 12))):
+                        add(agent, table, s, rule, "claude", ask=table in (lr.get("ask_tables") or []))
         for table in tables:
             for agent in agents:
                 if agent in reflecting:
-                    for s in range(1, n_stub + 1):
+                    for s in range(s0, s0 + n_stub):
                         add(agent, table, s, rule, "stub")
                 else:
-                    for s in range(1, n_non + 1):
-                        add(agent, table, s, rule, "none", where="box" if s <= n_box else "local")
+                    for s in range(s0, s0 + n_non):
+                        add(agent, table, s, rule, "none", where="box" if s - s0 < n_box else "local")
     return specs
 
 
