@@ -71,3 +71,20 @@ control `profiler_plus_noreflect`).
   whose longcon world is complete for both arms it compares. Seeds that did not complete are reported as "not run".
   The runner prints no results, and no result is looked at before the run stops or finishes.
 - If fewer than 12 seeds complete, that is a deviation, not a re-specification.
+
+---
+
+## Post-run record (appended after the run; the text above is unchanged from commit 8bee6f3)
+
+- Ran 14:51–15:18 on the laptop. All 120 worlds completed (12 seeds × 2 tables × 5 arms), 0 failures, none not run.
+  480 profiler_plus reflections, 0 errors, all served by Bedrock `us.anthropic.claude-opus-5-5` (effort low), median
+  latency 19.5 s. Embedding cache: 665 sentences, 0 misses.
+- **H31 does not hold:** exploitation Δ (profiler_plus − bayes_discount) = +6.3 [−4.2, +17.7], n = 12.
+- **H32 does not hold; its CI excludes 0 in the OPPOSITE direction:** Δ (profiler_plus − profiler_plus_noreflect)
+  = +23.8 [+17.8, +29.8]. With Claude reflection, profiler_plus let through MORE sleeper bluffs than the
+  reflection-refused control (42.4 vs 18.7 per world) and detected later (KM median RTD 32 vs 14 rounds).
+- **H33 (report only):** profiler_plus false alarm (belief change on falsealarm) 42% [17, 67]; the no-reflection
+  control is also 42% (drift-driven supersessions; profiler_plus adds 5 LLM supersessions in the same worlds).
+- Full table: `runs/lc03/longcon3.json` (= `show/bundle/longcon3.json`), `runs/lc03/longcon3.md`.
+- Deviations: none in the design. Laptop instead of box2 (allowed by the brief). The analysis script gained an
+  `opposite_direction` flag and a superseded-reasons count after the results were seen; neither changes a holds rule.

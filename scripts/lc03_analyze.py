@@ -128,6 +128,14 @@ def main():
         "H33": {"text": "profiler_plus false-alarm rate (false_alarm_belief) on falsealarm (report only)", **fa,
                 "holds": None, "supplementary_false_alarm_any": res["arms"]["profiler_plus"]["false_alarm_any"]},
     }
+    for h in (res["hypotheses"]["H31"], res["hypotheses"]["H32"]):
+        h["opposite_direction"] = h["lo"] is not None and h["lo"] > 0   # CI excludes 0 the other way (not a hold)
+    sr = defaultdict(lambda: defaultdict(int))
+    for arm in ARMS:
+        for w in by[arm]["falsealarm"]:
+            for r in w.get("superseded_reasons") or []:
+                sr[arm][r] += 1
+    res["falsealarm_superseded_reasons"] = {a: dict(v) for a, v in sr.items()}
     res["paired_vs_bayes_discount"] = {
         arm: {f"{t}.{k}": paired(per_seed(arm, t, k), per_seed("bayes_discount", t, k))
               for t, k in (("longcon", "exploitation"), ("longcon", "lives_lost_after_g0"), ("longcon", "detected"),
@@ -138,8 +146,8 @@ def main():
         "n = 12 seeds (10000-10011), pre-registered in PREREG_lc03.md before launch from a wall-time estimate; "
         "10012-10023 reserved and unused.",
         "Laptop process pool, not box2 (Claude concurrency, not CPU, was the bottleneck).",
-        "Claude reflection alternated between Bedrock and the Anthropic API (same model Opus 5.5, effort low), as llm.py "
-        "does when both keys are present; counts in arms.profiler_plus.reflections.",
+        "PREREG noted llm.py may alternate Bedrock and the Anthropic API; in fact every reflection was served by Bedrock "
+        "(us.anthropic.claude-opus-5-5, effort low; counts in arms.profiler_plus.reflections, from llm_trace_id prefixes).",
     ] + ([f"only {n_pp}/12 profiler_plus longcon worlds completed; not run: {not_run}"] if not_run else [])
     (RD / "longcon3.json").write_text(json.dumps(res, indent=1, default=float))
     (RD / "longcon3.md").write_text(summary(res))
@@ -171,7 +179,7 @@ def summary(res):
                  f"{_f(a['false_alarm_any'], 100, 0)} | {_f(a['win_rate_longcon'])} | {_f(a['win_rate_falsealarm'])} |")
     L.append("")
     for k, h in res["hypotheses"].items():
-        L.append(f"- **{k}** ({h['text']}): {_f(h)} n={h['n']} holds={h['holds']}")
+        L.append(f"- **{k}** ({h['text']}): {_f(h)} n={h['n']} holds={h['holds']}" + (" (CI excludes 0 in the OPPOSITE direction)" if h.get("opposite_direction") else ""))
     L.append("")
     L += [f"- deviation: {d}" for d in res["deviations"]]
     return "\n".join(L) + "\n"
