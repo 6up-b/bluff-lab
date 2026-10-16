@@ -1,6 +1,6 @@
 # Show bundle provenance (honesty record)
 
-Built 2026-10-16T18:31:01Z by `blab pick-demo --run r01` from real event logs. No number in this bundle was written by hand.
+Built 2026-10-16T18:35:28Z by `blab pick-demo --run r01` from real event logs. No number in this bundle was written by hand.
 
 - **Run:** `r01`
 - **World:** `w0002` (`runs/r01/w0002`)

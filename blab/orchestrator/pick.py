@@ -274,7 +274,7 @@ def cues(sel: dict, dossier_games: list[int], have: dict, events: list[dict] | N
                        {"action": "caption", "text": f"Game {sel['decision_game']}. The Profiler has played {pn} for {sel['decision_game'] - 1} games."}]}]
     if sel.get("ask_seq"):
         c.append({"name": "the ask (audio if voiced)",
-                  "say": "Same frozen model all day. It proposed this suspicion itself, between games, from its own reveals.",
+                  "say": "Same frozen model all day; no fine-tuning. Its memory, written between games and checked against reveals, says this player turns formal when bluffing.",
                   "actions": [{"action": "play_to", "seq": next((e["seq"] for e in sorted(events or [], key=lambda e: e["seq"])
                                                                  if e["type"] == "answer" and e["seq"] > sel["ask_seq"] and e["seq"] < sel["seq"]), sel["ask_seq"])},
                               {"action": "audio", "file": f"voice/ask_{sel['ask_seq']}.mp3"}]})
