@@ -8,7 +8,7 @@ cannot be computed from the logs is `None` and renders as "—" / "awaiting data
 from __future__ import annotations
 
 import json
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -470,12 +470,15 @@ def ablation(worlds: list[dict], table: str = "telltale", agent: str = "profiler
     by_v = defaultdict(list)
     for w in br:
         by_v[w["vkey"]].append(w)
-    full = by_seed(by_v.get("full", []), "win_rate")
+    def by_parent(ws, key):          # branches pair by parent world (same seed AND same parent memory)
+        return {w["parent_world"]: w["m"].get(key) for w in ws if w["m"].get(key) is not None}
+    full = by_parent(by_v.get("full", []), "win_rate")
     bars = []
     for k in sorted(by_v, key=lambda k: ABL_ORDER.index(k) if k in ABL_ORDER else 99):
         b = boot(w["m"]["win_rate"] for w in by_v[k])
         b.update({"variant": k, "label": ABL_LABEL.get(k, k),
-                  "delta_vs_full": paired_delta(by_seed(by_v[k], "win_rate"), full) if full and k != "full" else None})
+                  "n_by_reflection": dict(Counter(w["reflection"] for w in by_v[k])),
+                  "delta_vs_full": paired_delta(by_parent(by_v[k], "win_rate"), full) if full and k != "full" else None})
         bars.append(b)
     at = sorted({w["from_game"] for w in br if w["from_game"] is not None})
     return {"table": table, "agent": agent, "respond_rule": rule, "at_game": at[0] if len(at) == 1 else at,
@@ -622,9 +625,9 @@ def _sig(d: dict | None) -> str | None:
     return "none"
 
 
-def _ci(d: dict, pct: bool = False) -> str:
+def _ci(d: dict, pct: bool = False, unit: str = "paired seeds") -> str:
     f = (lambda x: f"{x * 100:+.1f} pts") if pct else (lambda x: f"{x:+.3f}")
-    return f"{f(d['mean'])} (95% CI {f(d['lo'])} to {f(d['hi'])}, n = {d['n']} paired seeds)"
+    return f"{f(d['mean'])} (95% CI {f(d['lo'])} to {f(d['hi'])}, n = {d['n']} {unit})"
 
 
 def claims(res: dict) -> dict:
@@ -691,7 +694,7 @@ def claims(res: dict) -> dict:
         d = e["delta_vs_full"]
         out["erase_hurts"] = {"holds": _sig(d) == "lower", "delta": d,
                               "text": f"Erasing memory at game {ab.get('at_game')} changes win rate in games "
-                                      f"{ab.get('window')} by {_ci(d, True)}."}
+                                      f"{ab.get('window')} by {_ci(d, True, 'parent worlds, paired')} ({ab.get('respond_rule')} rule)."}
     fl = ab.get("flips") or {}
     if fl.get("n"):
         out["decision_flips"] = {"holds": fl["flipped"] > 0, "text": f"Erasing memory flips {fl['flipped']} of "
