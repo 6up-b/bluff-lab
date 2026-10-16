@@ -58,3 +58,25 @@ Rebuild any time with `.venv/bin/python -m blab.orchestrator.cli pick-demo --run
 after `blab collect`). Preview: `cd show && python -m http.server 8000` → `http://localhost:8000/?hud`
 (`?cue=N` jumps to cue N for rehearsal; `?bundle=<dir>` loads another bundle).
 The HUD lists every cue; cues whose data is missing are marked "skipped: no data" and are stepped over.
+
+## Data and honesty notes (owned by the data side: analyze.py / pick.py)
+
+- **Two respond rules.** r01 runs every agent under `threshold` (SPEC default, the primary rule) and `ev`
+  (follow-up: challenge iff p_final > 1 − L). `results.json.show_grid` is the primary rule, and `show_grids[rule]`
+  holds both. Never mix rules in one comparison; every paired Δ is within one rule.
+- **Reflection source.** `reveal.json.provenance.reflection` is `claude` or `stub`. pick-demo prefers Claude-reflection
+  worlds. If the picked world says `stub`, the hypotheses came from a canned list. Do not say "nobody told it
+  to watch for that"; say "the line was proposed from a fixed list and confirmed by the reveals".
+- **Outcome sentences come from `results.json.claims` only.** Each has `holds` and a `text` whose wording already
+  follows the CI: "no detectable difference" when the CI includes 0. Show a headline only when `holds` is true.
+  The "better beliefs ≠ better decisions" beat is `claims.beliefs_not_decisions` (calibration better, CI
+  excludes 0, and no rule shows a significant win gain).
+- **The logreg_bow baseline** may be the stronger predictor: `claims.vs_logreg_<rule>`. The Profiler's case is
+  auditability, surgery and provenance (`claims.false_discovery_<rule>` and `false_discovery_lower_<rule>`, measured
+  on the null-tell falsealarm table). Say only what those claims support.
+- **Metrics.** Both the §6 versions and the corrected versions are in `metric_defs`:
+  - false alarm: `false_alarm` (§6) vs `false_alarm_belief` (corrected).
+  - exploitation: `lives_lost_to_sleeper` (§6) vs `missed_bluffs`, "sleeper bluffs let through" (corrected).
+  - The Show uses the corrected versions, labelled as such.
+- **logreg_bow decisions** have `q_used: null` and `q_source: "logreg"`. They have no memory segment in the
+  waterfall.
