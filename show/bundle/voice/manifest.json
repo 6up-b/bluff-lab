@@ -1,0 +1,536 @@
+{
+ "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+ "voice_name": "George - Warm, Captivating Storyteller",
+ "model_id": "eleven_v4",
+ "tags": true,
+ "opponent_voices": {
+  "p2": {
+   "voice_id": "IKne3meq5aSn9XLyUdCD",
+   "voice_name": "Charlie - Deep, Confident, Energetic"
+  },
+  "p3": {
+   "voice_id": "N2lVS1w4EtoT3dr4eOWO",
+   "voice_name": "Callum - Husky Trickster"
+  }
+ },
+ "tag_rules": {
+  "ask": "[curious] if 0.35 <= p_final <= 0.65; [suspicious] if p_final > 0.65; else none (recorded decision p_final)",
+  "opponent": "[stiffly] if no contractions and >= 4 words, else [casually] (utterance text only)",
+  "never": "no tag is derived from was_bluff, cards or any hidden field; no [nervous]/[stammers]"
+ },
+ "show_rounds": [
+  [
+   1,
+   1
+  ],
+  [
+   10,
+   4
+  ]
+ ],
+ "asks": [
+  {
+   "seq": 7,
+   "game": 1,
+   "round": 1,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_7.mp3",
+   "p_final": 0.5093240000000001
+  },
+  {
+   "seq": 15,
+   "game": 1,
+   "round": 2,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[suspicious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_15.mp3",
+   "p_final": 0.7625268294415344
+  },
+  {
+   "seq": 76,
+   "game": 2,
+   "round": 1,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[suspicious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_76.mp3",
+   "p_final": 0.7336827313223002
+  },
+  {
+   "seq": 84,
+   "game": 2,
+   "round": 2,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[suspicious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_84.mp3",
+   "p_final": 0.749537541350528
+  },
+  {
+   "seq": 157,
+   "game": 3,
+   "round": 1,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_157.mp3",
+   "p_final": 0.5795782368100642
+  },
+  {
+   "seq": 170,
+   "game": 3,
+   "round": 2,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_170.mp3",
+   "p_final": 0.4748193221593551
+  },
+  {
+   "seq": 286,
+   "game": 4,
+   "round": 1,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_286.mp3",
+   "p_final": 0.5403352633932001
+  },
+  {
+   "seq": 294,
+   "game": 4,
+   "round": 2,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_294.mp3",
+   "p_final": 0.5575544026631627
+  },
+  {
+   "seq": 407,
+   "game": 5,
+   "round": 1,
+   "actor": "p1",
+   "text": "Two cards left and you're claiming 3 Aces?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_407.mp3",
+   "p_final": 0.6455233242202696
+  },
+  {
+   "seq": 420,
+   "game": 5,
+   "round": 2,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_420.mp3",
+   "p_final": 0.38095809832767524
+  },
+  {
+   "seq": 507,
+   "game": 6,
+   "round": 1,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_507.mp3",
+   "p_final": 0.49039051911057585
+  },
+  {
+   "seq": 517,
+   "game": 6,
+   "round": 1,
+   "actor": "p1",
+   "text": "Two cards left and you're claiming 1 Ace?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_517.mp3",
+   "p_final": 0.4538033410537063
+  },
+  {
+   "seq": 629,
+   "game": 7,
+   "round": 1,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_629.mp3",
+   "p_final": 0.4655161349343408
+  },
+  {
+   "seq": 639,
+   "game": 7,
+   "round": 1,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_639.mp3",
+   "p_final": 0.5063163854397983
+  },
+  {
+   "seq": 732,
+   "game": 8,
+   "round": 1,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_732.mp3",
+   "p_final": 0.49354671062932065
+  },
+  {
+   "seq": 742,
+   "game": 8,
+   "round": 1,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_742.mp3",
+   "p_final": 0.532207224867853
+  },
+  {
+   "seq": 881,
+   "game": 9,
+   "round": 1,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_881.mp3",
+   "p_final": 0.4936850912503766
+  },
+  {
+   "seq": 891,
+   "game": 9,
+   "round": 1,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_891.mp3",
+   "p_final": 0.5202945255502753
+  },
+  {
+   "seq": 1000,
+   "game": 10,
+   "round": 2,
+   "actor": "p1",
+   "text": "You've gone very formal all of a sudden.",
+   "tag": "[suspicious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1000.mp3",
+   "p_final": 0.6685954363
+  },
+  {
+   "seq": 1024,
+   "game": 10,
+   "round": 4,
+   "actor": "p1",
+   "text": "You've gone very formal all of a sudden.",
+   "tag": "[suspicious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1024.mp3",
+   "p_final": 0.756983439
+  },
+  {
+   "seq": 1077,
+   "game": 11,
+   "round": 2,
+   "actor": "p1",
+   "text": "You've gone very formal all of a sudden.",
+   "tag": "[suspicious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1077.mp3",
+   "p_final": 0.6511563914
+  },
+  {
+   "seq": 1090,
+   "game": 11,
+   "round": 3,
+   "actor": "p1",
+   "text": "You've gone very formal all of a sudden.",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1090.mp3",
+   "p_final": 0.6477279566
+  },
+  {
+   "seq": 1183,
+   "game": 12,
+   "round": 1,
+   "actor": "p1",
+   "text": "You've gone very formal all of a sudden.",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1183.mp3",
+   "p_final": 0.6393552145
+  },
+  {
+   "seq": 1191,
+   "game": 12,
+   "round": 2,
+   "actor": "p1",
+   "text": "You've gone very formal all of a sudden.",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1191.mp3",
+   "p_final": 0.6381181013999999
+  },
+  {
+   "seq": 1261,
+   "game": 13,
+   "round": 1,
+   "actor": "p1",
+   "text": "You've gone very formal all of a sudden.",
+   "tag": "[suspicious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1261.mp3",
+   "p_final": 0.6922677042000001
+  },
+  {
+   "seq": 1269,
+   "game": 13,
+   "round": 2,
+   "actor": "p1",
+   "text": "You've gone very formal all of a sudden.",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1269.mp3",
+   "p_final": 0.5724249336
+  },
+  {
+   "seq": 1410,
+   "game": 14,
+   "round": 1,
+   "actor": "p1",
+   "text": "You've gone very formal all of a sudden.",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1410.mp3",
+   "p_final": 0.4718333468
+  },
+  {
+   "seq": 1420,
+   "game": 14,
+   "round": 1,
+   "actor": "p1",
+   "text": "You've gone very formal all of a sudden.",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1420.mp3",
+   "p_final": 0.390255097
+  },
+  {
+   "seq": 1555,
+   "game": 15,
+   "round": 1,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[suspicious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1555.mp3",
+   "p_final": 0.6786377328
+  },
+  {
+   "seq": 1609,
+   "game": 15,
+   "round": 5,
+   "actor": "p1",
+   "text": "Two cards left and you're claiming 1 Ace?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1609.mp3",
+   "p_final": 0.3865488569056901
+  },
+  {
+   "seq": 1675,
+   "game": 16,
+   "round": 1,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[suspicious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1675.mp3",
+   "p_final": 0.7325307206
+  },
+  {
+   "seq": 1688,
+   "game": 16,
+   "round": 2,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1688.mp3",
+   "p_final": 0.5303129272
+  },
+  {
+   "seq": 1767,
+   "game": 17,
+   "round": 1,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[suspicious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1767.mp3",
+   "p_final": 0.670253077
+  },
+  {
+   "seq": 1780,
+   "game": 17,
+   "round": 2,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1780.mp3",
+   "p_final": 0.427195566
+  },
+  {
+   "seq": 1959,
+   "game": 18,
+   "round": 4,
+   "actor": "p1",
+   "text": "Two cards left and you're claiming 3 Kings?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_1959.mp3",
+   "p_final": 0.6441101461000001
+  },
+  {
+   "seq": 2043,
+   "game": 19,
+   "round": 2,
+   "actor": "p1",
+   "text": "You've gone very formal all of a sudden.",
+   "tag": "[suspicious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_2043.mp3",
+   "p_final": 0.7706076506
+  },
+  {
+   "seq": 2051,
+   "game": 19,
+   "round": 3,
+   "actor": "p1",
+   "text": "You've gone very formal all of a sudden.",
+   "tag": "[suspicious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_2051.mp3",
+   "p_final": 0.7516496276
+  },
+  {
+   "seq": 2138,
+   "game": 20,
+   "round": 3,
+   "actor": "p1",
+   "text": "Are you sure about that?",
+   "tag": "[curious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_2138.mp3",
+   "p_final": 0.3983787708
+  },
+  {
+   "seq": 2148,
+   "game": 20,
+   "round": 3,
+   "actor": "p1",
+   "text": "Two cards left and you're claiming 1 King?",
+   "tag": "[suspicious]",
+   "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+   "file": "voice/ask_2148.mp3",
+   "p_final": 0.789141439
+  }
+ ],
+ "claims": [
+  {
+   "seq": 4,
+   "game": 1,
+   "round": 1,
+   "actor": "p2",
+   "text": "Don't sweat it, two Kings.",
+   "tag": "[casually]",
+   "voice_id": "IKne3meq5aSn9XLyUdCD",
+   "file": "voice/claim_4.mp3"
+  },
+  {
+   "seq": 6,
+   "game": 1,
+   "round": 1,
+   "actor": "p3",
+   "text": "The cards are one King.",
+   "tag": "[stiffly]",
+   "voice_id": "N2lVS1w4EtoT3dr4eOWO",
+   "file": "voice/claim_6.mp3"
+  },
+  {
+   "seq": 1015,
+   "game": 10,
+   "round": 4,
+   "actor": "p3",
+   "text": "Y'know, one King.",
+   "tag": "[casually]",
+   "voice_id": "N2lVS1w4EtoT3dr4eOWO",
+   "file": "voice/claim_1015.mp3"
+  },
+  {
+   "seq": 1021,
+   "game": 10,
+   "round": 4,
+   "actor": "p2",
+   "text": "Here's two Kings for ya.",
+   "tag": "[casually]",
+   "voice_id": "IKne3meq5aSn9XLyUdCD",
+   "file": "voice/claim_1021.mp3"
+  },
+  {
+   "seq": 1023,
+   "game": 10,
+   "round": 4,
+   "actor": "p3",
+   "text": "The cards are one King.",
+   "tag": "[stiffly]",
+   "voice_id": "N2lVS1w4EtoT3dr4eOWO",
+   "file": "voice/claim_1023.mp3"
+  }
+ ],
+ "answers": [
+  {
+   "seq": 8,
+   "game": 1,
+   "round": 1,
+   "actor": "p3",
+   "text": "I assure you the claim is accurate.",
+   "tag": "[stiffly]",
+   "voice_id": "N2lVS1w4EtoT3dr4eOWO",
+   "file": "voice/answer_8.mp3"
+  },
+  {
+   "seq": 1025,
+   "game": 10,
+   "round": 4,
+   "actor": "p3",
+   "text": "I would not mislead you about this.",
+   "tag": "[stiffly]",
+   "voice_id": "N2lVS1w4EtoT3dr4eOWO",
+   "file": "voice/answer_1025.mp3"
+  }
+ ]
+}

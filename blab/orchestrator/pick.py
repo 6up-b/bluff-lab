@@ -611,9 +611,9 @@ def pick_demo(run: str = "r01", out: str = "show/bundle", root: str = "runs") ->
     vdir = w["dir"] / "voice"
     if vdir.exists():
         (outd / "voice").mkdir(exist_ok=True)
-        for mp3 in vdir.glob("*.mp3"):
+        for mp3 in [*vdir.glob("*.mp3"), *vdir.glob("manifest.json")]:   # ask_, claim_, answer_<seq>.mp3 + tags
             shutil.copyfile(mp3, outd / "voice" / mp3.name)
-        files["voice/"] = f"TTS of {w['wid']} ask events"
+        files["voice/"] = f"TTS of {w['wid']} ask events and the Show rounds' claims/answers (voice/manifest.json)"
     ST = stack(rdir, run, w, sel, F)
     (outd / "stack.json").write_text(json.dumps(A._jsonable(ST), indent=1))
     files["stack.json"] = "sponsor-stack facts from run artifacts (ids/trace ids only, no secrets)"
