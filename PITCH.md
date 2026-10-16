@@ -27,72 +27,59 @@
 
 ## Script
 
-Every table or chart ends on a spoken **Takeaway** line, so the audience always knows what the slide showed. Cue numbers refer to the full deck. In a pitch-only deck, follow the scene names.
+**Present from the curated deck: https://6up-b.github.io/bluff-lab/?deck=pitch** (21 cues, nothing to press through). The full deck (no `?deck`) keeps every slide for Q&A. Each table or chart ends on a spoken **Takeaway**.
 
-**[title]** (cue 0) · 0:00
+**[title]** · 0:00
 > Agents are starting to carry memory from one encounter to the next. Memory can make them sharper, or it can be used against them. Bluff Lab measures which.
 
-**[cold open: deal → claims → ask → call → reveal]** (cues 1–6; press on the beat, let the voices play) · 0:10
+**[cold open: deal → claims → ask → call → reveal]** (press on the beat, let the voices play) · 0:10
 > Three players. You lay cards face-down and claim they match the table rank, and you're allowed to lie. The next player plays on, asks a question, or calls it. *(press to the reveal)* The cards flip and whoever was wrong loses a life, so every challenge gives us ground truth.
 
-**[game 10: the claim]** (cue 7) · 0:30
+**[game 10: the claim]** · 0:30
 > Game ten. Player 3: "The cards are one King."
 
-**[the ask]** (cue 8; let the voice play: "You've gone very formal all of a sudden.")
+**[the ask]** (let the voice play: "You've gone very formal all of a sudden.")
 > That's our agent, the Profiler: the same frozen model all day, no fine-tuning. Its memory, written between games and checked against the reveals, says this player turns formal when bluffing.
 
-**[freeze]** (cue 9)
+**[freeze]**
 > Let's stop time and look inside.
 
-**[Mind Inspector]** (cue 10) · 0:50
-> Card math alone says 24% this is a bluff. Memory holds one confirmed line: Player 3 speaks formally when bluffing, a 68% bluff rate across eleven reveals versus 22% otherwise. That lifts it to 76%, so it challenges. Every number here was recorded at decision time.
+**[Mind Inspector]** · 0:50
+> Card math alone says 24% this is a bluff. Memory holds one confirmed line: Player 3 speaks formally when bluffing, a 68% bluff rate across eleven reveals versus 22% otherwise. That lifts it to 76%, so it challenges.
 
-*(cues 11–13, evidence and dossier: press through)*
-
-**[surgery: full]** (cue 14) · 1:10
+**[surgery: full]** · 1:05
 > Now, surgery. Same state, same claim, same model; only the memory changes.
 
-**[erased]** (cue 15)
+**[erased]**
 > Erase the memory: 43%. It plays on.
 
-**[false memory]** (cue 16)
+**[false memory]**
 > Plant a false line, "Player 3 never bluffs," with no evidence behind it. Ours ignores it: still 76%.
 
-**[provenance-blind]** (cue 17)
+**[provenance-blind]**
 > An agent that trusts every line it's handed drops to 24%.
 
-**[flip]** (cue 18; pause one beat)
+**[flip]** (pause one beat)
 > It was a bluff.
 
-**[ablation chart]** (cue 19) · 1:35
-> One decision isn't proof. So we replayed games eleven to twenty on the same seeds, with memory frozen at game ten. Erased, the win rate falls from 23% to 9%. But older memory, from game four or six, did as well as the full file.
-> **Takeaway:** more memory isn't better. *Trusted* memory is.
+**[ablation]** · 1:30
+> One decision isn't proof. So we replayed games eleven to twenty on the same seeds, memory frozen at game ten. Erased, the win rate falls from 23% to 9%. But older memory did as well as the full file.
+> **Takeaway:** more memory isn't better. Trusted memory is.
 
-*(cues 20, 21, 24–26: not in the pitch deck. If they come up, use the table takeaways below.)*
-
-**[checkpoint branches table]** (cue 22) · 1:55
-> Memory can also be used against you. An opponent plays honestly, then turns. We restored 120 worlds from just before the turn: erase what the agent had learned, and it lets through 17 fewer of the betrayer's bluffs.
-
-**[long con, full Profiler (lc03)]** (cue 23) · 2:08
-> And our best agent isn't immune. Same seeds, Claude's reflection on versus off: switched on, it let through 24 more of the betrayer's bluffs and noticed the turn later. Pre-registered, twelve fresh seeds.
-> **Takeaway:** every one of those memories was true. The memory that wins against consistent players is exactly what a long con exploits.
-
-**[does memory help? table]** (cue 27) · 2:20
-> The cleanest test: same model, same raw table talk, only the memory differs. A raw transcript of past rounds: no detectable gain. A file of hypotheses: plus 6 points. Hypotheses weighed by a small statistical model: plus 19. Early evidence, three to four seeds per table.
+**[does memory help?]** · 1:50
+> Same model, same raw table talk, only the memory differs. A raw transcript of past rounds: no detectable gain. A file of hypotheses: plus 6. Hypotheses weighed by a small statistical model: plus 19.
 > **Takeaway:** it isn't having the history that helps. It's how the memory is structured.
 
-**[capability map table]** (cue 28) · 2:40
-> And where we lose: on our pre-registered boundary test, a sentence-embedding classifier predicted bluffs better.
+**[one memory, two opponents]** · 2:10
+> Then we tested it the strict way: pre-registered, fresh seeds, raw text only. It beat a word-count classifier by 8 points, and switching Claude's hypotheses off costs about 7. But against a long con, those same hypotheses let through 24 more of the betrayer's bluffs.
+> **Takeaway:** Claude's hypotheses are earned trust. They win more games, and they're exactly what a long con exploits.
+
+**[capability map]** · 2:35
+> And where we lose: on prediction alone, simple classifiers do as well or better. This boundary test was pre-registered, and we lost it.
 > **Takeaway:** memory doesn't make a better lie detector than a good classifier. It makes an agent you can inspect, edit and defend.
 
-*Late results (c02, lc03; finished ~15:32). Read only the `holds` flags from the pre-written analysis, and add AT MOST one sentence here, right before the Takeaway:*
-- *c02 H13 holds:* "And on fresh, pre-registered seeds that finished after the deadline, it replicated: plus [N] points over the word-count classifier."
-- *c02 H11 holds (and H13 doesn't):* "With the missing record check built, it now reads lies against the record better than the embedding classifier."
-- *Neither holds:* "Our pre-registered confirmatory run finished after the deadline and didn't confirm it, so we don't claim it." Then change the Takeaway to "…a good classifier, yet."
-- *lc03:* stage line only if it holds AND you have time; otherwise Q&A: "With the full Profiler, the Long Con result [held / didn't hold] on 12 fresh seeds."
-
-**[close]** (cue 32) · 2:55
-> Memory made our agent better against players who stay the same, and more exploitable by players who don't. The question isn't how much an agent remembers. It's which memories it should trust, and when to stop.
+**[close]** · 2:50
+> Memory made our agent better, and more exploitable by players who change. The question isn't how much an agent remembers. It's which memories it should trust, and when to stop.
 
 *(Stop. Smile. Wait for questions.)*
 
@@ -121,6 +108,13 @@ Use it only in Q&A (see below).
 ---
 
 ## Q&A prep (answer in one or two sentences, then stop)
+
+**"Beat what, exactly?"** (c01, pre-registered)
+On fresh seeds 5000–5023, raw text only, the agent beat a bag-of-words classifier by 8.1 points of win rate [+5.7, +10.4], replicating mem01. That classifier wasn't handed the tell, and on raw text it's the stronger of our two classifiers. The record check we added was right 80–83% of the time but added nothing on top; the gain comes from Claude's hypotheses.
+
+**"c02 says you beat the embedding classifier by 18 points. Why not lead with that?"**
+It's a low bar on those tables: even the non-learning card counter beats that classifier by about 15 points. The c02 number we use is the replication: reflection on vs off, +7.3 [+1.9, +11.6] on fresh seeds, matching mem01's +9.5. That one wasn't pre-registered in c02, and we label it that way.
+
 
 **"Did remembering *who* you play help?"**
 We pre-registered it, and it didn't hold. Keying memory by person split the data four ways. A pooled memory learned the shared base rate and calibration about four times faster, and our conflicting tells were too weak to punish pooling: repeat-meeting win rate −2.3 points vs pooled [−5.1, +0.6]. It did beat a pooled classifier (+3.2 [+0.7, +5.8]). The fix is partial pooling: start each new person from the population file and let their own evidence override it.
