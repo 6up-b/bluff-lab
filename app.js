@@ -41,7 +41,7 @@ async function load() {
   HAVE["world.jsonl"] = world !== null; HAVE["twin.jsonl"] = twin !== null;
   if (world) indexWorld(parseJSONL(world));
   if (twin) B.twin = parseJSONL(twin);
-  const names = ["reveal", "dossier", "ablation", "longcon", "results", "forge", "cues"];
+  const names = ["reveal", "dossier", "ablation", "longcon", "results", "forge", "stack", "cues"];
   const got = await Promise.all(names.map((n) => getJSON(`${n}.json`)));
   names.forEach((n, i) => { B[n] = got[i]; HAVE[`${n}.json`] = got[i] !== null; });
   cues = normalizeCues(B.cues || defaultCues());
@@ -72,8 +72,8 @@ let cues = [];
 let idx = 0;                      // number of cues applied
 const S = {};                     // presentation state
 function resetState() {
-  Object.assign(S, { view: "title", seq: null, frozen: false, inspect: null, evidence: false,
-    dossierGame: null, dossierAbout: null, surgery: [], flipped: false, caption: "" });
+  Object.assign(S, { view: "title", seq: null, frozen: false, playFrom: null, pace: 1, inspect: null, evidence: false,
+    dossierGame: null, dossierAbout: null, surgery: [], flipped: false, caption: "", stackFlow: false });
 }
 
 function normalizeCues(raw) {
@@ -90,9 +90,10 @@ async function markSkips() {
   for (const c of cues) {
     const need = new Set(c.requires);
     for (const a of c.actions) {
-      if (a.action === "audio" && a.file) need.add(a.file);
+      if (a.action === "audio" && a.file) a.missing = !(await exists(a.file));   // no mp3: the cue still runs, silently
       if (a.action === "view" && a.name === "forge") need.add("forge.json");
       if (a.action === "view" && a.name === "split") need.add("twin.jsonl");
+      if (a.action === "view" && a.name === "stack") need.add("stack.json");
       if (["play_to", "freeze", "inspect"].includes(a.action)) need.add("world.jsonl");
       if (a.action === "surgery") {
         need.add("reveal.json");
@@ -107,15 +108,15 @@ async function markSkips() {
 
 function applyAction(a, live) {
   switch (a.action) {
-    case "view": S.view = a.name; break;
-    case "play_to": S.seq = a.seq; S.frozen = false; S.view = "table"; break;
-    case "freeze": S.seq = a.seq; S.frozen = true; S.view = "table"; break;
+    case "view": S.view = a.name; if (a.flow) S.stackFlow = true; break;
+    case "play_to": S.seq = a.seq; S.frozen = false; S.view = "table"; S.playFrom = a.from ?? null; S.pace = a.pace ?? 1; break;
+    case "freeze": S.seq = a.seq; S.frozen = true; S.view = "table"; S.playFrom = null; S.pace = 1; break;
     case "inspect": S.inspect = a.seq; S.view = "inspector"; break;
     case "evidence": S.evidence = a.hyp_id || true; S.view = "inspector"; break;
     case "dossier": S.dossierGame = a.game; if (a.about) S.dossierAbout = a.about; S.view = "dossier"; break;
     case "surgery": if (!S.surgery.includes(a.variant)) S.surgery.push(a.variant); S.view = "surgery"; break;
     case "flip": S.flipped = true; break;
-    case "audio": if (live) playAudio(a.file); break;
+    case "audio": if (live && !a.missing) playAudio(a.file); break;
     case "caption": S.caption = a.text || ""; break;
     case "clear_caption": S.caption = ""; break;
     default: console.warn("unknown cue action", a);
@@ -130,7 +131,7 @@ function next() {
   if (idx >= cues.length) return;
   applyCue(cues[idx], true); idx++;
   while (idx < cues.length && cues[idx - 1].skip) { applyCue(cues[idx], true); idx++; }  // never land on a skip
-  render();
+  render(true);
 }
 function prev() {
   let target = Math.max(0, idx - 1);
@@ -140,9 +141,9 @@ function prev() {
 function goto(n) {
   // Rebuilding state (←, R, ?cue=) jumps without transitions so the frame is final immediately.
   document.body.classList.add("instant");
-  resetState(); stopAudio();
+  resetState(); stopAudio(); tableStop(); T.built = false;
   for (let i = 0; i < n; i++) applyCue(cues[i], false);
-  idx = n; render();
+  idx = n; render(false);
   void document.body.offsetHeight;
   requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove("instant")));
 }
@@ -185,10 +186,69 @@ function claimBefore(seq) {
   let c = null; for (const e of W.events) { if (e.seq > seq) break; if (e.type === "claim") c = e; if (e.type === "deal") c = null; }
   return c;
 }
-function cardEl(rank, { up = false, tableRank = null, sm = false } = {}) {
+/* ================================================================ table
+   The table is a persistent DOM synced to tableModel(seq). Within one cue it can step through the
+   real events between the previous cue's seq and this one (sub-animations); the cue itself only
+   advances on a keypress. Opponents' cards are face-down and carry no rank in the DOM until a
+   real `reveal` event; the Profiler's own hand (p1) is face up. */
+const SEAT_IDS = ["p2", "p3", "p1"];
+const TURN_XY = { p1: [760, 906], p2: [235, 546], p3: [1685, 546] };
+const STEP_MS = { game_start: 300, deal: 1500, claim: 1300, play_on: 700, ask: 1700, answer: 1700, challenge: 1100, reveal: 1700, life_lost: 1200, game_end: 900 };
+const T = { built: false, shown: null, target: null, timers: [] };
+let SC = 1;                                   // stage scale (screen px per stage px)
+
+function tableModel(upto) {
+  const st = { game: 0, round: 0, lives: {}, hand1: [], counts: {}, rank: null, pile: [], bubbles: {}, acts: {},
+    reveal: null, lost: null, winner: undefined, active: null, lastBubble: -1 };
+  let i = 0;
+  for (; i < W.events.length; i++) {
+    const e = W.events[i]; if (e.seq > upto) break;
+    const p = e.payload || {};
+    switch (e.type) {
+      case "game_start": Object.assign(st, { game: e.game, round: 0, lives: { ...p.lives }, pile: [], bubbles: {}, acts: {}, reveal: null, lost: null, winner: undefined, rank: null, counts: {}, hand1: [] }); break;
+      case "deal": Object.assign(st, { round: e.round, game: e.game, rank: p.table_rank, pile: [], bubbles: {}, acts: {}, reveal: null, lost: null });
+        st.hand1 = [...(p.hands.p1 || [])];
+        st.counts = Object.fromEntries(Object.entries(p.hands).map(([k, v]) => [k, v.length])); break;
+      case "claim": {
+        st.counts[e.actor] = Math.max(0, (st.counts[e.actor] || 0) - p.count);
+        if (e.actor === "p1") for (const c of p.cards) { const j = st.hand1.indexOf(c); if (j >= 0) st.hand1.splice(j, 1); }
+        st.pile.push({ actor: e.actor, count: p.count, rank: p.claimed_rank, cards: p.cards, seq: e.seq });
+        st.bubbles[e.actor] = { text: p.utterance, kind: "claim", seq: e.seq }; st.lastBubble = e.seq;
+        st.acts[e.actor] = null; break;
+      }
+      case "play_on": st.acts[e.actor] = { text: "plays on", seq: e.seq }; break;
+      case "ask": { const a = e.actor || "p1"; st.bubbles[a] = { text: p.text, kind: "ask", seq: e.seq }; st.lastBubble = e.seq; break; }
+      case "answer": if (e.actor) { st.bubbles[e.actor] = { text: p.text, kind: "answer", seq: e.seq }; st.lastBubble = e.seq; } break;
+      case "challenge": st.acts[e.actor] = { text: "Challenge!", call: true, seq: e.seq }; break;
+      case "reveal": st.reveal = { ...p, seq: e.seq }; break;
+      case "life_lost": st.lives[p.seat] = p.lives_left; st.lost = { seat: p.seat, seq: e.seq }; break;
+      case "game_end": st.winner = p.winner; break;
+    }
+  }
+  // whose turn: the next seat to act in this round, read from the log
+  for (let j = i; j < W.events.length; j++) {
+    const e = W.events[j];
+    if (e.game !== st.game || ["deal", "game_end", "game_start", "reveal", "life_lost"].includes(e.type)) break;
+    if (["claim", "play_on", "challenge", "ask", "answer", "decision"].includes(e.type) && e.actor) { st.active = e.actor; break; }
+  }
+  return st;
+}
+
+function cardFront(rank) {
+  if (rank === "J") return `<i class="tl">J</i><b>★</b><s>Joker</s><i class="br">J</i>`;
+  return `<i class="tl">${esc(rank)}</i><b>${esc(rank)}</b><s>${esc(RANK1[rank] || "")}</s><i class="br">${esc(rank)}</i>`;
+}
+function cardEl(rank, { up = false, tableRank = null, sm = false, xs = false } = {}) {
   const bad = up && tableRank && rank !== tableRank && rank !== "J";
-  const cls = ["card", sm ? "sm" : "", up ? "up" : "", bad ? "bad" : "", up && rank === "J" ? "wild" : ""].join(" ");
-  return `<div class="${cls}" title="${up ? esc(rank) : "face down"}">${up ? esc(rank) : ""}</div>`;
+  const cls = ["pc", sm ? "sm" : "", xs ? "xs" : "", up ? "up" : "", bad ? "bad" : "", up && rank === "J" ? "joker" : ""].join(" ");
+  return `<div class="${cls}" title="${up ? esc(rank) : "face down"}"><div class="in"><div class="face back"></div><div class="face front">${up ? cardFront(rank) : ""}</div></div></div>`;
+}
+function nodeOf(html) { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstChild; }
+function setFront(pc, rank, tableRank) {
+  pc.querySelector(".front").innerHTML = cardFront(rank);
+  pc.classList.toggle("joker", rank === "J");
+  pc.classList.toggle("bad", !!tableRank && rank !== tableRank && rank !== "J");
+  pc.title = rank;
 }
 function isBluff(cards, tr) { return cards.some((c) => c !== tr && c !== "J"); }
 function svg(w, h, inner, cls = "") { return `<svg class="${cls}" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="${SVGNS}">${inner}</svg>`; }
@@ -197,64 +257,174 @@ function seatName(seat, reveal = false) {
   const role = W.seats[seat]?.role;
   return esc(NAMES[seat] || seat) + (reveal && role && seat !== "p1" ? `<span class="role">${esc(role)}</span>` : "");
 }
+const claimText = (n, r) => `${n} ${esc((n === 1 ? RANK1 : RANKS)[r] || r)}`;
 
-/* ================================================================ table */
-function tableState(upto) {
-  const st = { game: 0, round: 0, lives: {}, hands: {}, rank: null, pile: [], bubbles: {}, reveal: null, actor: null, winner: undefined };
-  for (const e of W.events) {
-    if (e.seq > upto) break;
-    const p = e.payload;
-    switch (e.type) {
-      case "game_start": st.game = e.game; st.lives = { ...p.lives }; st.pile = []; st.bubbles = {}; st.reveal = null; st.winner = undefined; break;
-      case "deal": st.round = e.round; st.game = e.game; st.rank = p.table_rank; st.pile = []; st.bubbles = {}; st.reveal = null;
-        st.hands = Object.fromEntries(Object.entries(p.hands).map(([k, v]) => [k, v.length])); break;
-      case "claim": st.hands[e.actor] = Math.max(0, (st.hands[e.actor] || 0) - p.count);
-        st.pile.push({ actor: e.actor, count: p.count, cards: p.cards, seq: e.seq });
-        st.bubbles[e.actor] = { text: p.utterance, kind: "claim" }; st.actor = e.actor; break;
-      case "ask": st.bubbles[e.actor || "p1"] = { text: p.text, kind: "ask" }; break;
-      case "answer": if (e.actor) st.bubbles[e.actor] = { text: p.text, kind: "answer" }; break;
-      case "challenge": st.bubbles[e.actor] = { text: "Challenge.", kind: "act" }; st.actor = e.actor; break;
-      case "reveal": st.reveal = p; break;
-      case "life_lost": st.lives[p.seat] = p.lives_left; break;
-      case "game_end": st.winner = p.winner; break;
-    }
-  }
-  return st;
+function buildTable() {
+  const el = $("#v-table");
+  el.innerHTML = `<div class="room-light"></div><div class="tbl">
+      <div class="rail"></div><div class="felt"></div>
+      <div class="gameplate"></div>
+      <div class="rankplate hide"><div class="lbl">Table</div><div class="rk"></div></div>
+      <div class="pile"></div><div class="piletag"></div>
+      <div class="verdict"><span class="v"></span><span class="why"></span></div>
+      ${SEAT_IDS.map((s) => `<div class="seat ${s}" data-seat="${s}"><div class="glow"></div><div class="hand"></div>
+        <div class="plate"><span class="name">${seatName(s)}</span></div><div class="chips"></div>
+        <div class="act"></div><div class="bubble"></div></div>`).join("")}
+    </div><div id="turn">turn</div><div class="frost"></div><div class="freeze-stamp"></div>`;
+  T.built = true; T.shown = null;
+}
+const rectC = (n) => { const r = n.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+
+function pilePos(g, j, G, seq) {
+  const x = (g - (G - 1) / 2) * 40 + j * 18, y = ((seq * 13) % 9) - 4;
+  const r = ((seq * 37) % 23) - 11 + j * 4;
+  return `translate(${x}px, ${y}px) rotate(${r}deg)`;
 }
 
-function renderTable() {
+function syncTable(m, ev, anim) {
   const el = $("#v-table");
-  if (!W.events.length) { el.innerHTML = awaiting("Awaiting data", "No <code>bundle/world.jsonl</code> yet. Run <code>blab pick-demo --run local</code> after a real local world exists."); return; }
-  const upto = S.seq ?? 0;
-  const st = tableState(upto);
-  const flipShow = S.flipped && B.reveal && B.reveal.reveal_seq && upto < B.reveal.reveal_seq;   // flip shows the picked reveal
-  const lastPile = st.pile[st.pile.length - 1];
-  const revealCards = st.reveal ? st.reveal.cards : (flipShow ? B.reveal.reveal.cards : null);
-  const pile = st.pile.map((pl, i) => {
-    const up = revealCards && i === st.pile.length - 1;
-    return pl.cards.map((c, j) => cardEl(up ? revealCards[j] ?? c : c, { up, tableRank: st.rank })).join("");
-  }).join('<div style="width:18px"></div>');
-  const seat = (s) => {
-    const lives = st.lives[s] ?? 0, max = 3;
-    const pips = Array.from({ length: max }, (_, i) => `<span class="${i < lives ? "on" : ""}">●</span>`).join("");
-    const b = st.bubbles[s];
-    const tag = b ? { claim: "says", ask: "asks", answer: "answers", act: "" }[b.kind] : "";
-    const n = st.hands[s] ?? 0;
-    return `<div class="seat ${s} ${lives <= 0 ? "out" : ""} ${st.actor === s ? "actor" : ""}">
-      <div><span class="name">${seatName(s, S.flipped)}</span></div>
-      <div class="lives">${pips}</div>
-      <div class="hand">${Array.from({ length: n }, () => cardEl("?", { sm: true })).join("")}</div>
-      <div class="bubble ${b ? "on" : ""} ${b?.kind === "ask" ? "ask" : ""}">${b ? `${tag ? `<span class="tag">${tag}</span>` : ""}${esc(b.text)}` : ""}</div>
-    </div>`;
-  };
+  const isDeal = anim && ev?.type === "deal";
+  el.querySelector(".gameplate").innerHTML = m.game ? `Game <b>${m.game}</b>${m.round ? `, round <b>${m.round}</b>` : ""}${m.winner !== undefined ? `. ${m.winner ? `${seatName(m.winner)} wins the game` : "Draw"}` : ""}` : "";
+  const rp = el.querySelector(".rankplate");
+  rp.querySelector(".rk").textContent = RANKS[m.rank] || "";
+  rp.classList.toggle("hide", !m.rank);
+  if (isDeal) { rp.classList.remove("pop"); void rp.offsetWidth; rp.classList.add("pop"); }
+
+  // hands (remember where removed cards were, for the slide into the pile)
+  const from = {};
+  for (const s of SEAT_IDS) {
+    const hand = el.querySelector(`.seat.${s} .hand`);
+    const alive = (m.lives[s] ?? 0) > 0 || m.counts[s] > 0;
+    el.querySelector(`.seat.${s}`).classList.toggle("out", m.game > 0 && !alive);
+    if (isDeal || !anim) {
+      hand.innerHTML = s === "p1" ? m.hand1.map((c) => cardEl(c, { up: true })).join("")
+        : Array.from({ length: m.counts[s] || 0 }, () => cardEl("?", { sm: true })).join("");
+      if (isDeal) [...hand.children].forEach((c, i) => { c.classList.add("deal"); c.style.setProperty("--i", i + SEAT_IDS.indexOf(s) * 5);
+        c.style.setProperty("--dx", s === "p1" ? "0px" : s === "p2" ? "540px" : "-540px"); c.style.setProperty("--dy", s === "p1" ? "-330px" : "100px"); });
+      continue;
+    }
+    const kids = [...hand.children];
+    if (s === "p1") {
+      const want = [...m.hand1]; const keep = new Set();
+      for (const k of kids) { const r = k.title; const j = want.indexOf(r); if (j >= 0) { want.splice(j, 1); keep.add(k); } }
+      const gone = kids.filter((k) => !keep.has(k));
+      from[s] = gone.map(rectC); gone.forEach((k) => k.remove());
+      for (const r of want) hand.appendChild(nodeOf(cardEl(r, { up: true })));
+    } else {
+      const n = m.counts[s] || 0;
+      const gone = kids.slice(n); from[s] = gone.map(rectC); gone.forEach((k) => k.remove());
+      for (let i = kids.length; i < n; i++) hand.appendChild(nodeOf(cardEl("?", { sm: true })));
+    }
+  }
+
+  // pile
+  const pile = el.querySelector(".pile");
+  const G = m.pile.length;
+  const have = new Map([...pile.children].map((c) => [c.dataset.k, c]));
+  const want = new Set();
+  m.pile.forEach((g, gi) => g.cards.forEach((c, j) => {
+    const k = `${g.seq}:${j}`; want.add(k);
+    let n = have.get(k); const tf = pilePos(gi, j, G, g.seq);
+    const revealed = m.reveal && gi === G - 1;
+    if (!n) {
+      n = nodeOf(cardEl(g.actor === "p1" ? c : "?", { up: g.actor === "p1" && anim }));
+      if (g.actor === "p1") setFront(n, c, null);
+      n.dataset.k = k; pile.appendChild(n);
+      n.style.transform = tf;
+      const src = anim && ev?.type === "claim" && ev.seq === g.seq ? (from[g.actor] || [])[j] : null;
+      if (src) {
+        const [cx, cy] = rectC(n);
+        n.style.transition = "none";
+        n.style.transform = `translate(${(src[0] - cx) / SC}px, ${(src[1] - cy) / SC}px) ${tf}`;
+        void n.offsetWidth;
+        n.style.transition = "transform .75s cubic-bezier(.3,.7,.2,1)";
+        requestAnimationFrame(() => { n.style.transform = tf; if (g.actor === "p1") n.classList.remove("up"); });
+      } else if (g.actor === "p1") n.classList.remove("up");
+    } else { n.style.transform = tf; }
+    if (revealed) {
+      const rc = m.reveal.cards?.[j] ?? c;
+      if (!n.classList.contains("up")) { setFront(n, rc, m.rank); n.classList.add("up"); }
+    }
+  }));
+  for (const [k, n] of have) if (!want.has(k)) n.remove();
+  const last = m.pile[G - 1];
+  const lastSaid = last && m.bubbles[last.actor]?.seq !== last.seq ? W.bySeq.get(last.seq)?.payload?.utterance : null;
+  el.querySelector(".piletag").innerHTML = last ? `${seatName(last.actor)} claims <b>${claimText(last.count, last.rank)}</b>${lastSaid ? `<span class="said">“${esc(lastSaid)}”</span>` : ""}` : "";
+
+  // verdict
+  const vd = el.querySelector(".verdict");
+  if (m.reveal) {
+    const R = m.reveal;
+    vd.className = `verdict on ${R.was_bluff ? "bluff" : "honest"}`;
+    vd.querySelector(".v").textContent = R.was_bluff ? "Bluff" : "Honest";
+    vd.querySelector(".why").innerHTML = `${seatName(R.loser)} loses a life`;
+  } else vd.className = "verdict";
+
+  // seats: lives, bubbles, actions, spotlight
+  for (const s of SEAT_IDS) {
+    const se = el.querySelector(`.seat.${s}`);
+    se.classList.toggle("active", m.active === s);
+    const lives = m.lives[s] ?? 0;
+    const chips = se.querySelector(".chips");
+    const leaving = anim && ev?.type === "life_lost" && ev.payload.seat === s;
+    if (!chips.children.length || !anim || isDeal || ev?.type === "game_start") {
+      chips.innerHTML = Array.from({ length: 3 }, (_, i) => `<span class="chip-life ${i < lives ? "" : "gone"}"></span>`).join("");
+    } else if (leaving) {
+      const c = chips.children[lives];
+      if (c && !c.classList.contains("gone")) { c.classList.add("leaving"); setTimeout(() => { c.classList.remove("leaving"); c.classList.add("gone"); }, 800); }
+    }
+    const b = m.bubbles[s]; const bu = se.querySelector(".bubble");
+    if (b) {
+      if (bu.dataset.seq !== String(b.seq)) {
+        const tgt = String(W.bySeq.get(b.seq)?.payload?.target || "");
+        bu.innerHTML = esc(b.text) + (b.kind === "ask" ? `<span class="tag">The Profiler asks ${seatName(tgt)}${HAVE_VOICE(b.seq) ? " (voice: ElevenLabs)" : ""}</span>`
+          : b.kind === "answer" ? `<span class="tag">answers the question</span>` : "");
+        bu.dataset.seq = b.seq;
+        if (anim) { bu.classList.remove("on"); void bu.offsetWidth; }
+      }
+      bu.classList.add("on"); bu.classList.toggle("ask", b.kind === "ask"); bu.classList.toggle("old", b.seq < m.lastBubble);
+    } else { bu.classList.remove("on", "old"); bu.dataset.seq = ""; }
+    const a = m.acts[s]; const ae = se.querySelector(".act");
+    ae.textContent = a ? a.text : ""; ae.classList.toggle("on", !!a); ae.classList.toggle("call", !!a?.call);
+  }
+  const tb = $("#turn");
+  if (m.active && TURN_XY[m.active]) { tb.style.transform = `translate(${TURN_XY[m.active][0]}px, ${TURN_XY[m.active][1]}px)`; tb.classList.add("on"); }
+  else tb.classList.remove("on");
+  where(m.game ? `Game ${m.game}, round ${m.round}${B.stack?.daytona?.picked_world_box && B.stack?.picked_decision?.world === W.wid ? `, played on <span class="spons">Daytona</span> ${esc(B.stack.daytona.picked_world_box)}` : ""}` : "");
+}
+const HAVE_VOICE = (seq) => !!HAVE[`voice/ask_${seq}.mp3`];
+
+function tableStop() { T.timers.forEach(clearTimeout); T.timers = []; }
+function renderTable(live) {
+  const el = $("#v-table");
+  if (!W.events.length) { T.built = false; el.innerHTML = awaiting("Awaiting data", "No <code>bundle/world.jsonl</code> yet. Run <code>blab pick-demo --run local</code> after a real local world exists."); return; }
+  const target = S.seq ?? 0;
+  const interrupted = T.timers.length > 0;
+  tableStop();
+  if (!T.built) buildTable();
+  if (interrupted && T.target !== null) { document.body.classList.add("instant"); syncTable(tableModel(T.target), null, false); T.shown = T.target; void el.offsetWidth; document.body.classList.remove("instant"); }
+  T.target = target;
+  let start = T.shown;
+  if (live && S.playFrom !== null && S.playFrom !== undefined && T.shown !== S.seq) {
+    start = S.playFrom - 1;
+    document.body.classList.add("instant"); syncTable(tableModel(start), null, false); void el.offsetWidth; document.body.classList.remove("instant");
+  }
+  const steps = (live && start !== null && target > start) ? W.events.filter((e) => e.seq > start && e.seq <= target && STEP_MS[e.type]) : null;
+  if (!steps || steps.length > 80) { syncTable(tableModel(target), null, false); T.shown = target; }
+  else {
+    let t = 0; const pace = S.pace || 1;
+    steps.forEach((e, i) => {
+      T.timers.push(setTimeout(() => { syncTable(tableModel(e.seq), e, true); T.shown = e.seq; }, t));
+      t += STEP_MS[e.type] * (e.type === "deal" ? 1 : pace);
+    });
+    T.timers.push(setTimeout(() => { syncTable(tableModel(target), null, true); T.shown = target; T.timers = []; }, Math.max(0, t - 200)));
+  }
   el.classList.toggle("frozen", !!S.frozen);
-  el.innerHTML = `<div class="felt-oval"></div>
-    <div class="gameplate">Game <b>${st.game}</b>, round <b>${st.round}</b></div>
-    <div class="rankplate"><div class="lbl">Table rank</div><div class="rk">${esc(RANKS[st.rank] || "—")}</div></div>
-    <div class="pile">${pile}</div>
-    ${seat("p2")}${seat("p3")}${seat("p1")}
-    <div class="freeze-stamp">Frozen at decision #${esc(S.seq)}</div>`;
-  where(`Game ${st.game}, round ${st.round}`);
+  const m = tableModel(target);
+  const claimant = m.pile[m.pile.length - 1]?.actor;
+  for (const s of SEAT_IDS) el.querySelector(`.seat.${s}`).classList.toggle("held-seat", !!S.frozen && s === claimant);
+  for (const s of SEAT_IDS) el.querySelector(`.seat.${s} .bubble`).classList.toggle("held", !!S.frozen && s === claimant);
+  el.querySelector(".freeze-stamp").textContent = S.frozen ? `Time stopped at decision ${S.seq}. The Profiler is to act.` : "";
 }
 
 /* ================================================================ inspector */
@@ -276,39 +446,39 @@ function predFeatures(pred, out = new Set()) {
 function gaugeSVG(pc, pf, { w = 1080, h = 170, label = true } = {}) {
   const x0 = 20, x1 = w - 20, X = (v) => x0 + (x1 - x0) * Math.max(0, Math.min(1, v));
   const y = 62, bh = 46;
-  let s = `<rect x="${x0}" y="${y}" width="${x1 - x0}" height="${bh}" fill="#0c2426"/>`;
-  if (pc !== null && pc !== undefined) s += `<rect x="${x0}" y="${y}" width="${X(pc) - x0}" height="${bh}" fill="var(--amber)"/>`;
+  let s = `<rect x="${x0}" y="${y}" width="${x1 - x0}" height="${bh}" fill="#07100b" stroke="var(--brass-lo)" stroke-width="1"/>`;
+  if (pc !== null && pc !== undefined) s += `<rect class="g-cards" x="${x0}" y="${y}" width="${X(pc) - x0}" height="${bh}" fill="var(--brass)"/>`;
   if (pf !== null && pf !== undefined && pc !== null && pc !== undefined) {
     const a = Math.min(pc, pf), b = Math.max(pc, pf);
-    s += `<rect x="${X(a)}" y="${y}" width="${Math.max(0, X(b) - X(a))}" height="${bh}" fill="var(--ice)"/>`;
-    s += `<rect x="${X(pf) - 3}" y="${y - 12}" width="6" height="${bh + 24}" fill="var(--bone)"/>`;
+    s += `<rect class="g-mem" style="transform-origin:${pf >= pc ? "left" : "right"} center" x="${X(a)}" y="${y}" width="${Math.max(0, X(b) - X(a))}" height="${bh}" fill="var(--pearl)"/>`;
+    s += `<rect class="g-final" x="${X(pf) - 3}" y="${y - 12}" width="6" height="${bh + 24}" fill="var(--ivory)"/>`;
   }
   s += `<line x1="${X(.5)}" x2="${X(.5)}" y1="${y - 22}" y2="${y + bh + 22}" stroke="var(--bone)" stroke-width="2" stroke-dasharray="6 6"/>`;
   if (label) {
     s += `<text x="${X(.5)}" y="${y + bh + 50}" fill="var(--bone-dim)" font-size="22" text-anchor="middle">challenge above 0.50</text>`;
     if (pc !== null && pc !== undefined) s += X(pc) < x0 + 240
-      ? `<text x="${x0}" y="${y - 20}" fill="var(--amber)" font-size="28" font-weight="700" text-anchor="start">card math ${f2(pc)}</text>`
-      : `<text x="${X(pc)}" y="${y - 20}" fill="var(--amber)" font-size="28" font-weight="700" text-anchor="end">card math ${f2(pc)}</text>`;
-    if (pf !== null && pf !== undefined) s += `<text x="${Math.min(X(pf) + 14, x1)}" y="${y - 20}" fill="var(--bone)" font-size="28" font-weight="700" text-anchor="${X(pf) > x1 - 260 ? "end" : "start"}">with memory ${f2(pf)}</text>`;
+      ? `<text class="g-lbl-cards" x="${x0}" y="${y - 20}" fill="var(--brass-hi)" font-size="28" font-weight="600" text-anchor="start">card math ${f2(pc)}</text>`
+      : `<text class="g-lbl-cards" x="${X(pc)}" y="${y - 20}" fill="var(--brass-hi)" font-size="28" font-weight="600" text-anchor="end">card math ${f2(pc)}</text>`;
+    if (pf !== null && pf !== undefined) s += `<text class="g-lbl-mem" x="${Math.min(X(pf) + 14, x1)}" y="${y - 20}" fill="var(--pearl)" font-size="28" font-weight="600" text-anchor="${X(pf) > x1 - 260 ? "end" : "start"}">with memory ${f2(pf)}</text>`;
     for (const t of [0, .25, .5, .75, 1]) s += `<text x="${X(t)}" y="${y + bh + 22}" fill="var(--bone-faint)" font-size="18" text-anchor="middle">${t === .5 ? "" : t}</text>`;
   }
-  return svg(w, h, s);
+  return svg(w, h, s, "gauge");
 }
 
 function memLineHTML(m, evidenceOpen) {
   const qt = m.q_true || [], qf = m.q_false || [];
   const rows = (m.evidence_obs || []).map((id) => W.reveals.get(id) ? { id, ...W.reveals.get(id) } : { id });
-  const shown = rows.slice(-5);
+  const shown = rows.slice(-3);
   const evid = shown.map((r) => {
     if (!r.reveal) return `<div class="row"><span>${esc(r.id.split(":").pop())}</span><span class="u">not in this world's log</span><span></span></div>`;
     const tr = (W.events.find((e) => e.type === "deal" && e.game === r.reveal.game && e.round === r.reveal.round) || {}).payload?.table_rank;
     const p = r.reveal.payload;
     return `<div class="row"><span>Game ${r.reveal.game} r${r.reveal.round}</span>
       <span class="u">${esc(r.claim?.payload.utterance || "")}</span>
-      <span class="cs">${p.cards.map((c) => cardEl(c, { up: true, tableRank: tr, sm: true })).join("")}
+      <span class="cs">${p.cards.map((c) => cardEl(c, { up: true, tableRank: tr, xs: true })).join("")}
       <span class="res ${p.was_bluff ? "bluffword" : "honestword"}">${p.was_bluff ? "bluff" : "honest"}</span></span></div>`;
   }).join("");
-  return `<div class="line">
+  return `<div class="line panel">
     <div class="txt">${esc(m.text)}</div>
     <div class="meta"><span class="chip ${esc(m.status)}">${esc(m.status)}</span>
       <span class="chip ${esc(m.provenance)}">${m.provenance === "untrusted" ? "no evidence (injected)" : "from evidence"}</span>
@@ -328,7 +498,7 @@ function claimCardHTML(d, ev) {
   const keys = ["formal_register", "hand_size", "claim_count", "trusted_streak", "lives_target", "was_challenged_last_round"];
   const chips = keys.filter((k) => k in feats).map((k) => `<span class="feat ${hot.has(k) ? "hot" : ""}">${esc(k.replace(/_/g, " "))} <b>${esc(String(feats[k]))}</b></span>`).join("");
   const who = d.target || ev?.actor;
-  return `<div class="claimcard"><div class="who">${seatName(who, S.flipped)} claims</div>
+  return `<div class="claimcard panel"><div class="who">${seatName(who, S.flipped)} claims</div>
     <div class="what">${esc(cl.count)} ${esc((cl.count === 1 ? RANK1 : RANKS)[cl.rank] || cl.rank || "")}</div>
     <div class="said">“${esc(cl.utterance)}”</div><div class="feats">${chips}</div></div>`;
 }
@@ -342,8 +512,9 @@ function qSourceText(d) {
   const m = (d.memory_used || []).find((x) => x.hyp_id === src);
   return m ? `From the memory line below: q = ${f2(d.q_used)}.` : `From memory (${esc(src)}): q = ${f2(d.q_used)}.`;
 }
-function renderInspector() {
+function renderInspector(live) {
   const el = $("#v-inspector");
+  el.classList.toggle("anim", !!live && !S.evidence);
   const e = W.bySeq.get(S.inspect);
   if (!e || e.type !== "decision") { el.innerHTML = awaiting("Awaiting data", `No decision event at seq ${esc(S.inspect)} in <code>world.jsonl</code>.`); return; }
   const d = e.payload, cm = d.card_math || {};
@@ -365,6 +536,9 @@ function renderInspector() {
         ${mem.map((m) => memLineHTML(m, S.evidence && m.hyp_id === focus)).join("")}</div>
     </div></div>`;
   where(`Game ${e.game}, round ${e.round}, decision #${e.seq}`);
+  const pd = B.stack?.picked_decision;
+  if (pd && pd.seq === e.seq && W.wid === pd.world) el.querySelector(".insp > div").insertAdjacentHTML("beforeend",
+    `<div class="attrib"><b>Arize AX</b> decision span, trace <code>${esc(pd.arize_trace_id || "—")}</code><br><b>Daytona</b> world box <code>${esc(pd.box || "—")}</code></div>`);
 }
 
 /* ================================================================ dossier */
@@ -398,7 +572,7 @@ function renderDossier() {
     (t % 2 === 0 || t === g ? `<text x="${X(t)}" y="66" fill="${t === g ? "var(--ice)" : "var(--bone-faint)"}" font-size="20" text-anchor="middle">${t}</text>` : "");
   el.innerHTML = `<h2 class="title">${seatName(about, S.flipped)}: the file it built, as of game ${g}</h2>
     <p class="sub">From memory checkpoint g${String(g).padStart(2, "0")} (memory version ${esc(ck.memory_version ?? "?")}).
-    ${base ? `Base bluff rate <b>${f2(base[0])}</b> (${f2(base[1])}–${f2(base[2])}).` : ""}</p>
+    ${base ? `Base bluff rate <b>${f2(base[0])}</b> (${f2(base[1])}–${f2(base[2])}).` : ""}${surrealNote(about)}</p>
     <div class="slider">${svg(w, 80, sl)}</div>
     <div class="doss">${block("confirmed", "Confirmed")}${block("provisional", "Provisional")}${block("superseded", "Superseded")}${block("refuted", "Refuted")}</div>`;
   where(`Dossier, game ${g}`);
@@ -425,12 +599,12 @@ function renderSurgery() {
     const sub = sub0 || (k === "false_memory" ? `Adds “${esc(fm?.text || "")}”, no evidence behind it`
       : `Treats every line as true, including “${esc((v?.variant || fm)?.text || "")}”`);
     if (!v || !v.available || !v.result) {
-      return `<div class="col absent ${on ? "on" : ""}"><div class="vt">${t}</div><div class="vs">${sub}</div><div class="p">not run</div>
+      return `<div class="col panel absent ${on ? "on" : ""}"><div class="vt">${t}</div><div class="vs">${sub}</div><div class="p">not run</div>
         <div class="dp">${esc(v?.note || "no matching world in this run")}</div></div>`;
     }
     const r = v.result; const act = r.action;
     const right = wasBluff === null ? null : (act === "challenge") === !!wasBluff;
-    return `<div class="col ${on ? "on" : ""}"><div class="vt">${t}</div><div class="vs">${sub}</div>
+    return `<div class="col panel ${on ? "on" : ""}"><div class="vt">${t}</div><div class="vs">${sub}</div>
       <div class="p">${f2(r.p_final)}</div><div class="plbl">probability of bluff</div>
       ${gaugeSVG(r.card_math?.p_cards ?? d.card_math?.p_cards, r.p_final, { w: 360, h: 120, label: false })}
       <div class="act ${esc(act)}">${esc((act || "").replace("_", " "))}${right === null ? "" : `<span class="judge ${right ? "right" : "wrong"}">${right ? "right" : "wrong"}</span>`}</div>
@@ -442,7 +616,7 @@ function renderSurgery() {
   el.classList.toggle("flipped", !!S.flipped);
   el.innerHTML = `<div class="surg-head"><div><div class="who">Same cards, same claim, same model. Only the memory changes. ${seatName(d.target, S.flipped)}, game ${esc(R.decision_game ?? "")}:</div>
       <div class="said">“${esc(cl.utterance)}”</div></div>
-      <div class="cards">${cards}<span class="verdict ${showCards ? "on" : ""} ${wasBluff ? "bluffword" : "honestword"}">${wasBluff ? "bluff" : "honest"}</span></div></div>
+      <div class="cards">${cards}<span class="verdict2 ${showCards ? "on" : ""} ${wasBluff ? "bluffword" : "honestword"}">${wasBluff ? "bluff" : "honest"}</span></div></div>
     <div class="cols">${cols}</div>
     ${R.selection && R.selection.exact === false ? `<div class="selnote">Closest match, not exact: ${esc(R.selection.note || "")}</div>` : ""}`;
   where(`Decision #${R.seq}, world ${R.world}`);
@@ -467,9 +641,9 @@ function renderAblation() {
   let s = axisY(x0, x1, Y, ticks, (t) => pct(t));
   bars.forEach((b, i) => {
     const cx = x0 + (x1 - x0) * (i + 0.5) / n;
-    const col = b.variant === "full" ? "var(--ice)" : b.variant.startsWith("minus") ? "var(--bluff)" : b.variant.startsWith("as_of") ? "var(--amber)" : "var(--violet)";
+    const col = b.variant === "full" ? "var(--s-memory)" : b.variant.startsWith("minus") ? "var(--s-rose)" : b.variant.startsWith("as_of") ? "var(--s-brass)" : "var(--s-violet)";
     if (b.mean !== null && b.mean !== undefined) {
-      s += `<rect x="${cx - bw / 2}" y="${Y(b.mean)}" width="${bw}" height="${yB - Y(b.mean)}" fill="${col}" opacity=".9"/>`;
+      s += `<rect x="${cx - bw / 2}" y="${Y(b.mean)}" width="${bw}" height="${yB - Y(b.mean)}" fill="${col}" rx="4"/>`;
       if (b.lo !== null && b.hi !== null) s += `<line x1="${cx}" x2="${cx}" y1="${Y(b.lo)}" y2="${Y(b.hi)}" stroke="var(--bone)" stroke-width="3"/>
         <line x1="${cx - 16}" x2="${cx + 16}" y1="${Y(b.lo)}" y2="${Y(b.lo)}" stroke="var(--bone)" stroke-width="3"/>
         <line x1="${cx - 16}" x2="${cx + 16}" y1="${Y(b.hi)}" y2="${Y(b.hi)}" stroke="var(--bone)" stroke-width="3"/>`;
@@ -509,7 +683,7 @@ function renderTrust() {
     out += `<path d="M${ok.map((p) => `${X(p.game)},${Y(p.mean)}`).join("L")}" fill="none" stroke="${color}" stroke-width="${width}" stroke-dasharray="${dash}" stroke-linejoin="round"/>`;
     return out;
   };
-  const COL = { counter: "var(--amber)", bayes: "var(--violet)", bayes_discount: "#e6c98f", profiler: "var(--ice)" };
+  const COL = { counter: "var(--s-brass)", bayes: "var(--s-rose)", bayes_discount: "var(--s-violet)", profiler: "var(--s-memory)" };
   s += line(L.true_honesty || [], "var(--bone)", 6);
   const agents = Object.keys(L.agents || {});
   for (const a of agents) s += line(L.agents[a], COL[a] || "var(--bone-dim)", 4, a === "counter" ? "10 8" : "");
@@ -613,12 +787,66 @@ function renderSplit() {
     const ws = gameWinners(evs); const start = (evs.find((e) => e.type === "world_start") || {}).payload;
     const pol = start?.seats?.find((s) => s.seat === "p1")?.policy || "?";
     const won = ws.filter((g) => g.winner === "p1").length;
-    return `<div class="side"><h3>${esc(label)}: ${esc(pol)}</h3><div class="meta">World ${esc(evs[0]?.world)}, seed ${esc(start?.seed)}</div>
+    return `<div class="side panel"><h3>${esc(label)}: ${esc(pol)}</h3><div class="meta">World ${esc(evs[0]?.world)}, seed ${esc(start?.seed)}</div>
       <div class="strip-games">${ws.map((g) => `<div class="${g.winner === "p1" ? "win" : ""}">${g.game}</div>`).join("")}</div>
       <div class="total">${won}<span>of ${ws.length} games won</span></div></div>`;
   };
   el.innerHTML = head + `<p class="sub">Highlighted: games won by seat 1.</p><div class="split">${side(W.events, "World")}${side(B.twin, "Twin")}</div>`;
   where("Split screen");
+}
+
+/* ================================================================ how it's built (stack.json) */
+const dash = (v) => (v === null || v === undefined || v === "") ? "—" : esc(String(v));
+function surrealNote(about) {
+  const ex = B.stack?.surrealdb?.supersession_example;
+  if (!ex || ex.world !== W.wid || !String(ex.entity || "").endsWith(`.${about}`)) return "";
+  return `<br><span class="attrib"><b>SurrealDB Agent Memory</b> keeps this belief's history: <code>${esc(ex.entity)}</code>, key <code>${esc(ex.key)}</code>, ${dash(ex.history_len_from_log)} versions.</span>`;
+}
+let stackTimers = [];
+function renderStack(live) {
+  const el = $("#v-stack"); const K = B.stack;
+  stackTimers.forEach(clearTimeout); stackTimers = [];
+  const head = `<h2 class="title">How it's built: the house and its partners</h2>`;
+  if (!K) { el.innerHTML = head + awaiting("Awaiting data", "No <code>bundle/stack.json</code>."); return; }
+  const d = K.daytona || {}, c = K.claude || {}, sd = K.surrealdb || {}, az = K.arize || {}, el11 = K.elevenlabs, pd = K.picked_decision || {};
+  const R = B.reveal || {}; const dec = R.decision || {};
+  const boxes = (d.boxes || []).map((b) => `${esc(b.id)}`).join(", ");
+  const L = [
+    ["eleven", "ElevenLabs", "the voice", "Speaks the Profiler's questions at the table.",
+      el11 ? `voice <b>${dash(el11.voice_id)}</b>, <b>${dash(el11.mp3s)}</b> lines voiced` : "not voiced in this run"],
+    ["claude", "Claude Opus 5.5", "on AWS Bedrock", "Reflects between games: reads the reveals and proposes beliefs to test. Also writes Strategy Forge code.",
+      `<b>${dash(c.reflections)}</b> real reflections, <b>${dash(c.proposed_hypotheses)}</b> beliefs proposed`],
+    ["surreal", "SurrealDB", "Agent Memory", "Holds each belief about each opponent, with its history: what replaced what, valid from game to game. Dossiers are read as of a game.",
+      `<b>${dash(sd.supersessions_in_logs)}</b> supersessions; e.g. <b>${dash(sd.supersession_example?.entity)}</b>`],
+    ["arize", "Arize AX", "traces and experiments", "A span for every decision and reflection, and experiments that compare agents on the same seeds.",
+      `project <b>${dash(az.project)}</b>, <b>${dash(az.decision_spans_in_picked_world)}</b> decision spans in this world`],
+    ["daytona", "Daytona", "world boxes and forge sandbox", "Stateful boxes where many worlds play at once: events, checkpoints, live memory. AI-written strategy code runs in a separate network-blocked sandbox.",
+      `<b>${dash(d.worlds_total)}</b> worlds on boxes ${boxes || "—"}; forge sandbox ${dash(d.forge_sandbox_id)}`],
+  ];
+  const at = (k) => ({ claim: "daytona", decide: "daytona", trace: "arize", reveal: "daytona", reflect: "claude", store: "surreal", back: "surreal" })[k];
+  const steps = [
+    ["claim", `${seatName(dec.target || "p3")} claims in world <code>${dash(R.world)}</code> on Daytona <code>${dash(pd.box)}</code> (event ${dash(R.claim_seq)}).`],
+    ["decide", `The Profiler reads memory version ${dash(dec.memory_version)} and decides: <b>${esc((dec.action || "—").replace("_", " "))}</b>, p ${f2(dec.p_final)} (event ${dash(R.seq)}).`],
+    ["trace", `The decision lands in Arize AX as trace <code>${dash(pd.arize_trace_id)}</code>.`],
+    ["reveal", `The cards are turned: ${R.reveal ? (R.reveal.was_bluff ? "bluff" : "honest") : "—"} (event ${dash(R.reveal_seq)}).`],
+    ["reflect", `After the game, Claude reads the reveals and proposes beliefs (sample request <code>${dash(c.sample_reflect_trace)}</code>).`],
+    ["store", `Beliefs that pass the evidence test are written to SurrealDB; the old version is superseded, not erased.`],
+    ["back", `Next game, the Profiler reads that memory again. No retraining.`],
+  ];
+  const flow = S.stackFlow;
+  el.innerHTML = head + `<p class="sub">Every number on this card comes from run <b>${dash(K.run)}</b>.</p>
+    <div class="stack"><div class="layers">${L.map(([k, wm, sm, does, real]) => `<div class="layer panel" data-k="${k}">
+      <div class="wm">${wm}<small>${sm}</small></div><div class="does">${does}</div><div class="real">${real}</div></div>`).join("")}</div>
+      <div class="flow panel"><h3>One decision, through the house</h3>${steps.map(([k, t], i) => `<div class="step ${flow && !live ? "on" : ""}" data-k="${at(k)}"><span class="n">${i + 1}</span><span>${t}</span></div>`).join("")}</div></div>`;
+  where(`Run ${dash(K.run)}`);
+  if (flow && live) {
+    const st = [...el.querySelectorAll(".step")];
+    st.forEach((s, i) => stackTimers.push(setTimeout(() => {
+      s.classList.add("on");
+      el.querySelectorAll(".layer").forEach((l) => l.classList.toggle("hot", l.dataset.k === s.dataset.k));
+    }, 300 + i * 1100)));
+    stackTimers.push(setTimeout(() => el.querySelectorAll(".layer").forEach((l) => l.classList.remove("hot")), 300 + st.length * 1100 + 600));
+  }
 }
 
 /* ================================================================ title / close */
@@ -628,8 +856,9 @@ function provenance() {
 }
 function renderTitle() {
   const P = provenance();
-  $("#v-title").innerHTML = `<div class="big">Bluff Lab</div>
+  $("#v-title").innerHTML = `<div class="crest">a card room for agents that remember</div><div class="big">Bluff Lab</div>
     <div class="one">How AI agents learn through memory without retraining, and whether that memory makes them better or more exploitable.</div>
+    <div class="suits">${["K", "Q", "A", "J"].map((r) => cardEl(r, { up: true })).join("")}</div>
     <div class="prov">${W.events.length ? `One recorded world, picked by rule, not by hand: run <b>${esc(P.run)}</b>, world <b>${esc(P.world)}</b>, seed <b>${esc(P.seed)}</b>${P.table ? `, ${esc(P.table)} table` : ""}.` : "Awaiting data: no bundle yet."}</div>`;
   where("");
 }
@@ -642,19 +871,33 @@ function renderClose() {
 /* ================================================================ render */
 function where(t) { $("#strip-where").innerHTML = t; }
 const RENDER = { title: renderTitle, table: renderTable, inspector: renderInspector, dossier: renderDossier, surgery: renderSurgery,
-  ablation: renderAblation, trust: renderTrust, split: renderSplit, results: renderResults, decisions: renderDecisions, forge: renderForge, close: renderClose };
+  ablation: renderAblation, trust: renderTrust, split: renderSplit, results: renderResults, decisions: renderDecisions, forge: renderForge, stack: renderStack, close: renderClose };
 const SCENE = { title: "", table: "The table", inspector: "Mind inspector", dossier: "Dossier", surgery: "Memory surgery",
-  ablation: "Ablation", trust: "Long con", split: "Split screen", results: "Results", decisions: "Beliefs and decisions", forge: "Strategy forge", close: "" };
-function render() {
-  for (const el of document.querySelectorAll(".view")) el.classList.toggle("on", el.id === `v-${S.view}`);
-  (RENDER[S.view] || renderTitle)();
+  ablation: "Ablation", trust: "Long con", split: "Split screen", results: "Results", decisions: "Beliefs and decisions", forge: "Strategy forge", stack: "How it's built", close: "" };
+let lastView = null;
+function render(live = false) {
+  const prevView = lastView; lastView = S.view;
+  const turning = live && prevView === "table" && S.view === "inspector";
+  for (const el of document.querySelectorAll(".view")) {
+    el.classList.remove("turn-out", "turn-in");
+    el.classList.toggle("on", el.id === `v-${S.view}`);
+  }
+  if (S.view !== "table") tableStop();
+  (RENDER[S.view] || renderTitle)(live);
+  if (turning) {        // the table tilts away around the agent's seat; its mind turns in like a card
+    const tv = $("#v-table"), iv = $("#v-inspector");
+    void tv.offsetWidth; tv.classList.add("turn-out"); iv.classList.add("turn-in");
+    const done = () => { tv.classList.remove("turn-out"); iv.classList.remove("turn-in"); };
+    iv.addEventListener("animationend", (e) => { if (e.target === iv) done(); }, { once: false });
+    setTimeout(done, 1600);
+  }
   $("#strip-scene").textContent = SCENE[S.view] ?? "";
   const cap = $("#caption"); cap.textContent = S.caption || ""; cap.classList.toggle("on", !!S.caption);
   renderHUD();
 }
 function renderHUD() {
   const h = $("#hud"); const cur = cues[idx - 1]; const nxt = cues[idx];
-  const files = ["world.jsonl", "reveal.json", "dossier.json", "ablation.json", "longcon.json", "results.json", "cues.json", "twin.jsonl", "forge.json"]
+  const files = ["world.jsonl", "reveal.json", "dossier.json", "ablation.json", "longcon.json", "results.json", "cues.json", "twin.jsonl", "forge.json", "stack.json"]
     .map((f) => `${HAVE[f] ? "✓" : "✗"} ${f}`).join("  ");
   h.innerHTML = `<div class="now">${idx}/${cues.length} ${esc(cur?.name || "start")}</div>
     <div class="say">${esc(cur?.say || "")}</div>
@@ -665,7 +908,7 @@ function renderHUD() {
 }
 
 function fit() {
-  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080); SC = s;
   $("#stage").style.transform = `translate(-50%, -50%) scale(${s})`;
   $("#stage").style.transformOrigin = "center center";
   $("#stage").style.left = "50%"; $("#stage").style.top = "50%";

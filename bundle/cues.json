@@ -76,6 +76,10 @@
    {
     "action": "caption",
     "text": "Before it decides, the Profiler may ask one question."
+   },
+   {
+    "action": "audio",
+    "file": "voice/ask_7.mp3"
    }
   ]
  },
@@ -293,6 +297,33 @@
    {
     "action": "view",
     "name": "decisions"
+   }
+  ]
+ },
+ {
+  "name": "how it's built",
+  "requires": [
+   "stack.json"
+  ],
+  "say": "The house and its partners: Daytona runs the worlds, Claude reflects, SurrealDB remembers, Arize traces, ElevenLabs speaks.",
+  "actions": [
+   {
+    "action": "view",
+    "name": "stack"
+   }
+  ]
+ },
+ {
+  "name": "how it's built: one decision",
+  "requires": [
+   "stack.json"
+  ],
+  "say": "Follow this one decision through the stack: claim, decision, trace, reveal, reflection, memory, and back.",
+  "actions": [
+   {
+    "action": "view",
+    "name": "stack",
+    "flow": true
    }
   ]
  },
