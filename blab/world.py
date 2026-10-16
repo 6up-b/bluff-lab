@@ -34,6 +34,8 @@ TABLES: dict[str, list[str]] = {
     "tell_conjunctive": ["control", "tell_conjunctive"],
     "tell_flipper": ["control", "tell_flipper"],
     "answer_tell": ["control", "answer_tell"],
+    # b01 (capability boundary, PREREG.md): designed after r01
+    "tell_relational": ["control", "tell_relational"],
 }
 
 REFLECT_TIMEOUT_S = 60.0
@@ -249,6 +251,8 @@ class World:
                     self.emit("decision", d, game=g, round=r, actor=seat)
                 for typ, payload, actor in eng.apply(seat, act):
                     self.emit(typ, payload, game=g, round=r, actor=actor)
+                    if typ == "claim" and self._auto_ask(actor):
+                        self._engine_ask(actor, g, r)
             await asyncio.sleep(0)
         rnd = eng.round
         self.emit("game_end", eng.game_end_payload(), game=g, round=rnd)
@@ -262,6 +266,25 @@ class World:
                 await self._reflect(seat, pol, g, rnd)
         self.checkpoint(g)
         self._write_meta()
+
+    def _auto_ask(self, seat: str | None) -> bool:
+        """b01 answer fairness: the ENGINE asks every answer_tell seat the same neutral question on EVERY
+        claim, in every world of that table, so all agents receive identical answer text."""
+        sp = next((x for x in self.seats if x["seat"] == seat), {})
+        return sp.get("role") == "answer_tell"
+
+    def _engine_ask(self, tgt: str, g: int, r: int) -> None:
+        from blab.agents.banks import NEUTRAL_QUESTION
+        from blab.engine import formal_register, has_contraction
+        self.emit("ask", {"target": tgt, "template_id": "engine_neutral", "text": NEUTRAL_QUESTION,
+                          "kind": "neutral", "reason_aspect": None, "source": "engine"}, game=g, round=r, actor=None)
+        pol = self.policies[tgt]
+        text = pol.answer(NEUTRAL_QUESTION, self.engine.observation(tgt))
+        feats = {"answer_formal_register": formal_register(text), "answer_utterance": text,
+                 "answer_has_contraction": has_contraction(text)}
+        self.emit("answer", {"text": text, "latency_ms": 0, "source": "scripted", "features": feats},
+                  game=g, round=r, actor=tgt)
+        self.engine.annotate_pending(feats)      # public: in every observer's pending-claim features
 
     async def _interrogate(self, seat: str, obs: dict, g: int, r: int) -> None:
         """§7.5 (sim: text only). The answer's features are added to the pending claim's features as

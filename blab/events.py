@@ -69,7 +69,7 @@ class Ask(_P):
     target: Seat
     template_id: str
     text: str
-    p_final: float
+    p_final: Optional[float] = None          # None for the engine's neutral b01 question (no asker belief)
     reason_aspect: Optional[str] = None
     audio: Optional[str] = None
 
