@@ -42,7 +42,7 @@ async function load() {
   HAVE["world.jsonl"] = world !== null; HAVE["twin.jsonl"] = twin !== null;
   if (world) indexWorld(parseJSONL(world));
   if (twin) B.twin = parseJSONL(twin);
-  const names = ["reveal", "dossier", "ablation", "longcon", "results", "forge", "stack", "cues"];
+  const names = ["reveal", "dossier", "ablation", "longcon", "results", "forge", "stack", "cues", "longcon2", "boundary", "memory"];
   const got = await Promise.all(names.map((n) => getJSON(`${n}.json`)));
   names.forEach((n, i) => { B[n] = got[i]; HAVE[`${n}.json`] = got[i] !== null; });
   cues = normalizeCues(B.cues || defaultCues());
@@ -876,6 +876,89 @@ function renderStack(live) {
   }
 }
 
+
+/* ================================================================ lc02, checkpoint branches, capability map, memory (polish) */
+const ciPct = (m) => !m || m.mean === null || m.mean === undefined ? "—" : `${pct(m.mean)}${m.lo !== null && m.lo !== undefined ? `<span class="ci">${pct(m.lo)}–${pct(m.hi)}${m.n !== undefined ? ` · n ${m.n}` : ""}</span>` : ""}`;
+const ciNum = (m, f = fN) => !m || m.mean === null || m.mean === undefined ? "—" : `${f(m.mean)}${m.lo !== null && m.lo !== undefined ? `<span class="ci">${f(m.lo)}–${f(m.hi)}${m.n !== undefined ? ` · n ${m.n}` : ""}</span>` : ""}`;
+const kmTxt = (k) => !k ? "—" : (k.median === null || k.median === undefined ? `undefined<span class="ci">fewer than half detected · n ${esc(k.n ?? "?")}</span>`
+  : `${fN(k.median)}<span class="ci">${k.lo !== null && k.lo !== undefined ? `${fN(k.lo)}–${k.hi === null || k.hi === undefined ? "∞" : fN(k.hi)}` : ""}${k.n !== undefined ? ` · ${esc(k.n_events ?? "?")}/${esc(k.n)} detected` : ""}</span>`);
+const sgn = (v, f) => v === null || v === undefined ? "—" : MINUS(`${v > 0 ? "+" : ""}${f(v)}`);
+const dPts = (v) => sgn(v, (x) => `${(x * 100).toFixed(1)} pts`);
+const dCI = (d, f) => !d || d.mean === null || d.mean === undefined ? "—"
+  : `${f(d.mean)}${d.lo !== null && d.lo !== undefined ? `<span class="ci">${f(d.lo)} to ${f(d.hi)} · n ${esc(d.n)}</span>` : `<span class="ci">n ${esc(d.n ?? "?")}, no CI</span>`}`;
+
+function renderLongcon2() {
+  const el = $("#v-longcon2"); const L = B.longcon2;
+  const head = `<h2 class="title">The long con at scale</h2>`;
+  if (!L?.arms) { el.innerHTML = head + awaiting("Awaiting data", "No <code>bundle/longcon2.json</code> yet."); return; }
+  const order = ["counter", "bayes", "bayes_discount", "logreg_bow", "profiler", "profiler+claude", "profiler_blind"];
+  const rows = order.map((l) => [l, L.arms[`${l}|threshold`]]).filter(([, a]) => a).map(([l, a]) => {
+    const lab = l === "profiler" ? "profiler <small>stub reflection</small>" : l === "profiler+claude" ? "profiler <small>Claude reflection</small>" : esc(l);
+    return `<tr class="${l.startsWith("profiler") && l !== "profiler_blind" ? "ours" : ""}"><td>${lab}</td><td>${ciPct(a.detection_rate)}</td><td>${kmTxt(a.rtd_km_median)}</td>
+      <td>${ciNum(a.exploitation)}</td><td>${ciPct(a.false_alarm_belief)}</td></tr>`;
+  }).join("");
+  el.innerHTML = head + `<p class="sub">Pre-registered run ${esc(L.run || "")}: ${esc(L.n_worlds ?? "?")} worlds, seeds ${esc(L.seeds || "")}, threshold respond rule. A sleeper plays honest, then turns at G₀. Means with 95% bootstrap CIs over seeds.</p>
+    <table class="grid lc2"><thead><tr><th>Agent</th><th>Detects the turn</th><th>Rounds to detection<br><small>Kaplan–Meier median</small></th><th>Sleeper bluffs let through<br><small>games ≥ G₀, per world</small></th><th>False alarm<br><small>belief change, honest table</small></th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="foot" style="margin-top:18px">Detection is near 100% because the pre-registered rule fires on two consecutive p_final &gt; 0.5. Claude-reflection Profiler (n = ${esc(L.arms["profiler+claude|threshold"]?.n_longcon ?? "?")}) is its own row, never pooled with stub reflection.</div>`;
+  where(`Long con at scale, ${esc(L.run || "")}`);
+}
+
+function renderBranches() {
+  const el = $("#v-branches"); const C = B.longcon2?.checkpoint_branches;
+  const head = `<h2 class="title">Checkpoint branches: change one memory, replay the rest</h2>`;
+  if (!C?.interventions) { el.innerHTML = head + awaiting("Awaiting data", "No checkpoint branches in <code>bundle/longcon2.json</code> yet."); return; }
+  const I = C.interventions; const base = I.none?.exploitation?.mean;
+  const lab = { none: "untouched", erase: "erase memory", false_memory: "false memory", drift_off: "drift detector off" };
+  const rows = ["none", "erase", "false_memory", "drift_off"].filter((k) => I[k]).map((k) => {
+    const x = I[k]; const d = k === "none" || base === undefined || x.exploitation?.mean === undefined ? null : x.exploitation.mean - base;
+    return `<tr class="${k === "none" ? "ours" : ""}"><td>${lab[k]}</td><td>${ciNum(x.exploitation)}</td><td class="dl">${d === null ? "—" : sgn(d, (v) => v.toFixed(1))}</td><td>${kmTxt(x.rtd_km_median)}</td><td>${ciNum(x.lives_lost_after_g0)}</td></tr>`;
+  }).join("");
+  el.innerHTML = head + `<p class="sub">Each branch restores the Profiler's checkpoint from game G₀−1 and replays the same seeds and cards with one change to memory. Parent arm: ${esc(C.parent_arm || "")}.</p>
+    <table class="grid lc2"><thead><tr><th>Checkpoint branch</th><th>Sleeper bluffs let through<br><small>games ≥ G₀, per world</small></th><th>Difference<br><small>vs untouched, in means</small></th><th>Rounds to detection<br><small>Kaplan–Meier median</small></th><th>Lives lost after G₀</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="foot" style="margin-top:18px">Checkpoint branches: restored from game G₀−1, same seeds and cards, learning on, stub reflection. 95% bootstrap CIs over seeds; the difference column compares means.</div>`;
+  where("Checkpoint branches");
+}
+
+function renderBoundary() {
+  const el = $("#v-boundary"); const Bd = B.boundary; const M = Bd?.capability_map;
+  const head = `<h2 class="title">Where memory helps: the capability map</h2>`;
+  if (!M) { el.innerHTML = head + `<p class="sub">Pre-registered experiment b01: raw observations for every agent, fresh seeds 4000–4023.</p>` + awaiting("Awaiting data", "No <code>bundle/boundary.json</code> (capability_map) yet."); return; }
+  const rowsIn = Array.isArray(M) ? M : (M.rows || Object.entries(M).map(([k, v]) => ({ cue: k, ...v })));
+  const fmtD = (r) => (r.fmt === "pct" || r.metric === "win_rate") ? dPts : (v) => sgn(v, (x) => Math.abs(x) < 1 ? x.toFixed(3) : x.toFixed(1));
+  const ok = (h) => h === true ? '<span class="honestword">✓ holds</span>' : h === false ? '<span class="bluffword">✗ did not hold</span>' : "—";
+  const rows = rowsIn.map((r) => { const d = r.delta || r.diff || {}; const f = fmtD(r);
+    return `<tr><td>${esc(r.cue_type || r.cue || r.label || "")}${r.table ? `<small>${esc(r.table)}${r.run ? `, ${esc(r.run)}` : ""}</small>` : ""}</td><td>${esc(r.winner || "—")}</td>
+      <td>${dCI(d, f)}</td><td>${esc(r.metric || "")}</td><td>${ok(r.holds)}</td></tr>`; }).join("");
+  const H = Bd.hypotheses || M.hypotheses || [];
+  const hyp = (Array.isArray(H) ? H : Object.entries(H).map(([k, v]) => ({ id: k, ...v }))).map((h) => { const d = h.delta || h.diff || h.ci || null;
+    return `<div class="hyp ${h.holds ? "yes" : "no"}"><b>${esc(h.id || "")}</b> ${esc(h.text || h.claim || "")} <span>${ok(h.holds)}${d && d.mean !== undefined ? ` · ${dCI(d, (v) => sgn(v, (x) => x.toFixed(3)))}` : ""}</span></div>`; }).join("");
+  el.innerHTML = head + `<p class="sub">${esc(Bd.note || "Pre-registered experiment b01: raw observations for every agent, fresh seeds 4000–4023, paired bootstrap 95% CIs; a claim holds only if the CI excludes 0.")}</p>
+    <table class="grid lc2"><thead><tr><th>Cue type</th><th>Winner</th><th>Δ (95% CI)</th><th>Metric</th><th>Holds</th></tr></thead><tbody>${rows}</tbody></table>
+    ${hyp ? `<div class="hyps">${hyp}</div>` : ""}`;
+  where(`Capability map${Bd.run ? `, ${esc(Bd.run)}` : ""}`);
+}
+
+function renderMemory() {
+  const el = $("#v-memory"); const M = B.memory;
+  const head = `<h2 class="title">Does memory help?</h2>`;
+  if (!M?.rules) { el.innerHTML = head + awaiting("Awaiting data", "No <code>bundle/memory.json</code> yet."); return; }
+  const rule = (M.rules_order || Object.keys(M.rules))[0] || "threshold"; const R = M.rules[rule] || {};
+  const hasD = (t) => Object.values(R[t]?.delta_vs_baseline || {}).some((d) => d?.win_rate?.mean != null || d?.brier?.mean != null);
+  const tables = ["all", ...Object.keys(R).filter((t) => t !== "all")].filter((t) => R[t] && hasD(t));   // tables with no paired seeds are left out (listed in the foot)
+  const arms = (R.all || R[tables[0]])?.arms?.filter((a) => a !== M.baseline) || [];
+  const brier = (v) => sgn(v, (x) => x.toFixed(3));
+  const cell = (t, a) => { const d = R[t]?.delta_vs_baseline?.[a]; if (!d || (d.win_rate?.mean == null && d.brier?.mean == null)) return `<td class="na">—</td>`;
+    const one = (m, f) => !m || m.mean == null ? "—" : `${f(m.mean)} <span class="ci">${m.lo != null ? `${f(m.lo)} to ${f(m.hi)}` : "no CI"}</span>`;
+    return `<td><div>${one(d.win_rate, dPts)}</div><div class="br">${one(d.brier, brier)}</div></td>`; };
+  const rows = arms.map((a) => `<tr class="${a.startsWith("llm_") ? "ours" : ""}"><td>${esc(a)}</td>${tables.map((t) => cell(t, a)).join("")}</tr>`).join("");
+  const setting = M.setting === "raw" ? "raw observations" : M.setting === "engineered" ? "engineered-feature setting" : esc(M.setting || "");
+  el.innerHTML = head + `<div class="memhead"><span class="setting">${setting}</span><span class="hl">${esc(M.headline || "")}</span></div>
+    <p class="sub">Paired Δ vs the no-memory arm <b>${esc(M.baseline || "")}</b> on the same seeds, ${esc(rule)} rule, run ${esc(M.run || "")}. Win rate higher is better; Brier lower is better. 95% bootstrap CI where n allows.</p>
+    <table class="grid lc2 mem"><thead><tr><th>Arm</th>${tables.map((t) => `<th>${t === "all" ? "all tables" : esc(t)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>
+    <div class="foot" style="margin-top:14px">Each cell: win-rate Δ (top), Brier Δ (below), 95% CI. Paired seeds per cell: ${tables.map((t) => `${t === "all" ? "all" : esc(t)} n ${esc(Math.max(0, ...Object.values(R[t].delta_vs_baseline || {}).map((d) => d?.win_rate?.n || 0)))}`).join(", ")}.${Object.keys(R).filter((t) => t !== "all" && !hasD(t)).length ? ` No paired seeds yet: ${Object.keys(R).filter((t) => t !== "all" && !hasD(t)).map(esc).join(", ")}.` : ""}</div>`;
+  where(`Does memory help?, ${esc(M.run || "")}`);
+}
+
 /* ================================================================ title / close */
 function provenance() {
   const P = B.reveal?.provenance || {};
@@ -898,9 +981,11 @@ function renderClose() {
 /* ================================================================ render */
 function where(t) { $("#strip-where").innerHTML = t; }
 const RENDER = { title: renderTitle, table: renderTable, inspector: renderInspector, dossier: renderDossier, surgery: renderSurgery,
-  ablation: renderAblation, trust: renderTrust, split: renderSplit, results: renderResults, decisions: renderDecisions, forge: renderForge, stack: renderStack, close: renderClose };
+  ablation: renderAblation, trust: renderTrust, split: renderSplit, results: renderResults, decisions: renderDecisions, forge: renderForge, stack: renderStack, close: renderClose,
+  longcon2: renderLongcon2, branches: renderBranches, boundary: renderBoundary, memory: renderMemory };
 const SCENE = { title: "", table: "The table", inspector: "Mind inspector", dossier: "Dossier", surgery: "Memory surgery",
-  ablation: "Ablation", trust: "Long con", split: "Split screen", results: "Results", decisions: "Beliefs and decisions", forge: "Strategy forge", stack: "How it's built", close: "" };
+  ablation: "Ablation", trust: "Long con", split: "Split screen", results: "Results", decisions: "Beliefs and decisions", forge: "Strategy forge", stack: "How it's built", close: "",
+  longcon2: "Long con at scale", branches: "Checkpoint branches", boundary: "Capability map", memory: "Does memory help?" };
 let lastView = null;
 function render(live = false) {
   const prevView = lastView; lastView = S.view;
