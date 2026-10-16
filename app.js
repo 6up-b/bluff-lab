@@ -652,9 +652,11 @@ function axisY(x0, x1, yScale, ticks, fmt = (t) => t) {
   return ticks.map((t) => `<line x1="${x0}" x2="${x1}" y1="${yScale(t)}" y2="${yScale(t)}" stroke="var(--rule)" stroke-width="1"/>
     <text x="${x0 - 14}" y="${yScale(t) + 7}" fill="var(--bone-faint)" font-size="20" text-anchor="end">${fmt(t)}</text>`).join("");
 }
+const ABL_PLAIN = { "as_of:0": "no memory", "as_of:4": "memory @ g4", "as_of:6": "memory @ g6", "as_of:8": "memory @ g8",
+  full: "full (g10)", "minus:verbal_tell": "minus tell line", false_memory: "+ false line" };
 function renderAblation() {
   const el = $("#v-ablation"); const A = B.ablation;
-  const head = `<h2 class="title">Does the memory help? Ablation on the same seeds</h2>`;
+  const head = `<h2 class="title">Does the memory help? Ablation on the same seeds</h2><p class="sub" style="color:var(--ivory)">Each bar replays games 11–20 on the same seeds with a different memory loaded at game 10: none, an older snapshot, the full file, the file minus its tell line, or the file plus a planted false line.</p>`;
   if (!A?.bars?.length) { el.innerHTML = head + awaiting("Awaiting data", "No <code>bundle/ablation.json</code> yet. It comes from <code>blab ablate</code> branch worlds via <code>blab analyze</code>."); return; }
   const w = 1776, h = 640, x0 = 90, x1 = w - 20, yT = 30, yB = h - 130;
   const pts = (v) => `${v >= 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(1)}${""} pts`;
@@ -675,7 +677,7 @@ function renderAblation() {
         <line x1="${cx - 16}" x2="${cx + 16}" y1="${Y(b.hi)}" y2="${Y(b.hi)}" stroke="var(--bone)" stroke-width="3"/>`;
       s += `<text x="${cx}" y="${Y(b.hi ?? b.mean) - 14}" fill="var(--bone)" font-size="32" font-weight="700" text-anchor="middle">${pct(b.mean)}</text>`;
     }
-    s += `<text x="${cx}" y="${yB + 36}" fill="var(--bone)" font-size="26" font-weight="600" text-anchor="middle">${esc(b.label || b.variant)}</text>
+    s += `<text x="${cx}" y="${yB + 36}" fill="var(--bone)" font-size="26" font-weight="600" text-anchor="middle">${esc(ABL_PLAIN[b.variant] || b.label || b.variant)}</text>
       <text x="${cx}" y="${yB + 64}" fill="var(--bone-faint)" font-size="19" text-anchor="middle">n = ${esc(b.n_parents ?? b.n)}${b.delta_vs_full && b.delta_vs_full.mean !== null && b.delta_vs_full.mean !== undefined ? "" : ""}</text>
       ${b.delta_vs_full && b.delta_vs_full.mean !== null && b.delta_vs_full.mean !== undefined ? `<text x="${cx}" y="${yB + 92}" fill="var(--bone)" font-size="21" font-weight="600" text-anchor="middle">Δ vs full ${pts(b.delta_vs_full.mean)}</text>${b.delta_vs_full.lo !== null && b.delta_vs_full.lo !== undefined ? `<text x="${cx}" y="${yB + 116}" fill="var(--bone-dim)" font-size="18" text-anchor="middle">CI ${pts(b.delta_vs_full.lo)} to ${pts(b.delta_vs_full.hi)}</text>` : ""}` : ""}`;
   });
@@ -977,14 +979,16 @@ function renderMemory() {
   const cell = (t, a) => { const d = R[t]?.delta_vs_baseline?.[a]; if (!d || (d.win_rate?.mean == null && d.brier?.mean == null)) return `<td class="na">—</td>`;
     const one = (m, f) => !m || m.mean == null ? "—" : `${f(m.mean)} <span class="ci">${m.lo != null ? `${f(m.lo)} to ${f(m.hi)}` : "no CI"}</span>`;
     return `<td><div>${one(d.win_rate, dPts)}</div><div class="br">${one(d.brier, brier)}</div></td>`; };
-  const rowOf = (a, lab) => `<tr class="${a.startsWith("llm_") || a === "profiler_plus" ? "ours" : ""}"><td>${lab || esc(a)}</td>${tables.map((t) => cell(t, a)).join("")}</tr>`;
+  const MEM_PLAIN = { llm_episodic: "raw transcript of past rounds", llm_dossier: "file of hypotheses",
+    profiler_plus: "hypotheses + statistical weighting", profiler: "original Profiler", counter: "card math only, no learning" };
+  const rowOf = (a, lab) => `<tr class="${a.startsWith("llm_") || a === "profiler_plus" ? "ours" : ""}"><td>${lab || MEM_PLAIN[a] || esc(a)} <span class="ci" style="margin-left:6px">${MEM_PLAIN[a] ? esc(a) : ""}</span></td>${tables.map((t) => cell(t, a)).join("")}</tr>`;
   const rows = arms.map((a) => rowOf(a)).join("") + (clsArms.length ? `<tr class="divider"><td colspan="${tables.length + 1}">classifier baselines</td></tr>`
-    + clsArms.map((a) => rowOf(a, `${esc(a)} <span class="ci">sentence embeddings</span>`)).join("") : "");
+    + clsArms.map((a) => rowOf(a, `embedding classifier <span class="ci" style="margin-left:6px">${esc(a)}</span>`)).join("") : "");
   const X = B.embed_exploratory?.deltas?.["profiler_plus-logreg_embed"]?.pooled_by_seed?.win;
   const expl = X?.mean == null ? "" : `<div class="explo"><span class="tag">exploratory</span> profiler_plus − logreg_embed, paired by seed: win rate ${dPts(X.mean)} <span class="ci">${dPts(X.lo)} to ${dPts(X.hi)} · n ${esc(X.n)}</span>. Baseline chosen after mem01 ran, and the weaker of our two classifiers on these tables. Confirmatory rerun: c02.</div>`;
   const setting = M.setting === "raw" ? "raw observations" : M.setting === "engineered" ? "engineered-feature setting" : esc(M.setting || "");
   el.innerHTML = head + `<div class="memhead"><span class="setting">${setting}</span><span class="hl">${esc(M.headline || "")}</span></div>
-    <p class="sub">Paired Δ vs the no-memory arm <b>${esc(M.baseline || "")}</b> on the same seeds, ${esc(rule)} rule, run ${esc(M.run || "")}. Win rate higher is better; Brier lower is better. 95% bootstrap CI where n allows.</p>
+    <p class="sub">Each row: change vs <b>the same model with no memory</b> <span class="ci">(${esc(M.baseline || "")})</span> on the same seeds, ${esc(rule)} rule, run ${esc(M.run || "")}. Win rate higher is better; Brier lower is better. 95% bootstrap CI where n allows.</p>
     <table class="grid lc2 mem"><thead><tr><th>Arm</th>${tables.map((t) => `<th>${t === "all" ? "all tables" : esc(t)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>${expl}
     <div class="foot" style="margin-top:14px">Each cell: win-rate Δ (top), Brier Δ (below), 95% CI. Paired seeds per cell: ${tables.map((t) => `${t === "all" ? "all" : esc(t)} n ${esc(Math.max(0, ...Object.values(R[t].delta_vs_baseline || {}).map((d) => d?.win_rate?.n || 0)))}`).join(", ")}.${Object.keys(R).filter((t) => t !== "all" && !hasD(t)).length ? ` No paired seeds yet: ${Object.keys(R).filter((t) => t !== "all" && !hasD(t)).map(esc).join(", ")}.` : ""}${allArms.includes("logreg_bow") ? " Word-count classifier omitted from this table (in r01 it was given the engineered tell feature); full results incl. it: DEVPOST.md / memory.json." : ""}</div>`;
   where(`Does memory help?, ${esc(M.run || "")}`);
