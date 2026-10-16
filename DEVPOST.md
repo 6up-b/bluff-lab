@@ -84,9 +84,9 @@ All metric definitions, including the §6 versions and our corrected ones, are i
 - **Anthropic Claude (Opus 5.5 via AWS Bedrock):** the reflection step between games returns structured
   hypotheses (JSON predicate DSL, never executed as code). Claude also generates the Strategy Forge code.
 - **SurrealDB Agent Memory:** a mirror of the belief graph. Rewriting a belief supersedes the old one, which
-  keeps its `valid_until` and history; a planted line raises an uncertainty record. Retrieval feeds reflection.
-- **Arize AX:** spans for decisions, reflections, forge steps and surgery, plus experiments over frozen
-  decision datasets.
+  keeps its `valid_until` and history. A planted false line is flagged by the Profiler: no evidence behind it.
+  (SurrealDB did not raise an `uncertainty` record for it in our spike, so we do not claim one.) Retrieval feeds reflection.
+- **Arize AX:** spans for decisions, reflections, forge steps and surgery.
 - **ElevenLabs:** the Profiler's interrogation line ("You've gone very formal all of a sudden.") is voiced
   from the real `ask` event.
 

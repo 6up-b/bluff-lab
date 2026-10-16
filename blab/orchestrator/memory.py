@@ -200,7 +200,7 @@ class Surreal:
         items = (unc or {}).get("unknowns") or (unc or {}).get("uncertainties") or []
         if items and isinstance(items[-1], dict):
             return items[-1].get("id")
-        return (res or {}).get("turnId")
+        return None          # no uncertainty record visible (spike S2 FAILED); a turn id is NOT an uncertainty id
 
     # ---------------------------------------------------------------- reads
     async def query(self, wid: str, seat: str, text: str, game: int, k: int = 20) -> dict | None:

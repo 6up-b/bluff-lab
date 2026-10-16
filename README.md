@@ -125,10 +125,11 @@ The event log is the only contract between the Lab and the Show: the Show is a p
   and live memory, and serves `/replay` and `/branch`. Ephemeral forge sandboxes use `network_block_all` to
   run AI-written strategy code.
 - **Arize AX:** OpenTelemetry spans for decisions (from the boxes) and for reflection, forge, voice and surgery
-  (from the orchestrator). Frozen-decision datasets feed one experiment per agent with a Brier evaluator.
+  (from the orchestrator).
 - **SurrealDB Agent Memory:** each opponent is an entity and each belief is an attribute. Rewriting a belief
-  supersedes the old one, so history and `asOf` show what the agent believed and when. A false memory written
-  through a different source raises an `uncertainty` record. Reflection retrieves through scoped lenses.
+  supersedes the old one, so history and `asOf` show what the agent believed and when. A planted false memory is
+  flagged by the Profiler: no evidence behind it (SurrealDB raised no `uncertainty` record for it in our spike).
+  Reflection retrieves through scoped lenses.
 - **Anthropic Claude (Opus 5.5, via AWS Bedrock):** reflection between games returns structured hypotheses
   validated against a closed predicate DSL. Claude also writes the Strategy Forge code. The LLM is never in
   the move-by-move loop.

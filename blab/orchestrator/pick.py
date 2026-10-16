@@ -274,7 +274,7 @@ def cues(sel: dict, dossier_games: list[int], have: dict, events: list[dict] | N
                        {"action": "caption", "text": f"Game {sel['decision_game']}. The Profiler has played {pn} for {sel['decision_game'] - 1} games."}]}]
     if sel.get("ask_seq"):
         c.append({"name": "the ask (audio if voiced)",
-                  "say": "That's a frozen model. Nobody told it to watch for that.",
+                  "say": "Same frozen model all day. It proposed this suspicion itself, between games, from its own reveals.",
                   "actions": [{"action": "play_to", "seq": next((e["seq"] for e in sorted(events or [], key=lambda e: e["seq"])
                                                                  if e["type"] == "answer" and e["seq"] > sel["ask_seq"] and e["seq"] < sel["seq"]), sel["ask_seq"])},
                               {"action": "audio", "file": f"voice/ask_{sel['ask_seq']}.mp3"}]})
@@ -353,13 +353,16 @@ def provenance_md(sel: dict) -> str:
 
 
 def forge_bundle(rdir: Path, wid: str) -> tuple[dict | None, str | None]:
-    """forge.json for the Show: the forge result for the picked world if one exists, else the run's forge.json.
-    Normalised to top-level forge_result fields + source/rationale; `network_blocked_verified` only when the
-    forge eval itself reported network BLOCKED."""
+    """forge.json for the Show. Accepts runs/<run>/forge.json as a dict (one forge) or a list (forge agent's
+    format: one entry per forge run, incl. replicates and empty-dossier controls).
+
+    Shown forge = the EARLIEST-created non-control forge for the picked world (else the earliest overall).
+    That rule doesn't look at results, so a lucky replicate can't be cherry-picked. `all_runs` lists every
+    forge run with its outcome, so the Show can state how many promoted out of how many tried."""
     cands = []
     if (rdir / "forge.json").exists():
         cands.append(rdir / "forge.json")
-    if (rdir / "forge").exists():
+    elif (rdir / "forge").exists():                  # per-run detail files: only when there's no index
         cands += sorted((rdir / "forge").glob("*.json"))
     docs = []
     for p in cands:
@@ -367,18 +370,40 @@ def forge_bundle(rdir: Path, wid: str) -> tuple[dict | None, str | None]:
             doc = json.loads(p.read_text())
         except Exception:
             continue
-        if isinstance(doc, dict):           # skip list-shaped side files (e.g. attempt logs)
-            docs.append((p, doc))
+        for d in (doc if isinstance(doc, list) else [doc]):
+            if isinstance(d, dict) and (d.get("forge_result") or d.get("module_source") or d.get("eval")):
+                docs.append((p, d))
     if not docs:
         return None, None
-    p, d = next(((p, d) for p, d in docs if d.get("world") == wid), docs[0])
+    def src_world(d):
+        return str(d.get("world") or d.get("source_world") or "").split("/")[-1]
+    real = [(p, d) for p, d in docs if not d.get("control")]
+    mine = [(p, d) for p, d in real if src_world(d) == wid]
+    p, d = min(mine or real or docs, key=lambda pd: str(pd[1].get("created") or ""))
     fr = d.get("forge_result") or {}
-    out = {**{k: v for k, v in d.items() if k not in ("forge_result", "attempts", "dossier")}, **fr}
+    out = {**{k: v for k, v in d.items() if k not in ("forge_result", "attempts", "dossier", "code")}, **fr}
     out["source"] = d.get("source") or d.get("module_source")
-    out["for_picked_world"] = d.get("world") == wid
-    net = fr.get("network") or (d.get("eval") or {}).get("network")
-    out["network_blocked_verified"] = str(net).upper() == "BLOCKED"
-    out["provider"] = next((a.get("provider") for a in d.get("attempts") or [] if a.get("provider")), None)
+    out["for_picked_world"] = src_world(d) == wid
+    net = d.get("network") or fr.get("network") or (d.get("eval") or {}).get("network")
+    out["network_blocked_verified"] = bool(d.get("network_blocked_verified")) or str(net).upper() == "BLOCKED"
+    out["provider"] = d.get("provider") or next((a.get("provider") for a in d.get("attempts") or [] if a.get("provider")), None)
+    out["selection_rule"] = ("earliest-created non-control forge generated from the picked world's memory "
+                             "(chosen without looking at results)")
+    rows = []
+    for _, e in sorted(docs, key=lambda pd: str(pd[1].get("created") or "")):
+        ev, cmp_ = e.get("eval") or {}, e.get("compare") or {}
+        rows.append({"policy_id": e.get("policy_id"), "source_world": src_world(e), "table": e.get("table"),
+                     "control": e.get("control"), "replicate": e.get("replicate"),
+                     "win_rate": ev.get("win_rate"), "ci": ev.get("ci"), "games": ev.get("games"),
+                     "delta_vs_profiler": cmp_.get("paired_delta_vs_profiler"),
+                     "delta_vs_logreg_bow": cmp_.get("paired_delta_vs_logreg_bow"),
+                     "promoted": bool(e.get("promoted")), "sandbox_id": e.get("sandbox_id"),
+                     "shown": e is d})
+    out["all_runs"] = rows
+    tries = [r for r in rows if not r["control"]]
+    out["tally"] = {t: {"tried": sum(1 for r in tries if r["table"] == t),
+                        "promoted": sum(1 for r in tries if r["table"] == t and r["promoted"])}
+                    for t in sorted({r["table"] for r in tries if r["table"]})}
     return out, str(p)
 
 

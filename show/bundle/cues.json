@@ -129,7 +129,7 @@
  },
  {
   "name": "the ask (audio if voiced)",
-  "say": "That's a frozen model. Nobody told it to watch for that.",
+  "say": "Same frozen model all day. It proposed this suspicion itself, between games, from its own reveals.",
   "actions": [
    {
     "action": "play_to",
