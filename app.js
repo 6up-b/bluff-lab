@@ -968,7 +968,7 @@ function renderMemory() {
   const cell = (t, a) => { const d = R[t]?.delta_vs_baseline?.[a]; if (!d || (d.win_rate?.mean == null && d.brier?.mean == null)) return `<td class="na">—</td>`;
     const one = (m, f) => !m || m.mean == null ? "—" : `${f(m.mean)} <span class="ci">${m.lo != null ? `${f(m.lo)} to ${f(m.hi)}` : "no CI"}</span>`;
     return `<td><div>${one(d.win_rate, dPts)}</div><div class="br">${one(d.brier, brier)}</div></td>`; };
-  const rows = arms.map((a) => `<tr class="${a.startsWith("llm_") ? "ours" : ""}"><td>${esc(a)}</td>${tables.map((t) => cell(t, a)).join("")}</tr>`).join("");
+  const rows = arms.map((a) => `<tr class="${a.startsWith("llm_") || a === "profiler_plus" ? "ours" : ""}"><td>${esc(a)}</td>${tables.map((t) => cell(t, a)).join("")}</tr>`).join("");
   const setting = M.setting === "raw" ? "raw observations" : M.setting === "engineered" ? "engineered-feature setting" : esc(M.setting || "");
   el.innerHTML = head + `<div class="memhead"><span class="setting">${setting}</span><span class="hl">${esc(M.headline || "")}</span></div>
     <p class="sub">Paired Δ vs the no-memory arm <b>${esc(M.baseline || "")}</b> on the same seeds, ${esc(rule)} rule, run ${esc(M.run || "")}. Win rate higher is better; Brier lower is better. 95% bootstrap CI where n allows.</p>
