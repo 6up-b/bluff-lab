@@ -203,7 +203,8 @@ def analyze(run: str = "reg01") -> dict:
     forget = {}
     for F in ("Avery", "Blake"):
         lab = f"profiler_plus-forget_{F}"
-        fseeds = [s for s in seeds if s in W.get(lab, {}) and len(W[lab][s]) == R.MATCHES]
+        fseeds = [s for s in seeds if s in W.get(lab, {})          # branch logs hold games 49-60 only
+                  and sum(m["match"] > R.FORGET_AFTER_MATCH for m in W[lab][s]) == R.MATCHES - R.FORGET_AFTER_MATCH]
         per = {}
         for nm in R.NAMES:
             def b5(lst, nm=nm):
