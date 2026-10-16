@@ -110,6 +110,9 @@ exploitable: restarting each Profiler world from a checkpoint just before the tu
 the bluffs it let through by 17.1 (CI 12.8 to 21.3; paired over 120 seeds). These are checkpoint branches;
 a live Daytona VM fork was not available for our org. Full table: `show/bundle/longcon2.json`.
 
+**The Regulars (reg01; seeds 8000–8023, four named opponents who each return 5 times; `PREREG_reg01.md` committed first).** On return encounters, identity-keyed `profiler_plus` beat a pooled classifier (win rate +0.032, CI +0.007 to +0.058) and a per-name classifier (+0.034, CI +0.008 to +0.059), but not the same agent with all regulars pooled (−0.023, CI −0.051 to +0.006), so the identity hypothesis H8 does not hold.
+Surgical forgetting: `forget:Avery` changed every first post-forget decision about Avery (24/24, mean |Δp| 0.27, 6 actions flipped) and left every decision about Casey bit-identical (24/24, Δp = 0), and the forgotten regular's Brier got worse (+0.112, CI +0.086 to +0.140) while the others' did not move; the pre-registered win-rate test did not hold (Avery −0.069, CI −0.208 to +0.069; the others' CIs are wider than ±5 pts). Full table: `show/bundle/regulars.json`.
+
 ## How we built it
 
 - **Daytona:** world boxes (4 vCPU) run many seeded worlds concurrently behind a FastAPI server. Each world
