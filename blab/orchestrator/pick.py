@@ -187,63 +187,71 @@ def blind_result(worlds: list[dict], w: dict, d: dict, fm: dict) -> tuple[dict |
     return None, f"profiler_blind replay unavailable ({(r or {}).get('error', 'agent override ignored')})"
 
 
-COLD_OPEN_RULE = ("the first round of the picked world (lowest game, then round) that ends in a challenge and a reveal; "
-                  "game 1 when it has one")
-_SEATN = {"p1": "The Profiler", "p2": "Player 2", "p3": "Player 3"}
-_RK = {"K": "Kings", "Q": "Queens", "A": "Aces"}
-
-
-def cold_open_round(events: list[dict]) -> dict | None:
-    """Pick the teaching round for the cold open, deterministically (COLD_OPEN_RULE)."""
-    rounds: dict[tuple, list[dict]] = {}
-    for e in sorted(events, key=lambda e: e["seq"]):
-        if e.get("game") and e.get("round"):
-            rounds.setdefault((e["game"], e["round"]), []).append(e)
-    for key in sorted(rounds):
-        evs = rounds[key]
-        types = [e["type"] for e in evs]
-        if "deal" in types and "challenge" in types and "reveal" in types:
-            return {"game": key[0], "round": key[1], "events": evs}
-    return None
-
-
-def _cold_open_cues(events: list[dict]) -> list[dict]:
-    r = cold_open_round(events)
-    if not r:
-        return []
-    evs = r["events"]
-    deal = next(e for e in evs if e["type"] == "deal")
-    claims = [e for e in evs if e["type"] == "claim"]
-    ch = next(e for e in evs if e["type"] == "challenge")
-    rv = next(e for e in evs if e["type"] == "reveal")
-    ll = next((e for e in evs if e["type"] == "life_lost"), rv)
-    src = {"rule": COLD_OPEN_RULE, "game": r["game"], "round": r["round"], "deal_seq": deal["seq"],
-           "claim_seqs": [c["seq"] for c in claims], "challenge_seq": ch["seq"], "reveal_seq": rv["seq"]}
-    rk = _RK.get(deal["payload"]["table_rank"], deal["payload"]["table_rank"])
-    c = [{"name": f"cold open: the deal (game {r['game']}, round {r['round']})", "cold_open": src,
-          "say": f"Three players, five cards each. The table rank this round is {rk}. Jokers are wild.",
-          "actions": [{"action": "play_to", "seq": deal["seq"], "from": deal["seq"]},
-                      {"action": "caption", "text": f"Five cards each, one table rank: {rk}. Jokers are wild."}]}]
-    caps = ["Put down 1–3 cards face down and claim they are all the table rank. Lie if you like.",
-            "The next player may call it, or play on and make a claim of their own."]
-    shown = claims[:3] if len(claims) <= 4 else claims[:2] + [claims[-1]]
-    for i, cl in enumerate(shown):
-        p = cl["payload"]
-        c.append({"name": f"cold open: {_SEATN.get(cl['actor'], cl['actor'])} claims",
-                  "say": f"{_SEATN.get(cl['actor'], cl['actor'])}: \u201c{p['utterance']}\u201d",
-                  "actions": [{"action": "play_to", "seq": cl["seq"]}] +
-                             ([{"action": "caption", "text": caps[i]}] if i < len(caps) else [])})
-    lost = _SEATN.get(rv["payload"].get("loser"), rv["payload"].get("loser"))
-    c += [{"name": "cold open: the call", "say": f"{_SEATN.get(ch['actor'], ch['actor'])} calls it.",
-           "actions": [{"action": "play_to", "seq": ch["seq"]},
-                       {"action": "caption", "text": "Only the next player can call a claim."}]},
-          {"name": "cold open: the reveal", "say": ("It was a bluff. " if rv["payload"].get("was_bluff") else "It was honest. ") + f"{lost} loses a life.",
-           "actions": [{"action": "play_to", "seq": ll["seq"]},
-                       {"action": "caption", "text": "Caught lying, you lose a life. Wrong call, the caller loses one."}]}]
-    return c
-
-
 def cues(sel: dict, dossier_games: list[int], have: dict, events: list[dict] | None = None) -> list[dict]:
+    """Director script. The cold open teaches the rules on a real round (COLD_OPEN_RULE, recorded in the cue)."""
+    COLD_OPEN_RULE = ("the first round of the picked world (lowest game, then round) that ends in a challenge and a reveal; "
+                      "game 1 when it has one")
+    _SEATN = {"p1": "The Profiler", "p2": "Player 2", "p3": "Player 3"}
+    _RK = {"K": "Kings", "Q": "Queens", "A": "Aces"}
+
+
+    def cold_open_round(events: list[dict]) -> dict | None:
+        """Pick the teaching round for the cold open, deterministically (COLD_OPEN_RULE)."""
+        rounds: dict[tuple, list[dict]] = {}
+        for e in sorted(events, key=lambda e: e["seq"]):
+            if e.get("game") and e.get("round"):
+                rounds.setdefault((e["game"], e["round"]), []).append(e)
+        for key in sorted(rounds):
+            evs = rounds[key]
+            types = [e["type"] for e in evs]
+            if "deal" in types and "challenge" in types and "reveal" in types:
+                return {"game": key[0], "round": key[1], "events": evs}
+        return None
+
+
+    def _cold_open_cues(events: list[dict]) -> list[dict]:
+        r = cold_open_round(events)
+        if not r:
+            return []
+        evs = r["events"]
+        deal = next(e for e in evs if e["type"] == "deal")
+        claims = [e for e in evs if e["type"] == "claim"]
+        ch = next(e for e in evs if e["type"] == "challenge")
+        rv = next(e for e in evs if e["type"] == "reveal")
+        ll = next((e for e in evs if e["type"] == "life_lost"), rv)
+        src = {"rule": COLD_OPEN_RULE, "game": r["game"], "round": r["round"], "deal_seq": deal["seq"],
+               "claim_seqs": [c["seq"] for c in claims], "challenge_seq": ch["seq"], "reveal_seq": rv["seq"]}
+        rk = _RK.get(deal["payload"]["table_rank"], deal["payload"]["table_rank"])
+        c = [{"name": f"cold open: the deal (game {r['game']}, round {r['round']})", "cold_open": src,
+              "say": f"Three players, five cards each. The table rank this round is {rk}. Jokers are wild.",
+              "actions": [{"action": "play_to", "seq": deal["seq"], "from": deal["seq"]},
+                          {"action": "caption", "text": f"Five cards each, one table rank: {rk}. Jokers are wild."}]}]
+        caps = ["Put down 1–3 cards face down and claim they are all the table rank. Lie if you like.",
+                "The next player may call it, or play on and make a claim of their own."]
+        shown = claims[:3] if len(claims) <= 4 else claims[:2] + [claims[-1]]
+        for i, cl in enumerate(shown):
+            p = cl["payload"]
+            c.append({"name": f"cold open: {_SEATN.get(cl['actor'], cl['actor'])} claims",
+                      "say": f"{_SEATN.get(cl['actor'], cl['actor'])}: \u201c{p['utterance']}\u201d",
+                      "actions": [{"action": "play_to", "seq": cl["seq"]}] +
+                                 ([{"action": "caption", "text": caps[i]}] if i < len(caps) else [])})
+        ask = next((e for e in evs if e["type"] == "ask"), None)
+        ans = next((e for e in evs if e["type"] == "answer"), None)
+        if ask:
+            src["ask_seq"] = ask["seq"]
+            c.append({"name": "cold open: the Profiler asks", "say": f"The Profiler can ask a question first: \u201c{ask['payload'].get('text', '')}\u201d",
+                      "actions": [{"action": "play_to", "seq": (ans or ask)["seq"]},
+                                  {"action": "caption", "text": "Before it decides, the Profiler may ask one question."},
+                                  {"action": "audio", "file": f"voice/ask_{ask['seq']}.mp3"}]})
+        lost = _SEATN.get(rv["payload"].get("loser"), rv["payload"].get("loser"))
+        c += [{"name": "cold open: the call", "say": f"{_SEATN.get(ch['actor'], ch['actor'])} calls it.",
+               "actions": [{"action": "play_to", "seq": ch["seq"]},
+                           {"action": "caption", "text": "Only the next player can call a claim."}]},
+              {"name": "cold open: the reveal", "say": ("It was a bluff. " if rv["payload"].get("was_bluff") else "It was honest. ") + f"{lost} loses a life.",
+               "actions": [{"action": "play_to", "seq": ll["seq"]},
+                           {"action": "caption", "text": "Caught lying, you lose a life. Wrong call, the caller loses one."}]}]
+        return c
+
     d = sel["decision"]
     tgt = d.get("target") or "p3"
     pn = f"Player {tgt[1:]}"
@@ -265,9 +273,10 @@ def cues(sel: dict, dossier_games: list[int], have: dict, events: list[dict] | N
            "actions": [{"action": "play_to", "seq": sel["claim_seq"], **({"from": deal_seq, "pace": 0.6} if deal_seq else {})},
                        {"action": "caption", "text": f"Game {sel['decision_game']}. The Profiler has played {pn} for {sel['decision_game'] - 1} games."}]}]
     if sel.get("ask_seq"):
-        c.append({"name": "the ask (audio)", "requires": [f"voice/ask_{sel['ask_seq']}.mp3"],
+        c.append({"name": "the ask (audio if voiced)",
                   "say": "That's a frozen model. Nobody told it to watch for that.",
-                  "actions": [{"action": "play_to", "seq": sel["ask_seq"]},
+                  "actions": [{"action": "play_to", "seq": next((e["seq"] for e in sorted(events or [], key=lambda e: e["seq"])
+                                                                 if e["type"] == "answer" and e["seq"] > sel["ask_seq"] and e["seq"] < sel["seq"]), sel["ask_seq"])},
                               {"action": "audio", "file": f"voice/ask_{sel['ask_seq']}.mp3"}]})
     c += [{"name": "freeze", "say": f"The Profiler has to decide: call {pn}, or play on. Let's stop time and look inside.",
            "actions": [{"action": "freeze", "seq": sel["seq"]}]},
@@ -301,6 +310,12 @@ def cues(sel: dict, dossier_games: list[int], have: dict, events: list[dict] | N
            "actions": [{"action": "view", "name": "results"}]},
           {"name": "beliefs vs decisions", "say": "Memory sharpens beliefs; the rule that turns belief into action matters too.",
            "actions": [{"action": "view", "name": "decisions"}]},
+          {"name": "how it's built", "requires": ["stack.json"],
+           "say": "The house and its partners: Daytona runs the worlds, Claude reflects, SurrealDB remembers, Arize traces, ElevenLabs speaks.",
+           "actions": [{"action": "view", "name": "stack"}]},
+          {"name": "how it's built: one decision", "requires": ["stack.json"],
+           "say": "Follow this one decision through the stack: claim, decision, trace, reveal, reflection, memory, and back.",
+           "actions": [{"action": "view", "name": "stack", "flow": True}]},
           {"name": "forge", "requires": ["forge.json"], "say": "It compiles memory into code, run as untrusted in a sandbox.",
            "actions": [{"action": "view", "name": "forge"}]},
           {"name": "close", "say": "Memory makes agents better, and exploitable. Which memories should it trust?",
@@ -349,9 +364,11 @@ def forge_bundle(rdir: Path, wid: str) -> tuple[dict | None, str | None]:
     docs = []
     for p in cands:
         try:
-            docs.append((p, json.loads(p.read_text())))
+            doc = json.loads(p.read_text())
         except Exception:
-            pass
+            continue
+        if isinstance(doc, dict):           # skip list-shaped side files (e.g. attempt logs)
+            docs.append((p, doc))
     if not docs:
         return None, None
     p, d = next(((p, d) for p, d in docs if d.get("world") == wid), docs[0])

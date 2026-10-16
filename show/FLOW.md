@@ -11,25 +11,38 @@ No timers ever advance a scene. Brief CSS transitions only.
 `D` = the Profiler's `decision` on it, `V` = the `reveal`. `pick.py` fills these in when it writes
 `cues.json`.
 
-| # | Scene / view | On screen | Cue (keypress) → action | Presenter says | Feeds from |
-|---|---|---|---|---|---|
-| 0 | `title` | "Bluff Lab", one-liner, provenance strip (run, world, seed, "chosen near the median by rule") | load | — (wait for the room) | `PROVENANCE` fields in `reveal.json` |
-| 1 | `table` cold open | Table at game 12: three seats, face-down cards, lives. Player 3's claim bubble appears | `play_to C` | "Game twelve. Player 3 puts down two cards and claims two Kings." | `world.jsonl` up to `C` |
-| 2 | `table` ask | The Profiler's line appears as a bubble from seat P1; audio plays | `play_to A` + `audio voice/<A>.mp3` + bubble from the `ask` event text | (let the audio play) "You've gone very formal all of a sudden." — "That's a frozen model. Nobody told it to watch for that." | `ask` event; `voice/*.mp3` optional |
-| 3 | `table` freeze | Table dims, "frozen at decision D" stamp | `freeze D` | "Let's freeze that decision and look inside." | `decision` event `D` |
-| 4 | `inspector` | Claim card (count, rank, utterance, highlighted `formal_register`), the waterfall bar `p_cards` → +memory → `p_final` against the 0.5 line, EV per action, chosen action | `inspect D` | "Card math alone says [p_cards]. Memory holds a confirmed line…" | `decision.payload` (card_math, q_used, p_final, ev, action) |
-| 5 | `inspector` evidence | The memory line used: status chip, provenance chip, n for/against, q-intervals, and its evidence list (each revealed round, cards face-up) | `evidence` | "…Player 3 drops contractions when bluffing. Where that applies, [n_true] revealed claims, it bluffed at [q_true]; otherwise [q_false]. That pushes it to [p_final], so it challenges." (Say "applies on", not "for/against": n_true/n_false count reveals where the predicate held / didn't.) | `decision.memory_used[]`, `reveal` events matched by `obs_id` |
-| 6 | `dossier` | Player 3's dossier as of game 4 → 8 → 12: confirmed / provisional / superseded (struck, valid g–g) / refuted | `dossier` × 3 (pick.py chooses: game ≤ 4, the discovery game, the checkpoint the decision used = decision game − 1) | "Here is the file it built on Player 3, game by game. Nobody wrote this; reflection proposed it, reveals confirmed it." | `dossier.json` (from `ckpt/gNN.json`) |
-| 7 | `surgery` | The Surgery Reveal card: same claim header; columns appear one per keypress: **full**, **as_of:0 (erased)**, **false_memory**, **profiler_blind + false_memory**; each shows p_final bar + action | `surgery full`, `surgery as_of:0`, `surgery false_memory`, `surgery profiler_blind` | "Same cards, same claim, same model; only the memory changes." "No memory: [p_0]. It trusts." "Plant 'Player 3 never bluffs': ours sees no evidence and still challenges; a provenance-blind agent swallows it." | `reveal.json` (real `replay_decision` outputs) |
-| 8 | `surgery` flip | The claimed cards flip face-up; bluff/honest stamp; each column marked right/wrong | `flip` | "It was a bluff." (or whatever the reveal says — it is real) | `reveal.json.reveal` (= `reveal` event `V`) |
-| 9 | `ablation` | Dose-response bars: win rate g11–20 for as_of:0 → 4 → 6 → 8 → full, plus minus:verbal_tell, 95% CIs, n worlds; decision-flip count | `view ablation` | "A changed decision isn't an improved one. So we ablate at scale on the same seeds: [a] → [b]; remove the one line: [c]." | `ablation.json` |
-| 10 | `trust` | Long Con trust curve: sleeper's true honesty vs counter / bayes / profiler estimates by game, ⚑ G₀, ◎ detection | `view trust` | "Player 2 played honest for [G₀] games, then turned. Every memory was true." Twist line **only if** `longcon.json.exploitation_cost` shows bayes > counter: "Naive memory lost [x] lives — more than no memory at all." Ours: "closed its old belief after [RTD] rounds." | `longcon.json` |
-| 11 | `split` (optional) | Same seed, two minds: Profiler world vs Bayes twin, lives and per-game winner | `view split` | "Same seed, same cards. Different memory." | `twin.jsonl` + `world.jsonl` |
-| 12 | `results` | Results grid: win rate, win rate g11–20, Brier, discovery game, RTD, exploitation cost — per agent with CIs and n | `view results` | "All of it from [N] worlds on Daytona; every decision traced." | `results.json` |
-| 13 | `forge` (optional) | Generated strategy source (read-only), static gate result, sandbox id, network badge, eval vs Profiler, promoted badge | `view forge` | "It can even compile its memory into code — which we run as untrusted, in a sandbox." | `forge.json` |
-| 14 | `close` | The closing line, large | `view close` + caption | "Memory makes agents better, and it makes them exploitable. The question isn't how much an agent remembers. It's which memories it should trust." | — |
+Cue numbers below are for the current r01 bundle (world w0002, decision 1026); `pick.py` regenerates them for any bundle.
+The cold-open round is picked by rule in `cues()`: **the first round of the picked world (lowest game, then round) that ends in a challenge and a reveal** (game 1 round 1 when it has one). The cue records the rule and seqs in its `cold_open` field.
 
-Target pacing (video < 2:00): 0–2 ≈ 0:15, 3–8 ≈ 0:55, 9 ≈ 0:15, 10 ≈ 0:20, 12 ≈ 0:10, 14 ≈ 0:05. Scenes 11 and 13 are Devpost/Q&A extras; drop them from the video if over time.
+| # | Scene / view | On screen | Cue → action | Presenter says | Feeds from |
+|---|---|---|---|---|---|
+| 0 | `title` | Gold "Bluff Lab", one-liner, the four card faces, provenance strip | `view title` | — (wait for the room) | `reveal.json.provenance` |
+| 1 | `table` cold open: deal | Felt table; 5 cards dealt to each seat (only the Profiler's face up); "Table: Kings" plate; chips for lives; turn button on the first player | `play_to deal` (`from` = deal, animated) + caption | "Three players, five cards each. One table rank per round. Jokers are wild." | `deal` event |
+| 2 | cold open: first claim | Turn button + spotlight on the claimant; speech bubble with the real utterance; cards slide face-down to the pile; "claims 1 King" | `play_to claim` | "Player 2 puts down two cards: *'Don't sweat it, two Kings.'* You may lie." | `claim` |
+| 3 | cold open: next claim | "plays on" on the responder, then its own claim | `play_to claim` | "The next player can call it, or play on." | `play_on`, `claim` |
+| 4 | cold open: the ask (if the round has one) | The Profiler's question bubble (voiced if an mp3 exists), the answer bubble | `play_to answer` + `audio` | "Before deciding, the Profiler can ask one question." | `ask`, `answer` |
+| 5 | cold open: the call | "Challenge!" stamp on the caller | `play_to challenge` | "It calls it." | `challenge` |
+| 6 | cold open: the reveal | The claimed cards flip face-up; Bluff/Honest stamp; a chip leaves the loser's stack | `play_to life_lost` | "Caught lying, you lose a life. Wrong call, the caller loses one." | `reveal`, `life_lost` |
+| 7 | game N: the claim | Cut to the decision round: deal, then the round plays through (paced 0.6×) to the picked claim; turn button lands on the Profiler | `play_to C` (`from` = deal, `pace` .6) + caption | "Game ten. Nine games in. Player 3: *'The cards are one King.'*" | `world.jsonl` |
+| 8 | the ask | The Profiler's question bubble, ElevenLabs voice plays; the answer | `play_to answer` + `audio voice/ask_A.mp3` | (let the audio play) "That's a frozen model. Nobody told it to watch for that." | `ask`, `answer`, `voice/` |
+| 9 | freeze | Room desaturates, frost vignette, "Time stopped at decision D"; the claim and the Profiler's seat stay lit | `freeze D` | "The Profiler has to decide. Let's stop time and look inside." | `decision` D |
+| 10 | `inspector` (the turn) | The table tilts away around the Profiler's seat and the Mind Inspector turns in like a card (1.1–1.25 s; crossfade under reduced motion). Card math bar grows, then memory, then p_final; EV and action; Arize trace + Daytona box | `inspect D` | "Card math alone says [p_cards]. Memory says…" | `decision.payload`, `stack.json` |
+| 11 | evidence | The memory line's evidence: the last 3 revealed rounds, cards face-up | `evidence` | "…Player 3 drops contractions when bluffing: [n_true] reveals, bluff rate [q_true]." | `memory_used[]`, `reveal` events |
+| 12–13 | `dossier` | The file on Player 3 at game 4 → decision game − 1; SurrealDB history line | `dossier` × 2 | "Nobody wrote this; reflection proposed it, reveals confirmed it." | `dossier.json`, `stack.json` |
+| 14–17 | `surgery` | Four columns appear one per key: full, erased, false memory, provenance-blind | `surgery …` | "Same cards, same claim, same model; only the memory changes." | `reveal.json` |
+| 18 | surgery flip | The claimed card flips; bluff stamp; right/wrong per column | `flip` | "It was a bluff." | `reveal.json.reveal` |
+| 19 | `ablation` | Dose-response bars with CIs | `view ablation` | "A changed decision isn't an improved one. So we ablate at scale." | `ablation.json` |
+| 20 | `trust` | Long Con trust curve | `view trust` | "Every memory was true; the attack is assuming people don't change." | `longcon.json` |
+| 21 | `split` (optional) | Same seed, Profiler vs Bayes twin, won games as chips | `view split` | "Same seed, same cards. Different memory." | `twin.jsonl` |
+| 22 | `results` | Results grid | `view results` | "All of it from real worlds." | `results.json` |
+| 23 | `decisions` | Beliefs vs decisions, paired deltas | `view decisions` | "Memory sharpens beliefs; the decision rule matters too." | `results.json.decisions` |
+| 24 | `stack` | How it's built: five layers (ElevenLabs, Claude on Bedrock, SurrealDB, Arize AX, Daytona) with real counts and ids | `view stack` | "Daytona runs the worlds, Claude reflects, SurrealDB remembers, Arize traces, ElevenLabs speaks." | `stack.json` |
+| 25 | `stack` flow | The picked decision walks through the layers step by step (claim → decision → trace → reveal → reflection → memory → back); each layer lights as it is used | `view stack` + `flow` | "Follow this one decision through the stack." | `stack.json`, `reveal.json` |
+| 26 | `forge` (optional) | Generated strategy, gate, sandbox id, network badge | `view forge` | "It compiles memory into code, run as untrusted in a sandbox." | `forge.json` |
+| 27 | `close` | The closing line | `view close` | "The question isn't how much an agent remembers. It's which memories it should trust." | — |
+
+Target pacing (video < 2:00): 0–6 ≈ 0:25, 7–11 ≈ 0:30, 12–18 ≈ 0:30, 19–20 ≈ 0:20, 24–25 ≈ 0:10, 27 ≈ 0:05. Scenes 21, 23, 26 are Devpost/Q&A extras.
+Animations run inside a cue (deal, slides, flips, the turn); a keypress mid-animation snaps to the cue's end state and continues. `?cue=N` and `←` rebuild without animation.
 
 ## Fallbacks (P1 features cut or data missing)
 

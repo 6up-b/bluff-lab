@@ -22,7 +22,7 @@
   },
   "picked_world_box": "box2",
   "forge_sandbox_id": null,
-  "forge_network": null,
+  "forge_network": "blocked",
   "spike": {
    "D1": "PASS",
    "D2": "PASS",
@@ -40,7 +40,7 @@
   }
  },
  "claude": {
-  "provider": null,
+  "provider": "bedrock",
   "model": null,
   "reflections": 453,
   "reflections_total": 5280,
@@ -65,7 +65,11 @@
   "decision_spans_in_picked_world": 365,
   "sample_reflect_trace": "req_011Cg6J6Bm8ZBCB7TsNDVvfG"
  },
- "elevenlabs": null,
+ "elevenlabs": {
+  "voice_id": "JBFqnCBsd6RMkjVDRZzb",
+  "mp3s": 39,
+  "world": "w0002"
+ },
  "picked_decision": {
   "world": "w0002",
   "box": "box2",
