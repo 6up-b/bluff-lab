@@ -20,6 +20,13 @@ ALLOWED_IMPORTS = {"math", "random", "statistics", "collections", "itertools", "
 FORBIDDEN_NAMES = {"open", "exec", "eval", "compile", "__import__", "globals", "locals", "vars", "getattr",
                    "setattr", "delattr", "input", "breakpoint"}
 MAX_SOURCE = 20 * 1024
+# Beyond SPEC §7.4 (defence in depth; the sandbox is the real boundary): no private attributes at all
+# (`random._os`), no module-internal handles (`statistics.sys`), no frame/generator introspection, and no
+# string constant containing "__" (blocks `"{0.__class__}".format(x)`-style attribute access).
+FORBIDDEN_ATTRS = {"sys", "os", "modules", "builtins", "system", "popen", "subprocess", "importlib", "loader",
+                   "spec", "gi_frame", "gi_code", "f_globals", "f_locals", "f_back", "f_builtins", "f_code",
+                   "tb_frame", "tb_next", "cr_frame", "ag_frame", "func_globals", "mro", "format_map"}
+RESULT_TAG = "FORGE_EVAL_RESULT "
 
 
 def gate(source: str) -> dict:
@@ -43,8 +50,11 @@ def gate(source: str) -> dict:
             return {"ok": False, "reason": f"forbidden name {node.id} (line {node.lineno})"}
         elif isinstance(node, ast.Name) and node.id.startswith("__"):
             return {"ok": False, "reason": f"forbidden dunder name {node.id} (line {node.lineno})"}
-        elif isinstance(node, ast.Attribute) and (node.attr.startswith("__") or node.attr in FORBIDDEN_NAMES):
+        elif isinstance(node, ast.Attribute) and (node.attr.startswith("_") or node.attr in FORBIDDEN_NAMES
+                                                   or node.attr in FORBIDDEN_ATTRS):
             return {"ok": False, "reason": f"forbidden attribute .{node.attr} (line {node.lineno})"}
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str) and "__" in node.value:
+            return {"ok": False, "reason": f"string constant containing '__' not allowed (line {node.lineno})"}
         elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == "decide":
             if isinstance(node, ast.FunctionDef) and tree.body.count(node):
                 has_decide = True
@@ -59,10 +69,12 @@ def gate(source: str) -> dict:
 
 def _child(source: str, conn) -> None:
     import builtins
+    import io
+    sys.stdout = sys.stderr = io.StringIO()     # the policy must not write to the evaluator's stdout
     safe = {k: getattr(builtins, k) for k in (
         "abs", "all", "any", "bool", "dict", "enumerate", "filter", "float", "int", "isinstance", "len", "list",
         "map", "max", "min", "range", "reversed", "round", "set", "sorted", "str", "sum", "tuple", "zip",
-        "ValueError", "KeyError", "IndexError", "Exception", "print")}
+        "ValueError", "KeyError", "IndexError", "TypeError", "ZeroDivisionError", "Exception")}
 
     def _imp(name, *a, **k):
         if name.split(".")[0] not in ALLOWED_IMPORTS:
@@ -95,14 +107,19 @@ class ChildPolicy:
     id = "forge"
 
     def __init__(self, source: str, timeout_ms: int = 50):
+        self.source = source
+        self.timeout = timeout_ms / 1000.0
+        self.crashes = self.timeouts = self.illegal = self.decisions = self.respawns = 0
+        self.last_error: str | None = None
+        self.ms: list[float] = []
+        self._spawn()
+
+    def _spawn(self):
         import multiprocessing as mp
         ctx = mp.get_context("spawn")
         self.parent, child = ctx.Pipe()
-        self.proc = ctx.Process(target=_child, args=(source, child), daemon=True)
+        self.proc = ctx.Process(target=_child, args=(self.source, child), daemon=True)
         self.proc.start()
-        self.timeout = timeout_ms / 1000.0
-        self.crashes = self.timeouts = self.illegal = 0
-        self.ms: list[float] = []
         first = self.parent.recv() if self.parent.poll(10) else {"fatal": "child did not start"}
         if "fatal" in first:
             raise RuntimeError(first["fatal"])
@@ -127,19 +144,26 @@ class ChildPolicy:
         return False
 
     def act(self, obs: dict) -> dict:
-        t0 = time.perf_counter()
+        self.decisions += 1
         if not self.proc.is_alive():
             self.crashes += 1
-            return self.fallback(obs)
+            try:                       # a crashed/killed child is restarted (module state is lost)
+                self.respawns += 1
+                self._spawn()
+            except Exception:  # noqa: BLE001
+                return self.fallback(obs)
+        t0 = time.perf_counter()
         self.parent.send(json.dumps(obs))
         if not self.parent.poll(self.timeout):
             self.timeouts += 1
             self.proc.kill()
+            self.proc.join(1)
             return self.fallback(obs)
         r = self.parent.recv()
         self.ms.append((time.perf_counter() - t0) * 1000)
         if "error" in r:
             self.crashes += 1
+            self.last_error = r["error"]
             return self.fallback(obs)
         a = r.get("action")
         if not self._legal(a, obs):
@@ -157,13 +181,25 @@ class ChildPolicy:
         self.proc.kill()
 
 
+def boot_ci(xs: list[float], n: int = 4000, seed: int = 0) -> list[float]:
+    """95% percentile-bootstrap CI of the mean over seeds."""
+    import numpy as np
+    arr = np.asarray(xs, dtype=float)
+    if not len(arr):
+        return [0.0, 0.0]
+    rng = np.random.default_rng(seed)
+    boots = arr[rng.integers(0, len(arr), (n, len(arr)))].mean(axis=1)
+    return [float(np.percentile(boots, 2.5)), float(np.percentile(boots, 97.5))]
+
+
 def evaluate(source: str, table: str, seeds: list[int], games: int, timeout_ms: int) -> dict:
-    """Plays `games` games per seed with the forge policy in seat p1 (core's World, stub reflection off)."""
+    """Plays `games` games per seed with the forge policy in seat p1 (one child process per seed = per match;
+    module-level state may persist within a match). Opponents/seats exactly as `make_seats(table, …, seed)`."""
     import asyncio
     import numpy as np
     from blab import world as W
 
-    totals = {"won": 0, "games": 0, "crashes": 0, "timeouts": 0, "illegal": 0, "ms": []}
+    totals = {"won": 0, "games": 0, "crashes": 0, "timeouts": 0, "illegal": 0, "decisions": 0, "ms": []}
     per_seed = []
     for seed in seeds:
         pol = ChildPolicy(source, timeout_ms)
@@ -178,17 +214,41 @@ def evaluate(source: str, table: str, seeds: list[int], games: int, timeout_ms: 
         per_seed.append(won / games)
         totals["won"] += won
         totals["games"] += games
-        for k in ("crashes", "timeouts", "illegal"):
+        for k in ("crashes", "timeouts", "illegal", "decisions"):
             totals[k] += getattr(pol, k)
         totals["ms"] += pol.ms
     wr = totals["won"] / max(1, totals["games"])
-    rng = np.random.default_rng(0)
-    arr = np.array(per_seed)
-    boots = [rng.choice(arr, len(arr)).mean() for _ in range(2000)] if len(arr) else [0]
-    return {"win_rate": wr, "ci": [float(np.percentile(boots, 2.5)), float(np.percentile(boots, 97.5))],
+    return {"win_rate": wr, "ci": boot_ci(per_seed),
             "crashes": totals["crashes"], "timeouts": totals["timeouts"], "illegal": totals["illegal"],
+            "decisions": totals["decisions"],
             "mean_ms": float(np.mean(totals["ms"])) if totals["ms"] else None, "games": totals["games"],
-            "per_seed": per_seed}
+            "seeds": list(seeds), "per_seed": per_seed}
+
+
+def _baseline_one(args) -> float:
+    import asyncio
+    from blab import world as W
+    agent, table, seed, games, p1_params, eps = args
+    if eps is not None:                       # exploration rate of our agents (blab.agents.ours.EPS, 0.1 in runs)
+        import blab.agents.ours as ours
+        ours.EPS = float(eps)
+    seats = W.make_seats(table, agent, seed)
+    seats[0]["params"] = {**seats[0].get("params", {}), **(p1_params or {})}
+    w = W.World(wid=f"fb-{agent}-s{seed}", seats=seats, seed=seed, games=games, out_dir=None, run="forge",
+                box="local", table=table)            # profiler* reflect with the deterministic stub (no network)
+    res = asyncio.run(w.run())
+    return int(res["games_won"]) / games
+
+
+def evaluate_agent(agent: str, table: str, seeds: list[int], games: int, p1_params: dict | None = None,
+                   workers: int = 8, eps: float | None = None) -> dict:
+    """A built-in agent in seat p1 on the same seeds/opponents as `evaluate` (CPU only, runs on the laptop).
+    eps=None keeps the agents' own ε-exploration (as in the experiment runs); eps=0 makes them greedy."""
+    from concurrent.futures import ProcessPoolExecutor
+    with ProcessPoolExecutor(workers) as ex:
+        per_seed = list(ex.map(_baseline_one, [(agent, table, s, games, p1_params, eps) for s in seeds]))
+    return {"agent": agent, "params": p1_params or {}, "eps": eps, "win_rate": sum(per_seed) / len(per_seed),
+            "ci": boot_ci(per_seed), "games": games * len(seeds), "seeds": list(seeds), "per_seed": per_seed}
 
 
 def main(argv=None):
@@ -205,7 +265,7 @@ def main(argv=None):
         print(json.dumps({"gate": g}))
         sys.exit(2)
     seeds = [int(s) for s in a.seeds.split(",") if s.strip()]
-    print(json.dumps(evaluate(src, a.table, seeds, a.games, a.decide_timeout_ms)))
+    print(RESULT_TAG + json.dumps(evaluate(src, a.table, seeds, a.games, a.decide_timeout_ms)), flush=True)
 
 
 if __name__ == "__main__":
