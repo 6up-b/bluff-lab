@@ -109,6 +109,12 @@ Use it only in Q&A (see below).
 
 ## Q&A prep (answer in one or two sentences, then stop)
 
+**"If you had another week, what would you build next, and why that first?"** (Q10)
+> Fix the long-con weakness with Bayesian surprise. Every belief predicts each reveal, so when the reveals keep being improbable under a belief, that specific belief gets re-tested instead of trusted. The catch we found: trust means fewer challenges, so fewer reveals, so less surprise. A long con starves its own alarm, so we'd keep a small exploration rate. We'd pre-register it: keep the 7-to-10-point gain, cut the long-con bluffs to the reflection-off level.
+
+*(Why first: it fixes the biggest weakness we measured (lc03: +23.8 bluffs let through, noticed the turn at 32 vs 14 rounds). The drift detector already sees the change, and the harness can test it immediately. Mechanics if asked: surprisal = −log P(outcome | that belief), accumulate the excess over what's expected (CUSUM), and when it crosses a threshold set on dev seeds, demote that one line and trigger an early reflection. Principled version: Bayesian online change-point detection (Adams & MacKay, 2007). After that: identity memory with a shared population prior, then LLM or human opponents.)*
+
+
 **"Why did it ignore the false memory?"** *(say this one almost word for word)*
 > Every line in its memory records where it came from. Lines only count once real reveals confirm them. The planted line had no evidence behind it, so it got zero weight. Turn that check off and the same false line flips 146 decisions. The catch: it only stops claims without evidence. A long con brings real evidence, and that's the attack that gets through.
 
