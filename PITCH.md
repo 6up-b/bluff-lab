@@ -8,7 +8,7 @@
 
 **Numbers:**
 - Every number below was read from the frozen bundle (Show world `r01/w0002`, seed 2, decision #1026; plus
-  `memory.json` = mem01, `longcon2.json` = lc02, `boundary.json` = b01, `forge.json`, `arize_experiment.json`).
+  `memory.json` = mem01, `embed_exploratory.json` = mem01 vs sentence embeddings (exploratory), `longcon2.json` = lc02, `boundary.json` = b01, `forge.json`, `arize_experiment.json`).
 - Never say a number that isn't on the screen or in this file. (The screen shows probabilities as decimals, 0.24; saying "24%" is the same number.)
 - **Prompt caveat:** the Show world comes from r01, whose reflection prompt contained a formal-speech example.
   So on the table scenes we never say the agent found the tell on its own. The "found it from raw text" claims
@@ -136,7 +136,7 @@
 ## Q&A prep (answer in one or two sentences, then stop)
 
 **"Didn't a classifier beat you?"**
-Yes, in places, and we report it. With engineered features (r01), the word-count classifier predicted better. On raw text (mem01, 48 paired worlds), the Profiler-plus agent beat the word-count classifier: +10.8 points win rate [+6.6, +15.0], Brier −0.011 [−0.020, −0.002]. Against sentence embeddings, the stronger baseline, we lost on the relational tell (b01). The confirmatory rerun against embeddings is c02 (pre-registered, fresh seeds).
+Yes, in places, and we report it. We dropped the word-count classifier from the talk: in our first run it was handed the tell feature. On raw text we beat it anyway; full numbers are in the writeup. Against a sentence-embedding classifier on the same raw-text seeds, the Profiler-plus agent won by +19.3 points, but that's exploratory: we chose that baseline after the run, and it's the weaker of our two classifiers on those tables. On the pre-registered relational tell (b01), embeddings beat us. The confirmatory rerun against embeddings is c02 (pre-registered, fresh seeds).
 
 **"Your agent loses to the no-memory counter."**
 The original Profiler does, in r01, under the spec's rule (−10.5 points). It over-challenges near coin flips. Under a cost-aware rule it wins by +3.1 [+0.5, +5.8]. The Profiler-plus agent beats the counter on raw text: +7.6 [+4.0, +11.1].
@@ -145,7 +145,7 @@ The original Profiler does, in r01, under the spec's rule (−10.5 points). It o
 In the first run, yes: the reflection prompt's example was the formal-speech tell. We caught it, built a clean raw-mode prompt, made raw mode reject those features, and labelled every older world. That's why we don't claim the Show world found the tell unaided. The raw-text results (mem01, b01) use the clean prompt.
 
 **"Your control was added after pre-registration."**
-Yes, we say so. With Claude's reflection switched off, Profiler-plus only ties the word-count classifier (+1.4, CI spans 0). Switching it on adds +9.5 [+5.9, +13.2]. Treat it as exploratory.
+Yes, we say so. With Claude's reflection switched off, Profiler-plus still beat the sentence-embedding classifier (+9.8); with it on, +19.3. Both are exploratory, against the weaker of our two classifiers.
 
 **"Is the long con real?"**
 In the paired checkpoint branches, yes: erasing the trust it learned cut the bluffs it let through by 17 [12.8, 21.3] over 120 seeds. Across agents, naive Bayes let through fewer bluffs than no memory, so we don't claim "naive memory is more exploitable". These are checkpoint restores, not live forks; VM forking wasn't available to our org.

@@ -42,7 +42,7 @@ async function load() {
   HAVE["world.jsonl"] = world !== null; HAVE["twin.jsonl"] = twin !== null;
   if (world) indexWorld(parseJSONL(world));
   if (twin) B.twin = parseJSONL(twin);
-  const names = ["reveal", "dossier", "ablation", "longcon", "results", "forge", "stack", "cues", "longcon2", "boundary", "memory"];
+  const names = ["reveal", "dossier", "ablation", "longcon", "results", "forge", "stack", "cues", "longcon2", "boundary", "memory", "embed_exploratory"];
   const got = await Promise.all(names.map((n) => getJSON(`${n}.json`)));
   names.forEach((n, i) => { B[n] = got[i]; HAVE[`${n}.json`] = got[i] !== null; });
   cues = normalizeCues(B.cues || defaultCues());
@@ -735,13 +735,15 @@ function renderTrust() {
 }
 
 /* ================================================================ results */
+const OMIT_BOW = "Word-count classifier omitted (in r01 it was given the engineered tell feature); full results incl. it: DEVPOST.md / results.json.";
 function renderResults() {
   const el = $("#v-results"); const R = B.results;
   const head = `<h2 class="title">Results</h2>`;
   const grid = R?.show_grid;
   if (!grid?.rows?.length) { el.innerHTML = head + awaiting("Awaiting data", "No <code>bundle/results.json</code> yet (<code>blab analyze</code>)."); return; }
   const th = grid.columns.map((c) => `<th>${esc(c.label)}</th>`).join("");
-  const rows = grid.rows.map((r) => `<tr class="${r.agent === "profiler" || r.agent.startsWith("profiler+") ? "ours" : ""}"><td>${esc(r.agent)}</td>${grid.columns.map((c) => {
+  const omitted = grid.rows.some((r) => r.agent === "logreg_bow");
+  const rows = grid.rows.filter((r) => r.agent !== "logreg_bow").map((r) => `<tr class="${r.agent === "profiler" || r.agent.startsWith("profiler+") ? "ours" : ""}"><td>${esc(r.agent)}</td>${grid.columns.map((c) => {
     const m = r.cells?.[c.key];
     if (!m || m.mean === null || m.mean === undefined) return `<td class="na">—</td>`;
     const v = c.fmt === "pct" ? pct(m.mean) : f2(m.mean);
@@ -749,7 +751,7 @@ function renderResults() {
     return `<td>${v}<span class="ci">${ci}${m.n !== undefined ? ` n ${m.n}` : ""}</span></td>`;
   }).join("")}</tr>`).join("");
   el.innerHTML = head + `<p class="sub">${esc(R.n_worlds ?? "?")} worlds, run ${esc(R.run ?? "")}${grid.respond_rule ? `, ${esc(grid.respond_rule)} respond rule` : ""}. Means with 95% bootstrap CIs over seeds.</p>
-    <table class="grid"><thead><tr><th>Agent</th>${th}</tr></thead><tbody>${rows}</tbody></table>`;
+    <table class="grid"><thead><tr><th>Agent</th>${th}</tr></thead><tbody>${rows}</tbody></table>${omitted ? `<div class="foot" style="margin-top:12px">${esc(OMIT_BOW)}</div>` : ""}`;
   where(`Results, run ${esc(R.run ?? "")}`);
 }
 
@@ -905,7 +907,7 @@ function renderLongcon2() {
   const el = $("#v-longcon2"); const L = B.longcon2;
   const head = `<h2 class="title">The long con at scale</h2>`;
   if (!L?.arms) { el.innerHTML = head + awaiting("Awaiting data", "No <code>bundle/longcon2.json</code> yet."); return; }
-  const order = ["counter", "bayes", "bayes_discount", "logreg_bow", "profiler", "profiler+claude", "profiler_blind"];
+  const order = ["counter", "bayes", "bayes_discount", "profiler", "profiler+claude", "profiler_blind"];
   const rows = order.map((l) => [l, L.arms[`${l}|threshold`]]).filter(([, a]) => a).map(([l, a]) => {
     const lab = l === "profiler" ? "profiler <small>stub reflection</small>" : l === "profiler+claude" ? "profiler <small>Claude reflection</small>" : esc(l);
     return `<tr class="${l.startsWith("profiler") && l !== "profiler_blind" ? "ours" : ""}"><td>${lab}</td><td>${ciPct(a.detection_rate)}</td><td>${kmTxt(a.rtd_km_median)}</td>
@@ -913,7 +915,7 @@ function renderLongcon2() {
   }).join("");
   el.innerHTML = head + `<p class="sub">Pre-registered run ${esc(L.run || "")}: ${esc(L.n_worlds ?? "?")} worlds, seeds ${esc(L.seeds || "")}, threshold respond rule. A sleeper plays honest, then turns at G₀. Means with 95% bootstrap CIs over seeds.</p>
     <table class="grid lc2"><thead><tr><th>Agent</th><th>Detects the turn</th><th>Rounds to detection<br><small>Kaplan–Meier median</small></th><th>Sleeper bluffs let through<br><small>games ≥ G₀, per world</small></th><th>False alarm<br><small>belief change, honest table</small></th></tr></thead><tbody>${rows}</tbody></table>
-    <div class="foot" style="margin-top:18px">Detection is near 100% because the pre-registered rule fires on two consecutive p_final &gt; 0.5. Claude-reflection Profiler (n = ${esc(L.arms["profiler+claude|threshold"]?.n_longcon ?? "?")}) is its own row, never pooled with stub reflection.</div>`;
+    <div class="foot" style="margin-top:18px">Detection is near 100% because the pre-registered rule fires on two consecutive p_final &gt; 0.5. Claude-reflection Profiler (n = ${esc(L.arms["profiler+claude|threshold"]?.n_longcon ?? "?")}) is its own row, never pooled with stub reflection.${L.arms["logreg_bow|threshold"] ? ` ${esc(OMIT_BOW.replace("results.json", "longcon2.json"))}` : ""}</div>`;
   where(`Long con at scale, ${esc(L.run || "")}`);
 }
 
@@ -940,19 +942,21 @@ function renderBoundary() {
   const fx = (metric) => metric === "win_rate" ? dPts : metric === "revealed_to_discovery" ? (v) => sgn(v, (x) => x.toFixed(1)) : (v) => sgn(v, (x) => x.toFixed(3));
   const ok = (h, st) => st === "not run" ? '<span class="na">not run</span>' : h === true ? '<span class="honestword">✓ holds</span>' : h === false ? '<span class="bluffword">✗ did not hold</span>' : '<span class="na">no CI</span>';
   const MET = { win_rate: "win rate", brier_first10: "Brier, first 10 reveals", brier_after_flip10: "Brier, 10 after the flip", revealed_to_discovery: "reveals to discovery", brier: "Brier" };
-  const rows = M.rows.map((r) => { const f = fx(r.metric); const ci = Array.isArray(r.ci) ? r.ci : [];
+  const bow = (x) => x?.a === "logreg_bow" || x?.b === "logreg_bow";   // word-count classifier rows are omitted (footnote says where they are)
+  const omitted = M.rows.some(bow) || Object.values(Bd.hypotheses || {}).flat().some(bow);
+  const rows = M.rows.filter((r) => !bow(r)).map((r) => { const f = fx(r.metric); const ci = Array.isArray(r.ci) ? r.ci : [];
     return `<tr class="${r.status === "not run" ? "notrun" : ""}"><td>${esc(r.cue || "")}<small>${esc(r.hypothesis || "")}${r.a ? ` · ${esc(r.a)} vs ${esc(r.b)}` : ""}</small></td>
       <td>${esc(r.winner ?? "—")}</td>
       <td>${r.delta === null || r.delta === undefined ? "—" : `${f(r.delta)}<span class="ci">${ci[0] != null ? `${f(ci[0])} to ${f(ci[1])}` : "no CI"}${r.n !== undefined ? ` · n ${esc(r.n)}` : ""}</span>`}</td>
       <td>${esc(MET[r.metric] || r.metric || "—")}</td><td>${ok(r.holds, r.status)}</td></tr>`; }).join("");
   const H = Bd.hypotheses || {};
-  const hyp = Object.keys(H).sort().flatMap((k) => (Array.isArray(H[k]) ? H[k] : [H[k]])).map((h) => { const f = fx(h.metric);
+  const hyp = Object.keys(H).sort().flatMap((k) => (Array.isArray(H[k]) ? H[k] : [H[k]])).filter((h) => !bow(h)).map((h) => { const f = fx(h.metric);
     return `<div class="hyp"><b>${esc(h.name || "")}</b>${esc(h.text || "")}<span>${ok(h.holds, h.status)}${h.mean != null ? ` <span class="ci">Δ ${f(h.mean)}${h.lo != null ? `, CI ${f(h.lo)} to ${f(h.hi)}` : ""}${h.n !== undefined ? `, n ${esc(h.n)}` : ""}</span>` : ""}</span></div>`; }).join("");
   el.innerHTML = head + `<p class="sub">Pre-registered (${esc(Bd.prereg || "PREREG.md")}), run ${esc(Bd.run || "")}, ${esc(Bd.info || "raw")} observations, paired 95% CIs. Holds only if the CI excludes 0 in the predicted direction.</p>
     <table class="grid lc2 cmap"><thead><tr><th>Cue type</th><th>Winner</th><th>Δ (95% CI)</th><th>Metric</th><th>Pre-registered claim</th></tr></thead><tbody>${rows}</tbody></table>
     ${hyp ? `<div class="hyps">${hyp}</div>` : ""}${(() => { const n = String(M.note || ""); const k = n.indexOf("Deviation:");
       return k < 0 ? `<div class="foot" style="margin-top:8px">${esc(n)}</div>`
-        : `<div class="deviation"><b>Deviation from the pre-registration.</b> ${esc((t => t.charAt(0).toUpperCase() + t.slice(1))(n.slice(k + 10).trim()))}</div><div class="foot" style="margin-top:6px">${esc(n.slice(0, k).trim())}</div>`; })()}`;
+        : `<div class="deviation"><b>Deviation from the pre-registration.</b> ${esc((t => t.charAt(0).toUpperCase() + t.slice(1))(n.slice(k + 10).trim()))}</div><div class="foot" style="margin-top:6px">${esc(n.slice(0, k).trim().replace(" or logreg_bow − profiler (r01 win rate)", ""))}</div>`; })()}${omitted ? `<div class="foot" style="margin-top:6px">${esc(OMIT_BOW)}</div>` : ""}`;
   where(`Capability map, ${esc(Bd.run || "")}`);
 }
 
@@ -963,17 +967,24 @@ function renderMemory() {
   const rule = (M.rules_order || Object.keys(M.rules))[0] || "threshold"; const R = M.rules[rule] || {};
   const hasD = (t) => Object.values(R[t]?.delta_vs_baseline || {}).some((d) => d?.win_rate?.mean != null || d?.brier?.mean != null);
   const tables = ["all", ...Object.keys(R).filter((t) => t !== "all")].filter((t) => R[t] && hasD(t));   // tables with no paired seeds are left out (listed in the foot)
-  const arms = (R.all || R[tables[0]])?.arms?.filter((a) => a !== M.baseline) || [];
+  const allArms = (R.all || R[tables[0]])?.arms?.filter((a) => a !== M.baseline) || [];
+  // logreg_bow is left out of this headline table (word counts over a tiny fixed sentence bank); logreg_embed is the named classifier baseline.
+  const arms = allArms.filter((a) => a !== "logreg_bow" && a !== "logreg_embed");
+  const clsArms = allArms.filter((a) => a === "logreg_embed");
   const brier = (v) => sgn(v, (x) => x.toFixed(3));
   const cell = (t, a) => { const d = R[t]?.delta_vs_baseline?.[a]; if (!d || (d.win_rate?.mean == null && d.brier?.mean == null)) return `<td class="na">—</td>`;
     const one = (m, f) => !m || m.mean == null ? "—" : `${f(m.mean)} <span class="ci">${m.lo != null ? `${f(m.lo)} to ${f(m.hi)}` : "no CI"}</span>`;
     return `<td><div>${one(d.win_rate, dPts)}</div><div class="br">${one(d.brier, brier)}</div></td>`; };
-  const rows = arms.map((a) => `<tr class="${a.startsWith("llm_") || a === "profiler_plus" ? "ours" : ""}"><td>${esc(a)}</td>${tables.map((t) => cell(t, a)).join("")}</tr>`).join("");
+  const rowOf = (a, lab) => `<tr class="${a.startsWith("llm_") || a === "profiler_plus" ? "ours" : ""}"><td>${lab || esc(a)}</td>${tables.map((t) => cell(t, a)).join("")}</tr>`;
+  const rows = arms.map((a) => rowOf(a)).join("") + (clsArms.length ? `<tr class="divider"><td colspan="${tables.length + 1}">classifier baselines</td></tr>`
+    + clsArms.map((a) => rowOf(a, `${esc(a)} <span class="ci">sentence embeddings</span>`)).join("") : "");
+  const X = B.embed_exploratory?.deltas?.["profiler_plus-logreg_embed"]?.pooled_by_seed?.win;
+  const expl = X?.mean == null ? "" : `<div class="explo"><span class="tag">exploratory</span> profiler_plus − logreg_embed, paired by seed: win rate ${dPts(X.mean)} <span class="ci">${dPts(X.lo)} to ${dPts(X.hi)} · n ${esc(X.n)}</span>. Baseline chosen after mem01 ran, and the weaker of our two classifiers on these tables. Confirmatory rerun: c02.</div>`;
   const setting = M.setting === "raw" ? "raw observations" : M.setting === "engineered" ? "engineered-feature setting" : esc(M.setting || "");
   el.innerHTML = head + `<div class="memhead"><span class="setting">${setting}</span><span class="hl">${esc(M.headline || "")}</span></div>
     <p class="sub">Paired Δ vs the no-memory arm <b>${esc(M.baseline || "")}</b> on the same seeds, ${esc(rule)} rule, run ${esc(M.run || "")}. Win rate higher is better; Brier lower is better. 95% bootstrap CI where n allows.</p>
-    <table class="grid lc2 mem"><thead><tr><th>Arm</th>${tables.map((t) => `<th>${t === "all" ? "all tables" : esc(t)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>
-    <div class="foot" style="margin-top:14px">Each cell: win-rate Δ (top), Brier Δ (below), 95% CI. Paired seeds per cell: ${tables.map((t) => `${t === "all" ? "all" : esc(t)} n ${esc(Math.max(0, ...Object.values(R[t].delta_vs_baseline || {}).map((d) => d?.win_rate?.n || 0)))}`).join(", ")}.${Object.keys(R).filter((t) => t !== "all" && !hasD(t)).length ? ` No paired seeds yet: ${Object.keys(R).filter((t) => t !== "all" && !hasD(t)).map(esc).join(", ")}.` : ""}</div>`;
+    <table class="grid lc2 mem"><thead><tr><th>Arm</th>${tables.map((t) => `<th>${t === "all" ? "all tables" : esc(t)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>${expl}
+    <div class="foot" style="margin-top:14px">Each cell: win-rate Δ (top), Brier Δ (below), 95% CI. Paired seeds per cell: ${tables.map((t) => `${t === "all" ? "all" : esc(t)} n ${esc(Math.max(0, ...Object.values(R[t].delta_vs_baseline || {}).map((d) => d?.win_rate?.n || 0)))}`).join(", ")}.${Object.keys(R).filter((t) => t !== "all" && !hasD(t)).length ? ` No paired seeds yet: ${Object.keys(R).filter((t) => t !== "all" && !hasD(t)).map(esc).join(", ")}.` : ""}${allArms.includes("logreg_bow") ? " Word-count classifier omitted from this table (in r01 it was given the engineered tell feature); full results incl. it: DEVPOST.md / memory.json." : ""}</div>`;
   where(`Does memory help?, ${esc(M.run || "")}`);
 }
 

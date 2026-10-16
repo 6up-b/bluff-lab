@@ -84,9 +84,12 @@ The HUD lists every cue; cues whose data is missing are marked "skipped: no data
   follows the CI: "no detectable difference" when the CI includes 0. Show a headline only when `holds` is true.
   The "better beliefs ≠ better decisions" beat is `claims.beliefs_not_decisions` (calibration better, CI
   excludes 0, and no rule shows a significant win gain).
-- **The logreg_bow baseline** may be the stronger predictor: `claims.vs_logreg_<rule>`. The Profiler's case is
-  auditability, surgery and provenance (`claims.false_discovery_<rule>` and `false_discovery_lower_<rule>`, measured
-  on the null-tell falsealarm table). Say only what those claims support.
+- **The word-count classifier (logreg_bow) is not shown.** In r01 it was handed the engineered `formal_register`
+  feature, so it is not a fair baseline. The Show filters it out of every scene (memory, results grid, capability
+  map incl. the pre-registered H4 rows, long con) and adds one footnote pointing to DEVPOST.md and the JSON; the data
+  files are untouched. The named classifier baseline is `logreg_embed`. Any "beats the classifier" claim says
+  exploratory (`bundle/embed_exploratory.json`, copied from runs/mem01; baseline chosen after mem01 ran) and that
+  it is the weaker of the two classifiers on those tables.
 - **Metrics.** Both the §6 versions and the corrected versions are in `metric_defs`:
   - false alarm: `false_alarm` (§6) vs `false_alarm_belief` (corrected).
   - exploitation: `lives_lost_to_sleeper` (§6) vs `missed_bluffs`, "sleeper bluffs let through" (corrected).
@@ -94,7 +97,7 @@ The HUD lists every cue; cues whose data is missing are marked "skipped: no data
 - **logreg_bow decisions** have `q_used: null` and `q_source: "logreg"`. They have no memory segment in the
   waterfall.
 - **Two settings.** r01 observations include engineered tell features, notably the precomputed `formal_register`
-  boolean. Label any r01 comparison (logreg_bow, the results grid) "engineered-feature setting". mem01 (if present)
+  boolean. Label any r01 comparison (the results grid) "engineered-feature setting". mem01 (if present)
   is the raw-observation experiment: same model (Claude Sonnet 5.5), same prompt, same observation, different
   memory. `bundle/memory.json` gives `setting`, `baseline` (llm_nomem, or counter as a fallback, with `note`), and
   `rules[rule][table|"all"]` → `{arms, metrics[arm], delta_vs_baseline[arm][metric], curves[arm].{win_rate,brier}[bucket]}`.
