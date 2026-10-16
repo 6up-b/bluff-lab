@@ -712,3 +712,58 @@ def make_agent(agent_id: str, seat: str, rng, params: dict | None = None):
     return AGENTS[agent_id](seat, rng, params)
 
 import blab.agents.llm_agents  # noqa: E402,F401  (llm-arms registry hook: registers llm_* agents in AGENTS)
+
+
+# ------------------------------------------------------------------ logreg_embed (b01, PREREG.md)
+
+EMB_NUMERIC = ["bias", "logit_p_cards"] + [n for n, _ in NUMERIC] + ["was_challenged_last_round", "word_count",
+                                                                     "answer_word_count"]
+EMB_LAMBDA, EMB_LR = 1.0, 0.1          # fixed a priori (PREREG); no tuning
+
+
+def featurize_embed(features: dict, p_cards: float) -> np.ndarray:
+    """[64-dim fixed random projection (seed 0) of embed(utterance)] ⊕ [same for embed(answer), zeros if no
+    answer] ⊕ raw numeric features. Embeddings come only from blab/data/embed_cache.json (no network)."""
+    from blab.agents.embed import projected
+    pc = min(max(float(p_cards), 1e-3), 1 - 1e-3)
+    num = [1.0, math.log(pc / (1 - pc))] + [float(features.get(n, 0) or 0) / s for n, s in NUMERIC]
+    num += [float(bool(features.get("was_challenged_last_round"))),
+            float(features.get("word_count", len(str(features.get("utterance", "")).split()))) / 10.0,
+            float(features.get("answer_word_count", len(str(features.get("answer_utterance", "") or "").split()))) / 10.0]
+    return np.concatenate([np.asarray(num), np.asarray(projected(str(features.get("utterance", "") or ""))),
+                           np.asarray(projected(str(features.get("answer_utterance", "") or "")))])
+
+
+class LogregEmbed(LogregBow):
+    """b01: online L2 logistic regression (λ 1.0, lr 0.1, per-step penalty as in logreg_bow) on sentence
+    embeddings + numeric features; trained at game end on the same revealed claims as everyone else."""
+    id = "logreg_embed"
+
+    def predict(self, obs, about, features, p_c):
+        m = (self.memory.get("logreg_embed") or {}).get(about)
+        x = featurize_embed(features, p_c)
+        w = np.asarray(m["w"]) if m else np.zeros(len(x))
+        p = _sig(float(w @ x))
+        return None, "logreg", [], p, {"logreg": {"p_bluff": p, "n_fit": int(m["n"]) if m else 0,
+                                                 "tell_coef": None, "tell_feature": None, "discovery_game": None,
+                                                 "model": "logreg_embed"}}
+
+    def on_game_end(self, obs: dict, game: int) -> list[tuple[str, dict]]:
+        if not self.learning:
+            return []
+        new = self._absorb(obs, game)
+        mem = self.memory.setdefault("logreg_embed", {})
+        for e in sorted(new, key=lambda e: (e["game"], e["round"])):
+            x = featurize_embed(e["features"], e["p_cards"])
+            m = mem.setdefault(e["by"], {"w": [0.0] * len(x), "n": 0})
+            w = np.asarray(m["w"])
+            g = (_sig(float(w @ x)) - float(e["was_bluff"])) * x
+            reg = EMB_LAMBDA * w
+            reg[0] = 0.0
+            m["w"] = list(map(float, w - EMB_LR * (g + reg)))
+            m["n"] += 1
+        self.memory["memory_version"] = int(self.memory.get("memory_version", 0)) + 1
+        return []
+
+
+AGENTS[LogregEmbed.id] = LogregEmbed

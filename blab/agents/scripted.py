@@ -11,7 +11,7 @@ from blab.agents import banks
 from blab.engine import matches
 
 ROLES = ("sleeper", "control", "telltale", "telltale_overt", "colluder",
-         "tell_conjunctive", "tell_flipper", "answer_tell")
+         "tell_conjunctive", "tell_flipper", "answer_tell", "tell_relational")
 # The last three roles were DESIGNED AFTER seeing logreg_bow's weakness (plus01 experiment, INTERFACES.md):
 # - tell_conjunctive: the tell is an interaction (formal ⇔ bluff XOR hand_size > 2). A model that is linear in
 #   formal_register and hand_size cannot represent it; a conjunctive DSL predicate can.
@@ -31,6 +31,7 @@ class Scripted:
         self.id = f"scripted:{self.role}"
         self.partner = self.params.get("partner")       # colluder only
         self._last_bluff = False                        # did my latest claim bluff? (for ask answers)
+        self._ranks: dict = {}                          # tell_relational: (game, round) -> table rank seen
 
     # ---------------------------------------------------------------- s(game)
     def s(self, game: int) -> float:
@@ -40,7 +41,7 @@ class Scripted:
             return 0.0 if game < g0 else (0.3 if game == g0 else 0.6)
         if r == "control":
             return 0.0
-        if r in ("telltale", "telltale_overt", "tell_conjunctive", "tell_flipper", "answer_tell"):
+        if r in ("telltale", "telltale_overt", "tell_conjunctive", "tell_flipper", "answer_tell", "tell_relational"):
             return 0.35
         if r == "colluder":
             return 0.3
@@ -83,6 +84,36 @@ class Scripted:
             return line[0].upper() + line[1:]
         return banks.pick(banks.CASUAL, self.rng, n, rank)
 
+    def relational_utterance(self, obs: dict, n: int, bluff: bool) -> str:
+        """b01 tell_relational: claim line (casual or formal, independent of bluffing) + ONE factual statement
+        computable from the public log. Bluff -> statement false w.p. 0.7; honest -> false w.p. 0.1.
+        RNG order: claim bank, claim line, statement kind, template, truth, perturbation."""
+        rank, g, r = obs["table_rank"], obs["game"], obs["round"]
+        self._ranks[(g, r)] = rank
+        bank = banks.FORMAL if float(self.rng.random()) < 0.5 else banks.CASUAL
+        claim = banks.pick(bank, self.rng, n, rank)
+        prev = self._ranks.get((g, r - 1))
+        kinds = ["count", "hand"] + (["same"] if prev is not None else [])
+        kind = kinds[int(self.rng.integers(0, len(kinds)))]
+        ti = int(self.rng.integers(0, 4))
+        false = float(self.rng.random()) < (0.7 if bluff else 0.1)
+        d = 1 if float(self.rng.random()) < 0.5 else -1
+        pend = obs.get("pending_claim")
+        if kind == "count":
+            N = sum(int(c["count"]) for c in obs.get("round_claims", [])) + (int(pend["count"]) if pend else 0) + n
+            if false:
+                N = N + d if N + d >= 1 else N + 1
+            stmt = banks.REL_COUNT[ti].format(N=N, rank_pl=banks.ranks_word(rank, 2))
+        elif kind == "hand":
+            h = len(obs["my_hand"]) - n
+            if false:
+                h = h + d if h + d >= 0 else h + 1
+            stmt = banks.REL_HAND[ti].format(h=h)
+        else:
+            same = (rank == prev) != false
+            stmt = (banks.REL_SAME if same else banks.REL_DIFF)[ti]
+        return f"{claim} {stmt}"
+
     def play(self, obs: dict) -> dict:
         hand, rank = obs["my_hand"], obs["table_rank"]
         mi = [i for i, c in enumerate(hand) if matches(c, rank)]
@@ -105,7 +136,8 @@ class Scripted:
         bluff = kind is not None
         self._last_bluff = bluff
         return {"type": "play", "cards": sorted(int(i) for i in idx),
-                "utterance": self.utterance(len(idx), rank, bluff, len(hand) - len(idx), obs["game"]),
+                "utterance": (self.relational_utterance(obs, len(idx), bluff) if self.role == "tell_relational"
+                              else self.utterance(len(idx), rank, bluff, len(hand) - len(idx), obs["game"])),
                 "meta": {"bluff_kind": kind}}
 
     def act(self, obs: dict) -> dict:
@@ -117,8 +149,8 @@ class Scripted:
     def answer(self, question: str, obs: dict | None = None) -> str:
         """Telltale answers from its formal bank when bluffing (p 0.75); everyone else casual."""
         u = float(self.rng.random())
-        if self.role == "answer_tell":
-            bank = banks.ANSWER_FORMAL if u < (0.75 if self._last_bluff else 0.25) else banks.ANSWER_CASUAL
+        if self.role == "answer_tell":       # b01: semantic tell (evasive / over-assuring when bluffing)
+            bank = banks.ANSWER_EVASIVE if u < (0.75 if self._last_bluff else 0.25) else banks.ANSWER_PLAIN
         elif self.role == "telltale" and self._last_bluff and u < 0.75:
             bank = banks.ANSWER_FORMAL
         else:
