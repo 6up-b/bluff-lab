@@ -11,12 +11,13 @@ from blab.agents import banks
 from blab.engine import matches
 
 ROLES = ("sleeper", "control", "telltale", "telltale_overt", "colluder",
-         "tell_conjunctive", "tell_flipper", "answer_tell", "tell_relational")
+         "tell_conjunctive", "tell_flipper", "answer_tell", "tell_relational", "reverse_telltale")
 # The last three roles were DESIGNED AFTER seeing logreg_bow's weakness (plus01 experiment, INTERFACES.md):
 # - tell_conjunctive: the tell is an interaction (formal ⇔ bluff XOR hand_size > 2). A model that is linear in
 #   formal_register and hand_size cannot represent it; a conjunctive DSL predicate can.
 # - tell_flipper: a telltale until G1 ~ U{8..10}, then the tell inverts (formal when HONEST). Tests whether an
 #   agent is exploited by its own learned tell, and how fast it un-learns.
+# - reverse_telltale (reg01, PREREG_reg01.md): formal w.p. 0.75 when HONEST, 0.25 when bluffing (Avery's mirror).
 # - answer_tell: no utterance tell at all; when asked (ask=True) it answers formally when bluffing. That
 #   evidence exists only through interrogation.
 
@@ -41,7 +42,8 @@ class Scripted:
             return 0.0 if game < g0 else (0.3 if game == g0 else 0.6)
         if r == "control":
             return 0.0
-        if r in ("telltale", "telltale_overt", "tell_conjunctive", "tell_flipper", "answer_tell", "tell_relational"):
+        if r in ("telltale", "telltale_overt", "tell_conjunctive", "tell_flipper", "answer_tell", "tell_relational",
+                 "reverse_telltale"):
             return 0.35
         if r == "colluder":
             return 0.3
@@ -76,6 +78,10 @@ class Scripted:
         if r == "telltale":
             u = float(self.rng.random())
             bank = banks.FORMAL if u < (0.75 if bluff else 0.25) else banks.CASUAL
+            return banks.pick(bank, self.rng, n, rank)
+        if r == "reverse_telltale":     # reg01 "Blake": the mirror of telltale — formal when HONEST
+            u = float(self.rng.random())
+            bank = banks.FORMAL if u < (0.25 if bluff else 0.75) else banks.CASUAL
             return banks.pick(bank, self.rng, n, rank)
         if r == "telltale_overt":
             u = float(self.rng.random())

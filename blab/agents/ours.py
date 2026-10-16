@@ -347,6 +347,10 @@ class Profiler(Bayes):
                 "drift_notes": copy.deepcopy(mem.get("drift_notes", [])[-4:]),
                 "opponents": sorted({e["by"] for e in mem["revealed"]} | {s for s in ("p2", "p3") if s != self.seat})}
 
+    def allowed_about(self) -> tuple[str, ...]:
+        """Keys a reflection proposal may be about (seats; reg01 identity-keyed agents add names)."""
+        return ("p1", "p2", "p3")
+
     def apply_reflection(self, proposed: list[dict] | None, game: int) -> list[tuple[str, dict]]:
         mem = self.memory
         mem["reflected_upto"] = len(mem["revealed"])
@@ -362,7 +366,7 @@ class Profiler(Bayes):
                 if key in existing:
                     self.last_dropped.append({"proposal": p, "reason": "duplicate"})
                     continue
-                if p.get("about") not in ("p1", "p2", "p3") or p.get("about") == self.seat:
+                if p.get("about") not in self.allowed_about() or p.get("about") == self.seat:
                     raise ValueError("bad 'about'")
                 h = H.new_hypothesis(wid=self.params.get("wid", "w000"), about=p["about"], aspect=p["aspect"],
                                      text=str(p.get("text", ""))[:300], predicate=p["predicate"],
