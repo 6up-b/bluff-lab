@@ -162,11 +162,11 @@ const AQ = [];   // this cue's audio files, played in order
 function playQueue() {
   const el = $("#audio"); const f = AQ.shift();
   if (!f) return;
-  el.onended = () => playQueue();
+  el.onended = () => playQueue(); el.onerror = () => playQueue();   // a file that fails to load is skipped silently
   el.src = `${BUNDLE}/${f}`; el.currentTime = 0; el.play().catch(() => {});
 }
 function playAudio(file) { AQ.length = 0; AQ.push(file); playQueue(); }
-function stopAudio() { AQ.length = 0; const el = $("#audio"); el.onended = null; el.pause(); }
+function stopAudio() { AQ.length = 0; const el = $("#audio"); el.onended = null; el.onerror = null; el.pause(); }
 
 /* Fallback when cues.json is missing: the FLOW.md order, built from reveal.json. */
 function defaultCues() {
