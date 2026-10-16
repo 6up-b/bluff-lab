@@ -1,6 +1,6 @@
 {
  "run": "local",
- "generated": "2026-10-16T17:16:51Z",
+ "generated": "2026-10-16T17:20:14Z",
  "n_worlds": 16,
  "n_branch_worlds": 10,
  "rules": [
@@ -941,6 +941,12 @@
       "lo": null,
       "hi": null,
       "n": 0
+     },
+     "false_discovery": {
+      "mean": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
      }
     },
     "profiler \u2212 bayes": {
@@ -979,6 +985,12 @@
       "lo": null,
       "hi": null,
       "n": 1
+     },
+     "false_discovery": {
+      "mean": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
      }
     }
    },
@@ -1019,6 +1031,12 @@
       "lo": null,
       "hi": null,
       "n": 0
+     },
+     "false_discovery": {
+      "mean": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
      }
     },
     "profiler \u2212 bayes": {
@@ -1053,6 +1071,12 @@
       "n": 0
      },
      "rtd": {
+      "mean": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
+     },
+     "false_discovery": {
       "mean": null,
       "lo": null,
       "hi": null,
@@ -1097,6 +1121,12 @@
       "lo": null,
       "hi": null,
       "n": 0
+     },
+     "false_discovery": {
+      "mean": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
      }
     },
     "profiler \u2212 bayes": {
@@ -1135,6 +1165,12 @@
       "lo": null,
       "hi": null,
       "n": 1
+     },
+     "false_discovery": {
+      "mean": null,
+      "lo": null,
+      "hi": null,
+      "n": 0
      }
     }
    }

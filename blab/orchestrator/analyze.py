@@ -385,7 +385,7 @@ def aggregate(worlds: list[dict]) -> dict:
     return groups
 
 
-DELTA_METRICS = ("win_rate", "win_rate_late", "brier", "missed_bluffs", "lives_lost_to_sleeper", "rtd")
+DELTA_METRICS = ("win_rate", "win_rate_late", "brier", "missed_bluffs", "lives_lost_to_sleeper", "rtd", "false_discovery")
 
 
 def deltas(worlds: list[dict]) -> dict:
@@ -557,6 +557,16 @@ def claims(res: dict) -> dict:
                 "text": "On tables where no opponent has a tell, the discovery test still fired in: " + "; ".join(
                     f"{a} {r['mean'] * 100:.0f}% of {r['n']} worlds" for a, r in sorted(rates.items(), key=lambda kv: label_order(kv[0])))
                         + f" ({rule} rule)."}
+    for rule, tabs in D.items():
+        fd = ((tabs.get("falsealarm") or {}).get("profiler − logreg_bow") or {}).get("false_discovery")
+        if fd and fd.get("lo") is not None:
+            s_ = _sig(fd)
+            out[f"false_discovery_lower_{rule}"] = {
+                "holds": s_ == "lower", "delta": fd,
+                "text": {"lower": "The Profiler 'finds' fewer non-existent tells than the bag-of-words baseline: ",
+                         "higher": "The Profiler 'finds' more non-existent tells than the bag-of-words baseline: ",
+                         "none": "No detectable difference in false tell discoveries vs the bag-of-words baseline: "}[s_]
+                        + f"{_ci(fd)} ({rule} rule)."}
     cal = [k for k, v in out.items() if k.startswith("calibration_") and v["holds"]]
     wins = [k for k, v in out.items() if k.startswith("winrate_") and v["holds"]]
     if cal and not wins:

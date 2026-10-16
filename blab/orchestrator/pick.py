@@ -46,14 +46,26 @@ def _slim(res: dict | None) -> dict | None:
 
 
 def choose_world(worlds: list[dict]) -> tuple[dict | None, dict]:
-    for table in ("telltale", "longcon", "telltale_overt"):
-        cands = [w for w in worlds if not w["vkey"] and w["agent"] == "profiler" and w["table"] == table and w["done"]]
-        if cands:
-            break
+    """Pools are tried in order; the §13 median rule is applied inside the first non-empty pool.
+    Real-Claude reflection is preferred (with stub reflection the hypotheses come from a canned list, so the
+    Show must not say the agent found the tell on its own); the primary (threshold) respond rule is preferred."""
+    base = [w for w in worlds if not w["vkey"] and w["agent"] == "profiler" and w["done"]]
+    pools = [("claude reflection, threshold rule", lambda w: w["reflection"] == "claude" and w["rule"] == "threshold"),
+             ("claude reflection, any rule", lambda w: w["reflection"] == "claude"),
+             ("stub reflection, threshold rule", lambda w: w["rule"] == "threshold"),
+             ("any profiler world", lambda w: True)]
+    for pool_name, pred in pools:
+        for table in ("telltale", "longcon", "telltale_overt"):
+            cands = [w for w in base if pred(w) and w["table"] == table]
+            if cands:
+                break
+        else:
+            continue
+        break
     else:
         return None, {"note": "no finished profiler world found"}
     disc = [w["m"]["discovery_game"] for w in cands if w["m"]["discovery_game"] is not None]
-    info = {"table": table, "n_candidates": len(cands), "discovery_games": sorted(disc)}
+    info = {"table": table, "pool": pool_name, "n_candidates": len(cands), "discovery_games": sorted(disc)}
     if disc:
         medv = float(np.median(disc))
         info["median_discovery"] = medv
@@ -162,7 +174,7 @@ def dossier(world_dir: Path, seat: str = "p1") -> dict:
 
 def find_twin(worlds: list[dict], w: dict, agent: str) -> dict | None:
     c = [x for x in worlds if not x["vkey"] and x["agent"] == agent and x["seed"] == w["seed"]
-         and x["table"] == w["table"] and x["done"]]
+         and x["table"] == w["table"] and x["rule"] == w["rule"] and x["done"]]
     return c[0] if c else None
 
 
@@ -241,10 +253,13 @@ def provenance_md(sel: dict) -> str:
          f"Built {P['built']} by `blab pick-demo --run {P['run']}` from real event logs. No number in this bundle "
          "was written by hand.", "",
          f"- **Run:** `{P['run']}`", f"- **World:** `{P['world']}` (`{P['world_dir']}`)", f"- **Seed:** {P['seed']}",
-         f"- **Table:** {P['table']}", f"- **Decision seq:** {sel['seq']} (game {sel['decision_game']}, round {sel['decision_round']})",
+         f"- **Table:** {P['table']}", f"- **Respond rule:** {P.get('respond_rule')}",
+         f"- **Reflection:** {P.get('reflection')}" + ("" if P.get("reflection") == "claude" else
+             " — **hypotheses came from the canned stub reflector, not an LLM. Do not say the agent found the tell "
+             "on its own; say the tell was proposed from a fixed list and confirmed by the reveals.**"), f"- **Decision seq:** {sel['seq']} (game {sel['decision_game']}, round {sel['decision_round']})",
          f"- **Claim seq:** {sel['claim_seq']}, **reveal seq:** {sel.get('reveal_seq')}", "",
          "## Selection rules", "", f"- World: {RULE_WORLD}.",
-         f"  - candidates: {P['world_selection'].get('n_candidates')}; discovery games: {P['world_selection'].get('discovery_games')}; "
+         f"  - pool: {P['world_selection'].get('pool')}; candidates: {P['world_selection'].get('n_candidates')}; discovery games: {P['world_selection'].get('discovery_games')}; "
          f"median: {P['world_selection'].get('median_discovery')}; picked world's discovery game: {P['discovery_game']}",
          f"- Decision: {RULE_DECISION}.", f"  - exact match: **{s['exact']}** — {s.get('note', '')}",
          f"  - criteria: {json.dumps(s.get('criteria'))}", ""]
@@ -330,6 +345,7 @@ def pick_demo(run: str = "r01", out: str = "show/bundle", root: str = "runs") ->
             shutil.copyfile(mp3, outd / "voice" / mp3.name)
         files["voice/"] = f"TTS of {w['wid']} ask events"
     sel["provenance"] = {"run": run, "world": w["wid"], "world_dir": str(w["dir"]), "seed": w["seed"], "table": w["table"],
+                         "respond_rule": w["rule"], "reflection": w["reflection"],
                          "discovery_game": w["m"]["discovery_game"], "world_selection": winfo, "rule": RULE_WORLD,
                          "built": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "files": files}
     (outd / "reveal.json").write_text(json.dumps(A._jsonable(sel), indent=1))
@@ -343,3 +359,83 @@ def pick_demo(run: str = "r01", out: str = "show/bundle", root: str = "runs") ->
     (outd / "PROVENANCE.md").write_text(provenance_md(sel))
     print(f"pick-demo: world {w['wid']} (seed {w['seed']}), decision seq {seq} game {g}, exact={sinfo['exact']} → {outd}/")
     return sel
+
+
+# ------------------------------------------------------------------ Devpost fill (`python -m blab.orchestrator.pick --devpost`)
+def _get(obj, path: str):
+    for part in path.split("."):
+        if isinstance(obj, dict) and part in obj:
+            obj = obj[part]
+        elif isinstance(obj, list) and part.isdigit() and int(part) < len(obj):
+            obj = obj[int(part)]
+        else:
+            return None
+    return obj
+
+
+def fill_devpost(run: str = "r01", template: str = "DEVPOST.md", out: str = "DEVPOST.filled.md",
+                 root: str = "runs", bundle: str = "show/bundle") -> list[str]:
+    """Fill `{{…}}` placeholders in DEVPOST.md from runs/<run>/results.json and the Show bundle.
+
+      {{n_worlds}}, {{groups.threshold.telltale.profiler.brier.mean|3}}   dotted path into results.json (|N = decimals,
+                                                                          |pct = percent)
+      {{claim:calibration_threshold}}    the data-generated sentence (neutral wording if it does not hold)
+      {{claim_if:longcon_twist}}         the sentence only if `holds` is true, else nothing
+      {{prov:world}}                     a field of show/bundle/reveal.json → provenance
+      {{reveal:variants.1.result.p_final|2}}   any field of show/bundle/reveal.json (Surgery Reveal numbers)
+    Anything that cannot be resolved becomes `[missing: …]` and is reported, so nothing is silently invented."""
+    import re
+    res = json.loads((Path(root) / run / "results.json").read_text())
+    rv = Path(bundle) / "reveal.json"
+    rvj = json.loads(rv.read_text()) if rv.exists() else {}
+    prov = rvj.get("provenance", {})
+    missing: list[str] = []
+
+    def fmt(v, spec):
+        if isinstance(v, float):
+            if spec == "pct":
+                return f"{v * 100:.1f}%"
+            return f"{v:.{int(spec) if spec and spec.isdigit() else 3}f}"
+        return str(v)
+
+    def sub(m):
+        key = m.group(1).strip()
+        spec = None
+        if "|" in key:
+            key, spec = key.split("|", 1)
+        if key.startswith("claim_if:"):
+            c = res.get("claims", {}).get(key[9:])
+            return c["text"] if c and c.get("holds") and c.get("text") else ""
+        if key.startswith("claim:"):
+            c = res.get("claims", {}).get(key[6:])
+            if c and c.get("text"):
+                return c["text"]
+        elif key.startswith("prov:") or key.startswith("reveal:"):
+            v = _get(prov, key[5:]) if key.startswith("prov:") else _get(rvj, key[7:])
+            if v is not None and not isinstance(v, (dict, list)):
+                return fmt(v, spec)
+        else:
+            v = _get(res, key)
+            if v is not None and not isinstance(v, (dict, list)):
+                return fmt(v, spec)
+        missing.append(key)
+        return f"[missing: {key}]"
+
+    text = re.sub(r"\{\{(.+?)\}\}", sub, Path(template).read_text())
+    Path(out).write_text(text)
+    print(f"devpost: {template} → {out} from runs/{run}/results.json; {len(missing)} unresolved"
+          + (": " + ", ".join(sorted(set(missing))) if missing else ""))
+    return missing
+
+
+if __name__ == "__main__":
+    import argparse
+    ap = argparse.ArgumentParser(description="pick-demo bundle builder / Devpost filler")
+    ap.add_argument("--run", default="r01")
+    ap.add_argument("--out", default="show/bundle")
+    ap.add_argument("--devpost", action="store_true", help="fill DEVPOST.md → DEVPOST.filled.md from results.json")
+    a = ap.parse_args()
+    if a.devpost:
+        fill_devpost(run=a.run)
+    else:
+        pick_demo(run=a.run, out=a.out)
