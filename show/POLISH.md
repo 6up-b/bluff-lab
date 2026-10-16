@@ -28,5 +28,5 @@ Severity: **blocker** = visibly broken on stage; **major** = hurts reading from 
 
 ## Open (minor, not worth the risk before freeze)
 - [ ] c13 dossier as of game 4, c11 inspector: bottom third of the stage is empty (content is short by nature).
-- [ ] c20 ablation per-bar CI line and c23 results CI line are about 15–18px at 1080 and about 12px at 720. Readable on a monitor, faint on a projector.
+- [ ] c23 results CI line is 18px at 1080 and about 12px at 720. Faint on a projector. (Ablation CI labels now 18px with brighter ink.)
 - [ ] c18 "Provenance-blind agent" wraps to two lines (columns stay aligned).
