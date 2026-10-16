@@ -152,3 +152,29 @@ Operationalization:
 - Reflection failures and timeouts keep the old memory, as in every previous run, and are counted. Record-check
   failures give "none" and are counted.
 - The record check's call count, cache hits, tokens and estimated cost are reported.
+
+---
+
+## Post-run record (appended 15:32; the text above is unchanged from commit 7a0cd49)
+
+All 576 worlds ran (24 seeds × 4 tables × 6 arms), finishing at 15:30:06 with 0 failures. All 768 Opus
+reflections succeeded. The stopping rule was not triggered. Full numbers are in `runs/c01/confirm.json` (copy:
+`show/bundle/confirm.json`).
+
+| | Δ (a − b) | 95% CI | holds |
+|---|---|---|---|
+| H11a relational_v2, Brier first 10: hybrid − logreg_embed | +0.008 | [−0.017, +0.033] | no |
+| H11b flipper, Brier first 10: hybrid − logreg_embed | +0.014 | [−0.009, +0.039] | no |
+| H12 pooled win rate: hybrid − logreg_bow | +0.080 | [+0.054, +0.107] | **yes** |
+| H13 pooled win rate: profiler_plus_c01 − logreg_bow | +0.081 | [+0.057, +0.104] | **yes** |
+
+Exploratory, added after the run started (the lead's request arrived after test-seed worlds had run):
+- H14 hybrid − logreg_embed, pooled win rate: +0.158 [+0.134, +0.184].
+- H15 profiler_plus_c01 − logreg_embed, pooled win rate: +0.159 [+0.134, +0.183].
+- Whole-world Brier for hybrid − logreg_embed is negative on all 4 tables (−0.020 to −0.039, every CI excludes 0).
+
+Record check: 6,102 Sonnet calls and 589 cache hits. 158 calls failed and were scored "none". Tokens: 3.0M
+input, 0.23M output, 3.7M cache-read. Estimated cost about $9 at first-party rates. Accuracy on test decisions
+was 0.80–0.83 (descriptive), with errors mostly false "contradiction" answers.
+
+Deviations: see `confirm.json` `deviations`.
