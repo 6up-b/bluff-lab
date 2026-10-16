@@ -191,3 +191,50 @@ def _save(rec: dict) -> dict:
 
 if __name__ == "__main__":
     run_fork()
+
+
+# ------------------------------------------------------------------ fallback: checkpoint branches (NOT a fork)
+
+def _cb_one(world_dir: str, iv: str, g0: int, sleeper: str) -> dict:
+    import asyncio
+    from blab import world as W
+    variant = {"none": {"type": "full"}, "drift_off": {"type": "full"}, "erase": {"type": "as_of", "game": 0},
+               "false_memory": {"type": "false_memory", "about": sleeper, "aspect": "baseline_bluff",
+                                "text": f"Player {sleeper[-1]} never bluffs", "q": 0.0}}[iv]
+    wd = Path(world_dir)
+    new = f"{wd.name}_cb_{iv}"
+    w = W.branch(wd, new, g0 - 1, 20, variant, learning=True, reflector=W.stub_reflector)
+    if iv == "drift_off":
+        w.policies["p1"].params["drift"] = False
+        for sp in w.seats:
+            if sp["seat"] == "p1":
+                sp.setdefault("params", {})["drift"] = False
+    w.variant = {**variant, "intervention": iv, "kind": "checkpoint_branch"}
+    res = asyncio.run(w.run())
+    return {"wid": new, "parent": wd.name, "intervention": iv, "win_rate": res.get("win_rate")}
+
+
+def run_checkpoint_branches(run: str = "lc02", agent_label: str = "profiler", rule: str = "threshold") -> dict:
+    """At the moment of betrayal (ckpt g<G0-1>, learning ON, stub reflection), continue every stub-profiler longcon
+    world 4× with one intervention each: none / erase / false_memory (about the sleeper) / drift_off.
+    Same seeds and RNG state from the checkpoint ⇒ paired. This is a CHECKPOINT BRANCH, not a VM fork."""
+    from concurrent.futures import ProcessPoolExecutor
+    rd = ROOT / "runs" / run
+    specs = json.loads((rd / "worlds.json").read_text())
+    par = [s for s in specs if s["agent"] == "profiler" and s["reflection"] == "stub" and s["respond_rule"] == rule
+           and s["table"] == "longcon"]
+    jobs = []
+    for s in par:
+        sl = next(x for x in s["seats"] if x.get("role") == "sleeper")
+        jobs.append((str(rd / s["wid"]), sl["params"]["G0"], sl["seat"]))
+    out = []
+    with ProcessPoolExecutor() as ex:
+        futs = [ex.submit(_cb_one, wd, iv, g0, sl) for (wd, g0, sl) in jobs for iv in INTERVENTIONS]
+        for f in futs:
+            try:
+                out.append(f.result())
+            except Exception as e:  # noqa: BLE001
+                out.append({"error": f"{type(e).__name__}: {e}"})
+    (rd / "checkpoint_branches.json").write_text(json.dumps(out, indent=1))
+    print(f"[cb] {sum(1 for o in out if 'error' not in o)}/{len(out)} checkpoint branches ok")
+    return {"branches": out}
