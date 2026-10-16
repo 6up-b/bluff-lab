@@ -377,6 +377,32 @@
   ]
  },
  {
+  "name": "forge: introduction",
+  "requires": [
+   "forge.json"
+  ],
+  "say": "The agent compiles its memory into a program, and we run it as untrusted code.",
+  "actions": [
+   {
+    "action": "view",
+    "name": "forgeintro"
+   }
+  ]
+ },
+ {
+  "name": "forge",
+  "requires": [
+   "forge.json"
+  ],
+  "say": "It compiles memory into code, run as untrusted in a sandbox.",
+  "actions": [
+   {
+    "action": "view",
+    "name": "forge"
+   }
+  ]
+ },
+ {
   "name": "how it's built",
   "requires": [
    "stack.json"
@@ -400,19 +426,6 @@
     "action": "view",
     "name": "stack",
     "flow": true
-   }
-  ]
- },
- {
-  "name": "forge",
-  "requires": [
-   "forge.json"
-  ],
-  "say": "It compiles memory into code, run as untrusted in a sandbox.",
-  "actions": [
-   {
-    "action": "view",
-    "name": "forge"
    }
   ]
  },
