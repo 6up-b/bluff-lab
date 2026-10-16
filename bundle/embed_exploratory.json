@@ -1,0 +1,541 @@
+{
+ "label": "exploratory: baseline chosen after mem01 was run",
+ "generated": "2026-10-16 14:36:39",
+ "source": "runs/mem01 (+ runs/mem01_ctrl plus_nohyp); logreg_embed worlds by scripts/c02_embed_mem01.py",
+ "seeds": "3001-3012",
+ "info": "raw",
+ "respond_rule": "threshold",
+ "games": 20,
+ "cells": {
+  "telltale|counter": {
+   "n": 12,
+   "win": 0.3167,
+   "brier": 0.3138
+  },
+  "telltale|logreg_bow": {
+   "n": 12,
+   "win": 0.3625,
+   "brier": 0.2487
+  },
+  "telltale|logreg_embed": {
+   "n": 12,
+   "win": 0.2208,
+   "brier": 0.2862
+  },
+  "telltale|plus_nohyp": {
+   "n": 12,
+   "win": 0.3292,
+   "brier": 0.2723
+  },
+  "telltale|profiler": {
+   "n": 12,
+   "win": 0.2208,
+   "brier": 0.2833
+  },
+  "telltale|profiler_plus": {
+   "n": 12,
+   "win": 0.4042,
+   "brier": 0.2433
+  },
+  "tell_conjunctive|counter": {
+   "n": 12,
+   "win": 0.3167,
+   "brier": 0.3138
+  },
+  "tell_conjunctive|logreg_bow": {
+   "n": 12,
+   "win": 0.2792,
+   "brier": 0.2743
+  },
+  "tell_conjunctive|logreg_embed": {
+   "n": 12,
+   "win": 0.2125,
+   "brier": 0.2835
+  },
+  "tell_conjunctive|plus_nohyp": {
+   "n": 12,
+   "win": 0.3292,
+   "brier": 0.2723
+  },
+  "tell_conjunctive|profiler": {
+   "n": 12,
+   "win": 0.2167,
+   "brier": 0.2943
+  },
+  "tell_conjunctive|profiler_plus": {
+   "n": 12,
+   "win": 0.4042,
+   "brier": 0.2534
+  },
+  "tell_flipper|counter": {
+   "n": 12,
+   "win": 0.3167,
+   "brier": 0.3138
+  },
+  "tell_flipper|logreg_bow": {
+   "n": 12,
+   "win": 0.2583,
+   "brier": 0.2695
+  },
+  "tell_flipper|logreg_embed": {
+   "n": 12,
+   "win": 0.225,
+   "brier": 0.2849
+  },
+  "tell_flipper|plus_nohyp": {
+   "n": 12,
+   "win": 0.3292,
+   "brier": 0.2723
+  },
+  "tell_flipper|profiler": {
+   "n": 12,
+   "win": 0.2333,
+   "brier": 0.2911
+  },
+  "tell_flipper|profiler_plus": {
+   "n": 12,
+   "win": 0.4042,
+   "brier": 0.2582
+  },
+  "longcon|counter": {
+   "n": 12,
+   "win": 0.4292,
+   "brier": 0.3257
+  },
+  "longcon|logreg_bow": {
+   "n": 12,
+   "win": 0.35,
+   "brier": 0.2664
+  },
+  "longcon|logreg_embed": {
+   "n": 12,
+   "win": 0.2542,
+   "brier": 0.2629
+  },
+  "longcon|plus_nohyp": {
+   "n": 12,
+   "win": 0.3167,
+   "brier": 0.2654
+  },
+  "longcon|profiler": {
+   "n": 12,
+   "win": 0.2583,
+   "brier": 0.2889
+  },
+  "longcon|profiler_plus": {
+   "n": 12,
+   "win": 0.4708,
+   "brier": 0.2605
+  }
+ },
+ "deltas": {
+  "profiler_plus-logreg_embed": {
+   "per_table": {
+    "telltale": {
+     "win": {
+      "mean": 0.1833,
+      "lo": 0.125,
+      "hi": 0.2417,
+      "n": 12
+     },
+     "brier": {
+      "mean": -0.0429,
+      "lo": -0.0546,
+      "hi": -0.0314,
+      "n": 12
+     }
+    },
+    "tell_conjunctive": {
+     "win": {
+      "mean": 0.1917,
+      "lo": 0.125,
+      "hi": 0.2667,
+      "n": 12
+     },
+     "brier": {
+      "mean": -0.0301,
+      "lo": -0.0419,
+      "hi": -0.0175,
+      "n": 12
+     }
+    },
+    "tell_flipper": {
+     "win": {
+      "mean": 0.1792,
+      "lo": 0.1125,
+      "hi": 0.2542,
+      "n": 12
+     },
+     "brier": {
+      "mean": -0.0267,
+      "lo": -0.0422,
+      "hi": -0.0111,
+      "n": 12
+     }
+    },
+    "longcon": {
+     "win": {
+      "mean": 0.2167,
+      "lo": 0.1417,
+      "hi": 0.2917,
+      "n": 12
+     },
+     "brier": {
+      "mean": -0.0023,
+      "lo": -0.0197,
+      "hi": 0.0124,
+      "n": 12
+     }
+    }
+   },
+   "pooled_by_seed": {
+    "win": {
+     "mean": 0.1927,
+     "lo": 0.1438,
+     "hi": 0.2375,
+     "n": 12
+    },
+    "brier": {
+     "mean": -0.0255,
+     "lo": -0.0356,
+     "hi": -0.0145,
+     "n": 12
+    },
+    "seeds": [
+     3001,
+     3002,
+     3003,
+     3004,
+     3005,
+     3006,
+     3007,
+     3008,
+     3009,
+     3010,
+     3011,
+     3012
+    ]
+   },
+   "pooled_table_seed_pairs": {
+    "win": {
+     "mean": 0.1927,
+     "lo": 0.1604,
+     "hi": 0.226,
+     "n": 48
+    },
+    "brier": {
+     "mean": -0.0255,
+     "lo": -0.0331,
+     "hi": -0.0176,
+     "n": 48
+    }
+   }
+  },
+  "profiler-logreg_embed": {
+   "per_table": {
+    "telltale": {
+     "win": {
+      "mean": -0.0,
+      "lo": -0.0625,
+      "hi": 0.05,
+      "n": 12
+     },
+     "brier": {
+      "mean": -0.0029,
+      "lo": -0.0143,
+      "hi": 0.0079,
+      "n": 12
+     }
+    },
+    "tell_conjunctive": {
+     "win": {
+      "mean": 0.0042,
+      "lo": -0.0459,
+      "hi": 0.05,
+      "n": 12
+     },
+     "brier": {
+      "mean": 0.0108,
+      "lo": -0.002,
+      "hi": 0.0229,
+      "n": 12
+     }
+    },
+    "tell_flipper": {
+     "win": {
+      "mean": 0.0083,
+      "lo": -0.05,
+      "hi": 0.0625,
+      "n": 12
+     },
+     "brier": {
+      "mean": 0.0061,
+      "lo": -0.0065,
+      "hi": 0.0183,
+      "n": 12
+     }
+    },
+    "longcon": {
+     "win": {
+      "mean": 0.0042,
+      "lo": -0.0417,
+      "hi": 0.0542,
+      "n": 12
+     },
+     "brier": {
+      "mean": 0.026,
+      "lo": 0.0092,
+      "hi": 0.0409,
+      "n": 12
+     }
+    }
+   },
+   "pooled_by_seed": {
+    "win": {
+     "mean": 0.0042,
+     "lo": -0.0282,
+     "hi": 0.0333,
+     "n": 12
+    },
+    "brier": {
+     "mean": 0.01,
+     "lo": 0.0009,
+     "hi": 0.0193,
+     "n": 12
+    },
+    "seeds": [
+     3001,
+     3002,
+     3003,
+     3004,
+     3005,
+     3006,
+     3007,
+     3008,
+     3009,
+     3010,
+     3011,
+     3012
+    ]
+   },
+   "pooled_table_seed_pairs": {
+    "win": {
+     "mean": 0.0042,
+     "lo": -0.0219,
+     "hi": 0.0302,
+     "n": 48
+    },
+    "brier": {
+     "mean": 0.01,
+     "lo": 0.0028,
+     "hi": 0.0174,
+     "n": 48
+    }
+   }
+  },
+  "plus_nohyp-logreg_embed": {
+   "per_table": {
+    "telltale": {
+     "win": {
+      "mean": 0.1083,
+      "lo": 0.0542,
+      "hi": 0.175,
+      "n": 12
+     },
+     "brier": {
+      "mean": -0.0139,
+      "lo": -0.0202,
+      "hi": -0.0074,
+      "n": 12
+     }
+    },
+    "tell_conjunctive": {
+     "win": {
+      "mean": 0.1167,
+      "lo": 0.0625,
+      "hi": 0.1876,
+      "n": 12
+     },
+     "brier": {
+      "mean": -0.0112,
+      "lo": -0.0162,
+      "hi": -0.0056,
+      "n": 12
+     }
+    },
+    "tell_flipper": {
+     "win": {
+      "mean": 0.1042,
+      "lo": 0.05,
+      "hi": 0.1792,
+      "n": 12
+     },
+     "brier": {
+      "mean": -0.0126,
+      "lo": -0.0192,
+      "hi": -0.0051,
+      "n": 12
+     }
+    },
+    "longcon": {
+     "win": {
+      "mean": 0.0625,
+      "lo": -0.0333,
+      "hi": 0.1543,
+      "n": 12
+     },
+     "brier": {
+      "mean": 0.0025,
+      "lo": -0.0106,
+      "hi": 0.0146,
+      "n": 12
+     }
+    }
+   },
+   "pooled_by_seed": {
+    "win": {
+     "mean": 0.0979,
+     "lo": 0.0563,
+     "hi": 0.1521,
+     "n": 12
+    },
+    "brier": {
+     "mean": -0.0088,
+     "lo": -0.0143,
+     "hi": -0.0036,
+     "n": 12
+    },
+    "seeds": [
+     3001,
+     3002,
+     3003,
+     3004,
+     3005,
+     3006,
+     3007,
+     3008,
+     3009,
+     3010,
+     3011,
+     3012
+    ]
+   },
+   "pooled_table_seed_pairs": {
+    "win": {
+     "mean": 0.0979,
+     "lo": 0.0635,
+     "hi": 0.1354,
+     "n": 48
+    },
+    "brier": {
+     "mean": -0.0088,
+     "lo": -0.0132,
+     "hi": -0.0042,
+     "n": 48
+    }
+   }
+  },
+  "logreg_bow-logreg_embed": {
+   "per_table": {
+    "telltale": {
+     "win": {
+      "mean": 0.1417,
+      "lo": 0.0708,
+      "hi": 0.2167,
+      "n": 12
+     },
+     "brier": {
+      "mean": -0.0376,
+      "lo": -0.0485,
+      "hi": -0.0266,
+      "n": 12
+     }
+    },
+    "tell_conjunctive": {
+     "win": {
+      "mean": 0.0667,
+      "lo": 0.0167,
+      "hi": 0.1083,
+      "n": 12
+     },
+     "brier": {
+      "mean": -0.0092,
+      "lo": -0.0239,
+      "hi": 0.007,
+      "n": 12
+     }
+    },
+    "tell_flipper": {
+     "win": {
+      "mean": 0.0333,
+      "lo": -0.0167,
+      "hi": 0.0917,
+      "n": 12
+     },
+     "brier": {
+      "mean": -0.0154,
+      "lo": -0.0244,
+      "hi": -0.007,
+      "n": 12
+     }
+    },
+    "longcon": {
+     "win": {
+      "mean": 0.0958,
+      "lo": 0.0458,
+      "hi": 0.1458,
+      "n": 12
+     },
+     "brier": {
+      "mean": 0.0035,
+      "lo": -0.0092,
+      "hi": 0.0149,
+      "n": 12
+     }
+    }
+   },
+   "pooled_by_seed": {
+    "win": {
+     "mean": 0.0844,
+     "lo": 0.0479,
+     "hi": 0.124,
+     "n": 12
+    },
+    "brier": {
+     "mean": -0.0147,
+     "lo": -0.0204,
+     "hi": -0.0101,
+     "n": 12
+    },
+    "seeds": [
+     3001,
+     3002,
+     3003,
+     3004,
+     3005,
+     3006,
+     3007,
+     3008,
+     3009,
+     3010,
+     3011,
+     3012
+    ]
+   },
+   "pooled_table_seed_pairs": {
+    "win": {
+     "mean": 0.0844,
+     "lo": 0.0552,
+     "hi": 0.1146,
+     "n": 48
+    },
+    "brier": {
+     "mean": -0.0147,
+     "lo": -0.0223,
+     "hi": -0.0074,
+     "n": 48
+    }
+   }
+  }
+ }
+}
