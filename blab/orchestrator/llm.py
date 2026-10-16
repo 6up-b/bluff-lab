@@ -177,19 +177,38 @@ def user_message(payload: dict) -> str:
 
 # ------------------------------------------------------------------ validation
 
-def _validate_pred(pred) -> tuple[bool, str]:
+# Raw-information variant (info: "raw"): no engineered tell feature, no tell-shaped op, and neutral examples, so the
+# prompt cannot hint at the formal-speech tell. Built from STABLE_SYSTEM so both stay byte-stable.
+_RAW_REPL = [
+    ("| formal_register | bool | utterance has no contractions and >= 4 words |\n",
+     "| word_count | int | number of whitespace-separated words in the utterance |\n"),
+    ('(e.g. answer_formal_register)', '(e.g. answer_utterance, answer_word_count)'),
+    ("== != < <= > >= contains regex no_contractions", "== != < <= > >= contains regex"),
+    ("(contains/regex/no_contractions apply to string features", "(contains/regex apply to string features"),
+    ('{"all": [{"f":"formal_register","op":"==","v":true}, {"f":"hand_size","op":"<=","v":2}]}',
+     '{"all": [{"f":"hand_size","op":"<=","v":2}, {"f":"claim_count","op":">=","v":2}]}'),
+    ('e.g. "Player 3 speaks formally (no contractions) when bluffing"', 'e.g. "Player 3 bluffs more on multi-card claims"'),
+]
+STABLE_SYSTEM_RAW = STABLE_SYSTEM
+for _a, _b in _RAW_REPL:
+    assert _a in STABLE_SYSTEM_RAW, _a
+    STABLE_SYSTEM_RAW = STABLE_SYSTEM_RAW.replace(_a, _b)
+assert "formal" not in STABLE_SYSTEM_RAW.lower() and "contraction" not in STABLE_SYSTEM_RAW.lower()
+
+
+def _validate_pred(pred, mode: str | None = None) -> tuple[bool, str]:
     try:
         from blab.hypotheses import validate_predicate
     except Exception:  # noqa: BLE001  (module not ready yet)
         return (isinstance(pred, dict) and bool(pred)), "no validator"
     try:
-        return validate_predicate(pred)
+        return validate_predicate(pred, mode) if mode else validate_predicate(pred)
     except Exception as e:  # noqa: BLE001
         return False, f"{type(e).__name__}: {e}"
 
 
-def to_proposed(out: ReflectionOut) -> tuple[list[dict], list[dict]]:
-    """Wire → §5.4 proposed dicts. Returns (proposed, dropped)."""
+def to_proposed(out: ReflectionOut, mode: str | None = None) -> tuple[list[dict], list[dict]]:
+    """Wire → §5.4 proposed dicts. Returns (proposed, dropped). mode="raw" rejects engineered features/ops."""
     proposed, dropped = [], []
     for h in out.hypotheses[:3]:
         try:
@@ -197,7 +216,7 @@ def to_proposed(out: ReflectionOut) -> tuple[list[dict], list[dict]]:
         except json.JSONDecodeError as e:
             dropped.append({"text": h.text, "reason": f"predicate not JSON: {e}"})
             continue
-        ok, why = _validate_pred(pred)
+        ok, why = _validate_pred(pred, mode)
         if not ok:
             dropped.append({"text": h.text, "predicate": pred, "reason": why})
             continue
@@ -270,13 +289,13 @@ def _is_cred_error(e: Exception) -> bool:
                                 "PermissionDenied", "security token", "NoCredentials", "AccessDenied", "403", "401"))
 
 
-async def _call_claude(p: str, msg: str) -> tuple[ReflectionOut | None, str | None, str | None]:
+async def _call_claude(p: str, msg: str, system: str | None = None) -> tuple[ReflectionOut | None, str | None, str | None]:
     """Anthropic SDK path for both `anthropic` (direct; server-side refusal fallbacks on) and `bedrock`
     (structured outputs supported; no server-side fallbacks there). Returns (parsed, request_id, error)."""
     import anthropic
     client = _client(p)
     common = dict(model=BEDROCK_MODEL if p == "bedrock" else ANTHROPIC_MODEL, max_tokens=16000,
-                  system=[{"type": "text", "text": STABLE_SYSTEM, "cache_control": {"type": "ephemeral"}}],
+                  system=[{"type": "text", "text": system or STABLE_SYSTEM, "cache_control": {"type": "ephemeral"}}],
                   messages=[{"role": "user", "content": msg}],
                   output_format=ReflectionOut, output_config={"effort": "low"})
     try:
@@ -310,13 +329,13 @@ async def _call_claude(p: str, msg: str) -> tuple[ReflectionOut | None, str | No
     return parsed, rid, None
 
 
-async def _call_openrouter(msg: str) -> tuple[ReflectionOut | None, str | None, str | None]:
+async def _call_openrouter(msg: str, system: str | None = None) -> tuple[ReflectionOut | None, str | None, str | None]:
     import httpx
     body = {
         "model": OPENROUTER_MODEL,
         "max_tokens": 8000,
         "messages": [
-            {"role": "system", "content": [{"type": "text", "text": STABLE_SYSTEM,
+            {"role": "system", "content": [{"type": "text", "text": system or STABLE_SYSTEM,
                                             "cache_control": {"type": "ephemeral"}}]},
             {"role": "user", "content": msg},
         ],
@@ -373,6 +392,8 @@ async def reflect(payload: dict, wid: str = "", seat: str | None = None, only: s
     if be is None:
         return None
     msg = user_message(payload)
+    raw = payload.get("info") == "raw"
+    sysp = STABLE_SYSTEM_RAW if raw else None      # None → STABLE_SYSTEM looked up at call time
     t0 = time.time()
     try:
         from blab.orchestrator import tracing
@@ -388,7 +409,8 @@ async def reflect(payload: dict, wid: str = "", seat: str | None = None, only: s
             parsed, rid, err, used = None, None, "no provider", be
             for p in [p for p in chain if p not in _dead] or chain[:1]:
                 used = p
-                call = _call_openrouter if p == "openrouter" else (lambda m, _p=p: _call_claude(_p, m))
+                call = ((lambda m: _call_openrouter(m, sysp)) if p == "openrouter"
+                        else (lambda m, _p=p: _call_claude(_p, m, sysp)))
                 for attempt in range(2):
                     remaining = TIMEOUT_S - (time.time() - t0)
                     if remaining < 5:
@@ -410,8 +432,8 @@ async def reflect(payload: dict, wid: str = "", seat: str | None = None, only: s
             if parsed is None:
                 out.update(proposed=None, error=err)
             else:
-                proposed, dropped = to_proposed(parsed)
-                out.update(proposed=proposed, dropped=dropped)
+                proposed, dropped = to_proposed(parsed, "raw" if raw else None)
+                out.update(proposed=proposed, dropped=dropped, prompt="raw" if raw else "engineered")
             try:
                 if sp is not None:
                     sp.set_attribute("output.value", json.dumps(out, default=str)[:8000])
