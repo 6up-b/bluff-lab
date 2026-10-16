@@ -660,7 +660,7 @@ function renderAblation() {
     }
     s += `<text x="${cx}" y="${yB + 36}" fill="var(--bone)" font-size="26" font-weight="600" text-anchor="middle">${esc(b.label || b.variant)}</text>
       <text x="${cx}" y="${yB + 64}" fill="var(--bone-faint)" font-size="19" text-anchor="middle">n = ${esc(b.n_parents ?? b.n)}${b.delta_vs_full && b.delta_vs_full.mean !== null && b.delta_vs_full.mean !== undefined ? "" : ""}</text>
-      ${b.delta_vs_full && b.delta_vs_full.mean !== null && b.delta_vs_full.mean !== undefined ? `<text x="${cx}" y="${yB + 92}" fill="var(--bone)" font-size="21" font-weight="600" text-anchor="middle">Δ vs full ${pts(b.delta_vs_full.mean)}</text>${b.delta_vs_full.lo !== null && b.delta_vs_full.lo !== undefined ? `<text x="${cx}" y="${yB + 116}" fill="var(--bone-faint)" font-size="17" text-anchor="middle">CI ${pts(b.delta_vs_full.lo)} to ${pts(b.delta_vs_full.hi)}</text>` : ""}` : ""}`;
+      ${b.delta_vs_full && b.delta_vs_full.mean !== null && b.delta_vs_full.mean !== undefined ? `<text x="${cx}" y="${yB + 92}" fill="var(--bone)" font-size="21" font-weight="600" text-anchor="middle">Δ vs full ${pts(b.delta_vs_full.mean)}</text>${b.delta_vs_full.lo !== null && b.delta_vs_full.lo !== undefined ? `<text x="${cx}" y="${yB + 116}" fill="var(--bone-dim)" font-size="18" text-anchor="middle">CI ${pts(b.delta_vs_full.lo)} to ${pts(b.delta_vs_full.hi)}</text>` : ""}` : ""}`;
   });
   const fl = A.flips;
   const arm = [A.agent === "profiler" ? "Profiler" : A.agent, A.reflection === "claude" ? "with real Claude reflection" : A.reflection ? `with ${A.reflection} reflection` : "",
