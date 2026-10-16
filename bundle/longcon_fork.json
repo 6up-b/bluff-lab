@@ -1,0 +1,21 @@
+{
+ "real_vm_fork": false,
+ "seed": 6000,
+ "table": "longcon",
+ "children": [],
+ "errors": [
+  "VM create failed: DaytonaBadRequestError: Failed to create sandbox: Snapshot daytona-vm-small is not available in region us",
+  "VM create with target='eu' failed: Snapshot daytona-vm-small is not available in region eu",
+  "daytona-vm, daytona-vm-medium: not available in region us; all daytona-vm* snapshots list region_ids=[] for this org",
+  "sb.fork() on a container sandbox (default python snapshot, id 40ae7cda-7d3e-4de3-84ba-0616f4ade8a1, deleted): 'Forking is not supported for this sandbox'"
+ ],
+ "sleeper_seat": "p3",
+ "G0": 8,
+ "pause_before_game": 8,
+ "go_no_go": "NO-GO (13:51): no VM-capable region for this org; container sandboxes cannot fork",
+ "fallback": {
+  "kind": "checkpoint_branch",
+  "note": "restore ckpt g<G0-1> (same seeds + RNG state), learning ON, stub reflection; NOT a VM fork",
+  "results": "runs/lc02/longcon2.json \u2192 checkpoint_branches; per-branch worlds runs/lc02/<wid>_cb_<intervention>/"
+ }
+}
