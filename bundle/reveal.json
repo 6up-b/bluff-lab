@@ -1,0 +1,704 @@
+{
+ "world": "telltale-profiler-s1",
+ "run": "local",
+ "seq": 1043,
+ "decision_game": 10,
+ "decision_round": 4,
+ "claim_seq": 1042,
+ "ask_seq": null,
+ "reveal_seq": 1045,
+ "decision": {
+  "kind": "respond",
+  "target": "p3",
+  "claim": {
+   "count": 1,
+   "rank": "A",
+   "utterance": "I am laying down one Ace.",
+   "features": {
+    "hand_size": 3,
+    "claim_count": 1,
+    "trusted_streak": 1,
+    "lives_target": 3,
+    "game_index": 10,
+    "round_index": 4,
+    "was_challenged_last_round": true,
+    "table_rank": "A",
+    "utterance": "I am laying down one Ace.",
+    "formal_register": true,
+    "lives_self": 1
+   }
+  },
+  "card_math": {
+   "U": 15,
+   "m": 6,
+   "h": 4,
+   "k": 1,
+   "p_cards": 0.092308
+  },
+  "memory_used": [
+   {
+    "hyp_id": "h_telltale-profiler-s1_p3_001",
+    "aspect": "verbal_tell",
+    "text": "Player 3 speaks formally (no contractions, 4+ words) when bluffing",
+    "status": "confirmed",
+    "provenance": "evidence",
+    "n_true": 15,
+    "n_false": 9,
+    "q_true": [
+     0.6609,
+     0.36,
+     0.89
+    ],
+    "q_false": [
+     0.1451,
+     0.0,
+     0.44
+    ],
+    "evidence_obs": [
+     "telltale-profiler-s1:g3r3",
+     "telltale-profiler-s1:g4r4",
+     "telltale-profiler-s1:g5r4",
+     "telltale-profiler-s1:g6r1",
+     "telltale-profiler-s1:g6r2",
+     "telltale-profiler-s1:g6r4",
+     "telltale-profiler-s1:g6r5",
+     "telltale-profiler-s1:g7r8",
+     "telltale-profiler-s1:g8r1",
+     "telltale-profiler-s1:g8r2",
+     "telltale-profiler-s1:g8r4",
+     "telltale-profiler-s1:g8r6",
+     "telltale-profiler-s1:g9r3",
+     "telltale-profiler-s1:g9r4",
+     "telltale-profiler-s1:g9r5"
+    ],
+    "used_as": "q_source",
+    "matched": true
+   }
+  ],
+  "q_used": 0.6609,
+  "q_source": "h_telltale-profiler-s1_p3_001",
+  "p_final": 0.6922016428,
+  "ev": {
+   "challenge": 0.3844032855999999,
+   "play_on": -0.3844032855999999
+  },
+  "action": "challenge",
+  "explore": false,
+  "propensity": 1.0,
+  "rng_u": 0.7395912343528989,
+  "forced": false,
+  "memory_version": 13,
+  "agent": "profiler",
+  "ask": null,
+  "trace": {}
+ },
+ "claim": {
+  "count": 1,
+  "claimed_rank": "A",
+  "cards": [
+   "K"
+  ],
+  "utterance": "I am laying down one Ace.",
+  "features": {
+   "hand_size": 3,
+   "claim_count": 1,
+   "trusted_streak": 1,
+   "lives_target": 3,
+   "game_index": 10,
+   "round_index": 4,
+   "was_challenged_last_round": true,
+   "table_rank": "A",
+   "utterance": "I am laying down one Ace.",
+   "formal_register": true,
+   "lives_self": 1,
+   "card_math": {
+    "U": 15,
+    "m": 6,
+    "h": 4,
+    "k": 1,
+    "p_cards": 0.092308
+   }
+  },
+  "bluff_kind": "forced"
+ },
+ "reveal": {
+  "cards": [
+   "K"
+  ],
+  "was_bluff": true,
+  "loser": "p3",
+  "claimant": "p3",
+  "challenger": "p1",
+  "obs_id": "telltale-profiler-s1:g10r4"
+ },
+ "variants": [
+  {
+   "key": "full",
+   "available": true,
+   "result": {
+    "kind": "respond",
+    "target": "p3",
+    "claim": {
+     "count": 1,
+     "rank": "A",
+     "utterance": "I am laying down one Ace.",
+     "features": {
+      "hand_size": 3,
+      "claim_count": 1,
+      "trusted_streak": 1,
+      "lives_target": 3,
+      "game_index": 10,
+      "round_index": 4,
+      "was_challenged_last_round": true,
+      "table_rank": "A",
+      "utterance": "I am laying down one Ace.",
+      "formal_register": true,
+      "lives_self": 1
+     }
+    },
+    "card_math": {
+     "U": 15,
+     "m": 6,
+     "h": 4,
+     "k": 1,
+     "p_cards": 0.092308
+    },
+    "memory_used": [
+     {
+      "hyp_id": "h_telltale-profiler-s1_p3_001",
+      "aspect": "verbal_tell",
+      "text": "Player 3 speaks formally (no contractions, 4+ words) when bluffing",
+      "status": "confirmed",
+      "provenance": "evidence",
+      "n_true": 15,
+      "n_false": 9,
+      "q_true": [
+       0.6609,
+       0.36,
+       0.89
+      ],
+      "q_false": [
+       0.1451,
+       0.0,
+       0.44
+      ],
+      "evidence_obs": [
+       "telltale-profiler-s1:g3r3",
+       "telltale-profiler-s1:g4r4",
+       "telltale-profiler-s1:g5r4",
+       "telltale-profiler-s1:g6r1",
+       "telltale-profiler-s1:g6r2",
+       "telltale-profiler-s1:g6r4",
+       "telltale-profiler-s1:g6r5",
+       "telltale-profiler-s1:g7r8",
+       "telltale-profiler-s1:g8r1",
+       "telltale-profiler-s1:g8r2",
+       "telltale-profiler-s1:g8r4",
+       "telltale-profiler-s1:g8r6",
+       "telltale-profiler-s1:g9r3",
+       "telltale-profiler-s1:g9r4",
+       "telltale-profiler-s1:g9r5"
+      ],
+      "used_as": "q_source",
+      "matched": true
+     }
+    ],
+    "q_used": 0.6609,
+    "q_source": "h_telltale-profiler-s1_p3_001",
+    "p_final": 0.6922016428,
+    "ev": {
+     "challenge": 0.3844032855999999,
+     "play_on": -0.3844032855999999
+    },
+    "action": "challenge",
+    "explore": false,
+    "propensity": 1.0,
+    "rng_u": 0.7395912343528989,
+    "forced": false,
+    "memory_version": 13,
+    "agent": "profiler",
+    "ask": null,
+    "trace": {},
+    "replay_of": 1043,
+    "variant": {
+     "type": "full"
+    },
+    "logged": {
+     "p_final": 0.6922016428,
+     "action": "challenge",
+     "q_used": 0.6609,
+     "q_source": "h_telltale-profiler-s1_p3_001"
+    },
+    "delta_p": 0.0,
+    "flipped": false,
+    "delta_ev": 0.0
+   },
+   "variant": {
+    "type": "full"
+   },
+   "note": null
+  },
+  {
+   "key": "as_of:0",
+   "available": true,
+   "result": {
+    "kind": "respond",
+    "target": "p3",
+    "claim": {
+     "count": 1,
+     "rank": "A",
+     "utterance": "I am laying down one Ace.",
+     "features": {
+      "hand_size": 3,
+      "claim_count": 1,
+      "trusted_streak": 1,
+      "lives_target": 3,
+      "game_index": 10,
+      "round_index": 4,
+      "was_challenged_last_round": true,
+      "table_rank": "A",
+      "utterance": "I am laying down one Ace.",
+      "formal_register": true,
+      "lives_self": 1
+     }
+    },
+    "card_math": {
+     "U": 15,
+     "m": 6,
+     "h": 4,
+     "k": 1,
+     "p_cards": 0.092308
+    },
+    "memory_used": [],
+    "q_used": 0.24626865671641793,
+    "q_source": "base:p3",
+    "p_final": 0.3158440895522388,
+    "ev": {
+     "challenge": -0.3683118208955224,
+     "play_on": 0.3683118208955224
+    },
+    "action": "play_on",
+    "explore": false,
+    "propensity": 0.9,
+    "rng_u": 0.7395912343528989,
+    "forced": false,
+    "memory_version": 0,
+    "agent": "profiler",
+    "ask": null,
+    "trace": {},
+    "replay_of": 1043,
+    "variant": {
+     "type": "as_of",
+     "game": 0
+    },
+    "logged": {
+     "p_final": 0.6922016428,
+     "action": "challenge",
+     "q_used": 0.6609,
+     "q_source": "h_telltale-profiler-s1_p3_001"
+    },
+    "delta_p": -0.37635755324776116,
+    "flipped": true,
+    "delta_ev": -0.7527151064955223
+   },
+   "variant": {
+    "type": "as_of",
+    "game": 0
+   },
+   "note": null
+  },
+  {
+   "key": "false_memory",
+   "available": true,
+   "result": {
+    "kind": "respond",
+    "target": "p3",
+    "claim": {
+     "count": 1,
+     "rank": "A",
+     "utterance": "I am laying down one Ace.",
+     "features": {
+      "hand_size": 3,
+      "claim_count": 1,
+      "trusted_streak": 1,
+      "lives_target": 3,
+      "game_index": 10,
+      "round_index": 4,
+      "was_challenged_last_round": true,
+      "table_rank": "A",
+      "utterance": "I am laying down one Ace.",
+      "formal_register": true,
+      "lives_self": 1
+     }
+    },
+    "card_math": {
+     "U": 15,
+     "m": 6,
+     "h": 4,
+     "k": 1,
+     "p_cards": 0.092308
+    },
+    "memory_used": [
+     {
+      "hyp_id": "h_telltale-profiler-s1_p3_001",
+      "aspect": "verbal_tell",
+      "text": "Player 3 speaks formally (no contractions, 4+ words) when bluffing",
+      "status": "confirmed",
+      "provenance": "evidence",
+      "n_true": 15,
+      "n_false": 9,
+      "q_true": [
+       0.6609,
+       0.36,
+       0.89
+      ],
+      "q_false": [
+       0.1451,
+       0.0,
+       0.44
+      ],
+      "evidence_obs": [
+       "telltale-profiler-s1:g3r3",
+       "telltale-profiler-s1:g4r4",
+       "telltale-profiler-s1:g5r4",
+       "telltale-profiler-s1:g6r1",
+       "telltale-profiler-s1:g6r2",
+       "telltale-profiler-s1:g6r4",
+       "telltale-profiler-s1:g6r5",
+       "telltale-profiler-s1:g7r8",
+       "telltale-profiler-s1:g8r1",
+       "telltale-profiler-s1:g8r2",
+       "telltale-profiler-s1:g8r4",
+       "telltale-profiler-s1:g8r6",
+       "telltale-profiler-s1:g9r3",
+       "telltale-profiler-s1:g9r4",
+       "telltale-profiler-s1:g9r5"
+      ],
+      "used_as": "q_source",
+      "matched": true
+     },
+     {
+      "hyp_id": "h_telltale-profiler-s1_p3_013",
+      "aspect": "baseline_bluff",
+      "text": "Player 3 never bluffs",
+      "status": "confirmed",
+      "provenance": "untrusted",
+      "n_true": 0,
+      "n_false": 0,
+      "q_true": [
+       0.5,
+       0.02,
+       0.98
+      ],
+      "q_false": [
+       0.5,
+       0.02,
+       0.98
+      ],
+      "evidence_obs": [],
+      "used_as": "ignored_untrusted",
+      "matched": true,
+      "q_override": 0.0
+     }
+    ],
+    "q_used": 0.6609,
+    "q_source": "h_telltale-profiler-s1_p3_001",
+    "p_final": 0.6922016428,
+    "ev": {
+     "challenge": 0.3844032855999999,
+     "play_on": -0.3844032855999999
+    },
+    "action": "challenge",
+    "explore": false,
+    "propensity": 1.0,
+    "rng_u": 0.7395912343528989,
+    "forced": false,
+    "memory_version": 14,
+    "agent": "profiler",
+    "ask": null,
+    "trace": {},
+    "replay_of": 1043,
+    "variant": {
+     "type": "false_memory",
+     "about": "p3",
+     "aspect": "baseline_bluff",
+     "text": "Player 3 never bluffs",
+     "q": 0.0
+    },
+    "logged": {
+     "p_final": 0.6922016428,
+     "action": "challenge",
+     "q_used": 0.6609,
+     "q_source": "h_telltale-profiler-s1_p3_001"
+    },
+    "delta_p": 0.0,
+    "flipped": false,
+    "delta_ev": 0.0
+   },
+   "variant": {
+    "type": "false_memory",
+    "about": "p3",
+    "aspect": "baseline_bluff",
+    "text": "Player 3 never bluffs",
+    "q": 0.0
+   },
+   "note": null
+  },
+  {
+   "key": "profiler_blind",
+   "available": true,
+   "result": {
+    "kind": "respond",
+    "target": "p3",
+    "claim": {
+     "count": 1,
+     "rank": "A",
+     "utterance": "I am laying down one Ace.",
+     "features": {
+      "hand_size": 3,
+      "claim_count": 1,
+      "trusted_streak": 1,
+      "lives_target": 3,
+      "game_index": 10,
+      "round_index": 4,
+      "was_challenged_last_round": true,
+      "table_rank": "A",
+      "utterance": "I am laying down one Ace.",
+      "formal_register": true,
+      "lives_self": 1
+     }
+    },
+    "card_math": {
+     "U": 15,
+     "m": 6,
+     "h": 4,
+     "k": 1,
+     "p_cards": 0.092308
+    },
+    "memory_used": [
+     {
+      "hyp_id": "h_telltale-profiler-s1_p3_013",
+      "aspect": "baseline_bluff",
+      "text": "Player 3 never bluffs",
+      "status": "confirmed",
+      "provenance": "untrusted",
+      "n_true": 0,
+      "n_false": 0,
+      "q_true": [
+       0.5,
+       0.02,
+       0.98
+      ],
+      "q_false": [
+       0.5,
+       0.02,
+       0.98
+      ],
+      "evidence_obs": [],
+      "used_as": "q_source",
+      "matched": true,
+      "q_override": 0.0
+     },
+     {
+      "hyp_id": "h_telltale-profiler-s1_p3_001",
+      "aspect": "verbal_tell",
+      "text": "Player 3 speaks formally (no contractions, 4+ words) when bluffing",
+      "status": "confirmed",
+      "provenance": "evidence",
+      "n_true": 15,
+      "n_false": 9,
+      "q_true": [
+       0.6609,
+       0.36,
+       0.89
+      ],
+      "q_false": [
+       0.1451,
+       0.0,
+       0.44
+      ],
+      "evidence_obs": [
+       "telltale-profiler-s1:g3r3",
+       "telltale-profiler-s1:g4r4",
+       "telltale-profiler-s1:g5r4",
+       "telltale-profiler-s1:g6r1",
+       "telltale-profiler-s1:g6r2",
+       "telltale-profiler-s1:g6r4",
+       "telltale-profiler-s1:g6r5",
+       "telltale-profiler-s1:g7r8",
+       "telltale-profiler-s1:g8r1",
+       "telltale-profiler-s1:g8r2",
+       "telltale-profiler-s1:g8r4",
+       "telltale-profiler-s1:g8r6",
+       "telltale-profiler-s1:g9r3",
+       "telltale-profiler-s1:g9r4",
+       "telltale-profiler-s1:g9r5"
+      ],
+      "used_as": "considered",
+      "matched": true
+     },
+     {
+      "hyp_id": "h_telltale-profiler-s1_p3_003",
+      "aspect": "verbal_tell",
+      "text": "Player 3 says 'trust me' when bluffing",
+      "status": "provisional",
+      "provenance": "evidence",
+      "n_true": 0,
+      "n_false": 24,
+      "q_true": [
+       0.5,
+       0.02,
+       0.98
+      ],
+      "q_false": [
+       0.4088,
+       0.16,
+       0.65
+      ],
+      "evidence_obs": [],
+      "used_as": "considered",
+      "matched": false
+     },
+     {
+      "hyp_id": "h_telltale-profiler-s1_p3_007",
+      "aspect": "exploits_trust",
+      "text": "Player 3 cashes in after a long unchallenged streak",
+      "status": "provisional",
+      "provenance": "evidence",
+      "n_true": 1,
+      "n_false": 12,
+      "q_true": [
+       0.584,
+       0.04,
+       0.99
+      ],
+      "q_false": [
+       0.3607,
+       0.09,
+       0.67
+      ],
+      "evidence_obs": [
+       "telltale-profiler-s1:g7r6"
+      ],
+      "used_as": "considered",
+      "matched": false
+     },
+     {
+      "hyp_id": "h_telltale-profiler-s1_p3_011",
+      "aspect": "trigger",
+      "text": "Player 3 bluffs right after being challenged",
+      "status": "provisional",
+      "provenance": "evidence",
+      "n_true": 3,
+      "n_false": 1,
+      "q_true": [
+       0.2636,
+       0.0,
+       0.73
+      ],
+      "q_false": [
+       0.6563,
+       0.13,
+       0.99
+      ],
+      "evidence_obs": [
+       "telltale-profiler-s1:g9r1",
+       "telltale-profiler-s1:g9r4",
+       "telltale-profiler-s1:g9r5"
+      ],
+      "used_as": "considered",
+      "matched": true
+     }
+    ],
+    "q_used": 0.0,
+    "q_source": "h_telltale-profiler-s1_p3_013",
+    "p_final": 0.092308,
+    "ev": {
+     "challenge": -0.815384,
+     "play_on": 0.815384
+    },
+    "action": "play_on",
+    "explore": false,
+    "propensity": 0.9,
+    "rng_u": 0.7395912343528989,
+    "forced": false,
+    "memory_version": 14,
+    "agent": "profiler_blind",
+    "ask": null,
+    "trace": {},
+    "replay_of": 1043,
+    "variant": {
+     "type": "false_memory",
+     "about": "p3",
+     "aspect": "baseline_bluff",
+     "text": "Player 3 never bluffs",
+     "q": 0.0,
+     "agent": "profiler_blind"
+    },
+    "logged": {
+     "p_final": 0.6922016428,
+     "action": "challenge",
+     "q_used": 0.6609,
+     "q_source": "h_telltale-profiler-s1_p3_001"
+    },
+    "delta_p": -0.5998936427999999,
+    "flipped": true,
+    "delta_ev": -1.1997872855999998
+   },
+   "variant": {
+    "type": "false_memory",
+    "about": "p3",
+    "aspect": "baseline_bluff",
+    "text": "Player 3 never bluffs",
+    "q": 0.0,
+    "agent": "profiler_blind"
+   },
+   "note": "same recorded state and memory, re-run by profiler_blind with the same false line"
+  }
+ ],
+ "full_matches_log": true,
+ "selection": {
+  "exact": true,
+  "criteria": {
+   "games_10_14": true,
+   "formal_register": true,
+   "about_telltale": true,
+   "full_challenges_and_right": true,
+   "not_explore": true,
+   "as_of0_flips_to_play_on": true
+  },
+  "tier": "uses a confirmed verbal_tell line",
+  "uses_tell_line": true,
+  "n_candidates": 11,
+  "note": "11 decisions met the cheap criteria (11 used a confirmed verbal_tell line); first exact match at tier 'uses a confirmed verbal_tell line' used",
+  "rule": "first p1 respond decision (by seq) in games 10\u201314 on a formal_register claim where the logged (full-memory) action is challenge, the reveal shows a bluff, and replay with as_of:0 gives play_on; decisions that used a confirmed evidence-backed verbal_tell line are tried first"
+ },
+ "provenance": {
+  "run": "local",
+  "world": "telltale-profiler-s1",
+  "world_dir": "runs/local/telltale-profiler-s1",
+  "seed": 1,
+  "table": "telltale",
+  "discovery_game": 7,
+  "world_selection": {
+   "table": "telltale",
+   "n_candidates": 3,
+   "discovery_games": [
+    5,
+    7,
+    7
+   ],
+   "median_discovery": 7.0
+  },
+  "rule": "profiler world on the telltale table (else longcon) whose verbal_tell discovery game is closest to the median discovery game over those worlds; ties broken by lowest seed",
+  "built": "2026-10-16T17:05:15Z",
+  "files": {
+   "world.jsonl": "events of telltale-profiler-s1",
+   "twin.jsonl": "events of telltale-bayes-s1 (bayes, same seed 1)",
+   "dossier.json": "memory checkpoints g00\u2013g20 of telltale-profiler-s1",
+   "ablation.json": "`blab analyze --run local` output",
+   "longcon.json": "`blab analyze --run local` output",
+   "results.json": "`blab analyze --run local` output"
+  }
+ }
+}

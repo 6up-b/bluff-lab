@@ -1,0 +1,208 @@
+[
+ {
+  "name": "title",
+  "say": "(wait for the room)",
+  "actions": [
+   {
+    "action": "view",
+    "name": "title"
+   }
+  ]
+ },
+ {
+  "name": "cold open: the claim",
+  "say": "Game 10. Player 3 claims 1 A.",
+  "actions": [
+   {
+    "action": "play_to",
+    "seq": 1042
+   }
+  ]
+ },
+ {
+  "name": "freeze",
+  "say": "Let's freeze that decision and look inside.",
+  "actions": [
+   {
+    "action": "freeze",
+    "seq": 1043
+   }
+  ]
+ },
+ {
+  "name": "mind inspector",
+  "say": "Card math alone says 0.09.",
+  "actions": [
+   {
+    "action": "inspect",
+    "seq": 1043
+   }
+  ]
+ },
+ {
+  "name": "memory evidence",
+  "say": "Memory line: Player 3 speaks formally (no contractions, 4+ words) when bluffing \u2014 applies on 15 reveals. Pushes it to 0.69, so it challenges.",
+  "actions": [
+   {
+    "action": "evidence"
+   }
+  ]
+ },
+ {
+  "name": "dossier as of game 4",
+  "requires": [
+   "dossier.json"
+  ],
+  "say": "The file it built, game by game.",
+  "actions": [
+   {
+    "action": "dossier",
+    "game": 4,
+    "about": "p3"
+   }
+  ]
+ },
+ {
+  "name": "dossier as of game 7",
+  "requires": [
+   "dossier.json"
+  ],
+  "say": "",
+  "actions": [
+   {
+    "action": "dossier",
+    "game": 7,
+    "about": "p3"
+   }
+  ]
+ },
+ {
+  "name": "dossier as of game 9",
+  "requires": [
+   "dossier.json"
+  ],
+  "say": "",
+  "actions": [
+   {
+    "action": "dossier",
+    "game": 9,
+    "about": "p3"
+   }
+  ]
+ },
+ {
+  "name": "surgery: full",
+  "say": "Same cards, same claim, same model; only the memory changes.",
+  "actions": [
+   {
+    "action": "surgery",
+    "variant": "full"
+   }
+  ]
+ },
+ {
+  "name": "surgery: erased",
+  "say": "No memory: 0.32.",
+  "actions": [
+   {
+    "action": "surgery",
+    "variant": "as_of:0"
+   }
+  ]
+ },
+ {
+  "name": "surgery: false memory",
+  "say": "Plant 'Player 3 never bluffs': 0.69.",
+  "actions": [
+   {
+    "action": "surgery",
+    "variant": "false_memory"
+   }
+  ]
+ },
+ {
+  "name": "surgery: provenance-blind",
+  "say": "A provenance-blind agent: 0.09.",
+  "actions": [
+   {
+    "action": "surgery",
+    "variant": "profiler_blind"
+   }
+  ]
+ },
+ {
+  "name": "flip the cards",
+  "say": "It was a bluff.",
+  "actions": [
+   {
+    "action": "flip"
+   }
+  ]
+ },
+ {
+  "name": "ablation",
+  "say": "A changed decision isn't an improved one. So we ablate at scale.",
+  "actions": [
+   {
+    "action": "view",
+    "name": "ablation"
+   }
+  ]
+ },
+ {
+  "name": "long con",
+  "say": "Every memory was true; the attack is assuming people don't change.",
+  "actions": [
+   {
+    "action": "view",
+    "name": "trust"
+   }
+  ]
+ },
+ {
+  "name": "split screen",
+  "requires": [
+   "twin.jsonl"
+  ],
+  "say": "Same seed, same cards, different memory.",
+  "actions": [
+   {
+    "action": "view",
+    "name": "split"
+   }
+  ]
+ },
+ {
+  "name": "results",
+  "say": "All of it from real worlds; every decision recorded.",
+  "actions": [
+   {
+    "action": "view",
+    "name": "results"
+   }
+  ]
+ },
+ {
+  "name": "forge",
+  "requires": [
+   "forge.json"
+  ],
+  "say": "It compiles memory into code, run as untrusted in a sandbox.",
+  "actions": [
+   {
+    "action": "view",
+    "name": "forge"
+   }
+  ]
+ },
+ {
+  "name": "close",
+  "say": "Memory makes agents better, and exploitable. Which memories should it trust?",
+  "actions": [
+   {
+    "action": "view",
+    "name": "close"
+   }
+  ]
+ }
+]
