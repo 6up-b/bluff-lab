@@ -357,7 +357,8 @@ def forge(world: str, seat: str = "p1", run: str = "r01") -> dict:
                 rec["attempts"].append({"gate": g, "provider": prov, "source": fo.module_source})
         rec.update(source=fo.module_source, rationale=fo.rationale, targets=fo.targets, gate=g,
                    repair_attempted=repair, provider=prov, model=model)
-        policy_id = f"forge:{world}.{seat}.v{mem.get('memory_version')}" + (".nomem" if control else "")
+        policy_id = f"forge:{world}.{seat}.v{mem.get('memory_version')}" + (".nomem" if control else "") + (
+            f".{os.environ['BLAB_FORGE_TAG']}" if os.environ.get("BLAB_FORGE_TAG") else "")
         ev, sid = {}, None
         if g["ok"]:
             t1 = time.time()
@@ -404,7 +405,7 @@ def forge(world: str, seat: str = "p1", run: str = "r01") -> dict:
         entry = {
             "policy_id": policy_id, "source_world": f"{run}/{world}", "source_seat": seat, "table": table,
             "source_memory_version": mem.get("memory_version"), "source_reflection": p1params.get("reflection"),
-            "respond_rule": rule, "control": control or None, "model": model, "provider": prov, "effort": "medium",
+            "respond_rule": rule, "control": control or None, "replicate": os.environ.get("BLAB_FORGE_TAG"), "model": model, "provider": prov, "effort": "medium",
             "rationale": fo.rationale, "targets": fo.targets, "module_source": fo.module_source,
             "dossier": dossier["hypotheses"],
             "gate": g, "repair_attempted": repair, "sandbox_id": sid,
@@ -433,7 +434,7 @@ def forge(world: str, seat: str = "p1", run: str = "r01") -> dict:
         tracing._set(root, "output.value", {"promoted": promoted, "win_rate": ev.get("win_rate"),
                                             "sandbox_id": sid})
     rec["entry"] = entry
-    out = ROOT / "runs" / run / "forge" / f"{world}_{seat}{'_nomem' if control else ''}.json"
+    out = ROOT / "runs" / run / "forge" / f"{world}_{seat}{'_nomem' if control else ''}{('_' + os.environ['BLAB_FORGE_TAG']) if os.environ.get('BLAB_FORGE_TAG') else ''}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(rec, indent=1, default=str))
     fj = ROOT / "runs" / run / "forge.json"
