@@ -102,6 +102,14 @@ embedding classifier, built later for b01, beat the Profiler there). In a same-m
 memory block of the prompt differs, 4 seeds per table), a hypothesis dossier improved win rate over no memory
 by +0.064 (CI +0.009 to +0.127) and a raw transcript showed no detectable effect.
 
+**Confirmatory rerun on fresh seeds (c02; `PREREG_c02.md` committed first; seeds 9000–9011, 4 tables, real Claude
+reflection).** Pre-registered H21 and H22 held: `profiler_plus` beat a sentence-embedding classifier on win rate
+(+0.181, 95% CI +0.132 to +0.228) and Brier (−0.030, CI −0.042 to −0.021). Caveat: that classifier is a weak
+baseline here; even the non-learning card counter beats it (+0.148), so this is a low bar. H23 did not hold: the
+same agent with reflection off also beats it (+0.108). The more informative number replicates mem01 on fresh seeds:
+Claude's reflection adds +0.073 win rate (CI +0.019 to +0.116) over the same agent with reflection off. That
+comparison was not one of c02's pre-registered hypotheses.
+
 **The Long Con with the stronger agent (lc03; `PREREG_lc03.md` committed first; seeds 10000–10011, real Claude
 reflection).** Both pre-registered hypotheses failed, one in the opposite direction. With Claude's reflection on,
 `profiler_plus` let through *more* of the betrayer's bluffs after the turn than the same agent with reflection
