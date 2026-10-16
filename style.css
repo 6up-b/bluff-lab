@@ -510,3 +510,5 @@ table.grid.cmap td .ci { font-size: 15px; }
 #v-boundary .hyp { font-size: 16px; padding: 4px 0; line-height: 1.3; }
 #v-boundary .hyp .ci { font-size: 15px; }
 #v-boundary .foot { font-size: 16px; }
+#v-boundary .deviation { margin-top: 12px; font-size: 21px; line-height: 1.35; color: var(--ivory); border-left: 4px solid var(--brass); padding: 4px 0 4px 16px; }
+#v-boundary .deviation b { color: var(--brass-hi); font-weight: 600; }
