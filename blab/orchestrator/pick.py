@@ -646,6 +646,7 @@ def fill_devpost(run: str = "r01", template: str = "DEVPOST.md", out: str = "DEV
       {{prov:world}}                     a field of show/bundle/reveal.json → provenance
       {{reveal:variants.1.result.p_final|2}}   any field of show/bundle/reveal.json (Surgery Reveal numbers)
       {{mem:setting}} / {{memclaims:threshold}}  show/bundle/memory.json fields / its claim sentences as a list
+      {{arize:profiler|3}}               mean Brier of that agent's Arize AX experiment (runs/<run>/arize_experiment.json)
     Anything that cannot be resolved becomes `[missing: …]` and is reported, so nothing is silently invented."""
     import re
     res = json.loads((Path(root) / run / "results.json").read_text())
@@ -678,6 +679,12 @@ def fill_devpost(run: str = "r01", template: str = "DEVPOST.md", out: str = "DEV
             mj = Path(bundle) / "memory.json"
             v = _get(json.loads(mj.read_text()), key[4:]) if mj.exists() else None
             if v is not None and not isinstance(v, (dict, list)):
+                return fmt(v, spec)
+        if key.startswith("arize:"):          # mean Brier of that agent's Arize AX experiment
+            aj = Path(root) / run / "arize_experiment.json"
+            ex = json.loads(aj.read_text()).get("experiments", []) if aj.exists() else []
+            v = next((e.get("mean_brier_arize") for e in ex if e.get("agent") == key[6:]), None)
+            if v is not None:
                 return fmt(v, spec)
         if key.startswith("claim_if:"):
             c = res.get("claims", {}).get(key[9:])

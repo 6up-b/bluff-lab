@@ -86,7 +86,10 @@ All metric definitions, including the §6 versions and our corrected ones, are i
 - **SurrealDB Agent Memory:** a mirror of the belief graph. Rewriting a belief supersedes the old one, which
   keeps its `valid_until` and history. A planted false line is flagged by the Profiler: no evidence behind it.
   (SurrealDB did not raise an `uncertainty` record for it in our spike, so we do not claim one.) Retrieval feeds reflection.
-- **Arize AX:** spans for decisions, reflections, forge steps and surgery.
+- **Arize AX:** spans for decisions, reflections, forge steps and surgery, plus one experiment per agent over
+  frozen r01 decisions (1,994 revealed respond decisions, telltale table, threshold rule) with a Brier
+  evaluator. Mean Brier: logreg_bow {{arize:logreg_bow|3}}, profiler {{arize:profiler|3}}, bayes
+  {{arize:bayes|3}}, counter {{arize:counter|3}} (ids in `show/bundle/arize_experiment.json`).
 - **ElevenLabs:** the Profiler's interrogation line ("You've gone very formal all of a sudden.") is voiced
   from the real `ask` event.
 

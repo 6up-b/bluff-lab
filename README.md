@@ -125,7 +125,8 @@ The event log is the only contract between the Lab and the Show: the Show is a p
   and live memory, and serves `/replay` and `/branch`. Ephemeral forge sandboxes use `network_block_all` to
   run AI-written strategy code.
 - **Arize AX:** OpenTelemetry spans for decisions (from the boxes) and for reflection, forge, voice and surgery
-  (from the orchestrator).
+  (from the orchestrator). One Arize experiment per agent over
+  frozen r01 revealed respond decisions scores Brier (`python -m blab.orchestrator.arize_exp`).
 - **SurrealDB Agent Memory:** each opponent is an entity and each belief is an attribute. Rewriting a belief
   supersedes the old one, so history and `asOf` show what the agent believed and when. A planted false memory is
   flagged by the Profiler: no evidence behind it (SurrealDB raised no `uncertainty` record for it in our spike).
