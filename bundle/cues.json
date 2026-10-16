@@ -183,6 +183,16 @@
   ]
  },
  {
+  "name": "beliefs vs decisions",
+  "say": "Memory sharpens beliefs; the rule that turns belief into action matters too.",
+  "actions": [
+   {
+    "action": "view",
+    "name": "decisions"
+   }
+  ]
+ },
+ {
   "name": "forge",
   "requires": [
    "forge.json"

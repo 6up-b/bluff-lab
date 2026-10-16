@@ -1,6 +1,7 @@
 {
  "table": "telltale",
  "agent": "profiler",
+ "respond_rule": "threshold",
  "at_game": 10,
  "metric": "win_rate",
  "window": "11\u201320",
@@ -77,7 +78,8 @@
   "worlds": 3,
   "errors": 0,
   "variant": "as_of:0",
-  "games": "11\u201320"
+  "games": "11\u201320",
+  "respond_rule": "threshold"
  },
  "n_branch_worlds": 10,
  "source": "runs/local"

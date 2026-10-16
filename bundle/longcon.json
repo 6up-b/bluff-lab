@@ -22,6 +22,7 @@
   20
  ],
  "n_worlds": 3,
+ "respond_rule": "threshold",
  "true_honesty": [
   {
    "game": 1,
@@ -690,7 +691,15 @@
    "n": 1
   },
   "holds": false,
-  "metric": "missed_bluffs (bayes \u2212 counter, paired by seed)"
+  "metric": "sleeper bluffs let through, bayes \u2212 counter (paired by seed)",
+  "diff_spec": {
+   "mean": -5.0,
+   "lo": null,
+   "hi": null,
+   "n": 1
+  },
+  "holds_spec": false,
+  "metric_spec": "\u00a76 lives lost to the sleeper, bayes \u2212 counter (paired by seed)"
  },
  "estimate_note": "Estimate = 1 \u2212 mean q_used about the sleeper per game; counter has no memory (q = 0).",
  "source": "runs/local"
