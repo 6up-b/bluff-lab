@@ -21,7 +21,7 @@ from blab import grid
 from blab.orchestrator import analyze as A
 
 OWNED = ["world.jsonl", "twin.jsonl", "reveal.json", "dossier.json", "ablation.json", "longcon.json",
-         "results.json", "forge.json", "stack.json", "cues.json", "PROVENANCE.md"]
+         "results.json", "forge.json", "stack.json", "memory.json", "cues.json", "PROVENANCE.md"]
 RULE_WORLD = ("profiler world on the telltale table (else longcon) whose verbal_tell discovery game is closest to "
               "the median discovery game over those worlds; ties broken by lowest seed")
 RULE_DECISION = ("first p1 respond decision (by seq) in games 10–14 on a formal_register claim where the logged "
@@ -187,10 +187,68 @@ def blind_result(worlds: list[dict], w: dict, d: dict, fm: dict) -> tuple[dict |
     return None, f"profiler_blind replay unavailable ({(r or {}).get('error', 'agent override ignored')})"
 
 
-def cues(sel: dict, dossier_games: list[int], have: dict) -> list[dict]:
+COLD_OPEN_RULE = ("the first round of the picked world (lowest game, then round) that ends in a challenge and a reveal; "
+                  "game 1 when it has one")
+_SEATN = {"p1": "The Profiler", "p2": "Player 2", "p3": "Player 3"}
+_RK = {"K": "Kings", "Q": "Queens", "A": "Aces"}
+
+
+def cold_open_round(events: list[dict]) -> dict | None:
+    """Pick the teaching round for the cold open, deterministically (COLD_OPEN_RULE)."""
+    rounds: dict[tuple, list[dict]] = {}
+    for e in sorted(events, key=lambda e: e["seq"]):
+        if e.get("game") and e.get("round"):
+            rounds.setdefault((e["game"], e["round"]), []).append(e)
+    for key in sorted(rounds):
+        evs = rounds[key]
+        types = [e["type"] for e in evs]
+        if "deal" in types and "challenge" in types and "reveal" in types:
+            return {"game": key[0], "round": key[1], "events": evs}
+    return None
+
+
+def _cold_open_cues(events: list[dict]) -> list[dict]:
+    r = cold_open_round(events)
+    if not r:
+        return []
+    evs = r["events"]
+    deal = next(e for e in evs if e["type"] == "deal")
+    claims = [e for e in evs if e["type"] == "claim"]
+    ch = next(e for e in evs if e["type"] == "challenge")
+    rv = next(e for e in evs if e["type"] == "reveal")
+    ll = next((e for e in evs if e["type"] == "life_lost"), rv)
+    src = {"rule": COLD_OPEN_RULE, "game": r["game"], "round": r["round"], "deal_seq": deal["seq"],
+           "claim_seqs": [c["seq"] for c in claims], "challenge_seq": ch["seq"], "reveal_seq": rv["seq"]}
+    rk = _RK.get(deal["payload"]["table_rank"], deal["payload"]["table_rank"])
+    c = [{"name": f"cold open: the deal (game {r['game']}, round {r['round']})", "cold_open": src,
+          "say": f"Three players, five cards each. The table rank this round is {rk}. Jokers are wild.",
+          "actions": [{"action": "play_to", "seq": deal["seq"], "from": deal["seq"]},
+                      {"action": "caption", "text": f"Five cards each, one table rank: {rk}. Jokers are wild."}]}]
+    caps = ["Put down 1–3 cards face down and claim they are all the table rank. Lie if you like.",
+            "The next player may call it, or play on and make a claim of their own."]
+    shown = claims[:3] if len(claims) <= 4 else claims[:2] + [claims[-1]]
+    for i, cl in enumerate(shown):
+        p = cl["payload"]
+        c.append({"name": f"cold open: {_SEATN.get(cl['actor'], cl['actor'])} claims",
+                  "say": f"{_SEATN.get(cl['actor'], cl['actor'])}: \u201c{p['utterance']}\u201d",
+                  "actions": [{"action": "play_to", "seq": cl["seq"]}] +
+                             ([{"action": "caption", "text": caps[i]}] if i < len(caps) else [])})
+    lost = _SEATN.get(rv["payload"].get("loser"), rv["payload"].get("loser"))
+    c += [{"name": "cold open: the call", "say": f"{_SEATN.get(ch['actor'], ch['actor'])} calls it.",
+           "actions": [{"action": "play_to", "seq": ch["seq"]},
+                       {"action": "caption", "text": "Only the next player can call a claim."}]},
+          {"name": "cold open: the reveal", "say": ("It was a bluff. " if rv["payload"].get("was_bluff") else "It was honest. ") + f"{lost} loses a life.",
+           "actions": [{"action": "play_to", "seq": ll["seq"]},
+                       {"action": "caption", "text": "Caught lying, you lose a life. Wrong call, the caller loses one."}]}]
+    return c
+
+
+def cues(sel: dict, dossier_games: list[int], have: dict, events: list[dict] | None = None) -> list[dict]:
     d = sel["decision"]
     tgt = d.get("target") or "p3"
     pn = f"Player {tgt[1:]}"
+    deal_seq = next((e["seq"] for e in sorted(events or [], key=lambda e: -e["seq"])
+                     if e["type"] == "deal" and e["seq"] < sel["claim_seq"]), None)
     cm = (d.get("card_math") or {}).get("p_cards")
     mu = (d.get("memory_used") or [{}])[0]
     var = {v["key"]: v for v in sel["variants"]}
@@ -199,15 +257,19 @@ def cues(sel: dict, dossier_games: list[int], have: dict) -> list[dict]:
         r = (var.get(k) or {}).get("result") or {}
         return "—" if r.get("p_final") is None else f"{r['p_final']:.2f}"
     rv = sel.get("reveal") or {}
-    c = [{"name": "title", "say": "(wait for the room)", "actions": [{"action": "view", "name": "title"}]},
-         {"name": "cold open: the claim", "say": f"Game {sel['decision_game']}. {pn} claims {d['claim']['count']} {d['claim']['rank']}.",
-          "actions": [{"action": "play_to", "seq": sel["claim_seq"]}]}]
+    cl = d.get("claim") or {}
+    c = [{"name": "title", "say": "(wait for the room)", "actions": [{"action": "view", "name": "title"}]}]
+    c += _cold_open_cues(events or [])
+    c += [{"name": f"game {sel['decision_game']}: the claim",
+           "say": f"Game {sel['decision_game']}. {pn}: \u201c{cl.get('utterance', '')}\u201d",
+           "actions": [{"action": "play_to", "seq": sel["claim_seq"], **({"from": deal_seq, "pace": 0.6} if deal_seq else {})},
+                       {"action": "caption", "text": f"Game {sel['decision_game']}. The Profiler has played {pn} for {sel['decision_game'] - 1} games."}]}]
     if sel.get("ask_seq"):
         c.append({"name": "the ask (audio)", "requires": [f"voice/ask_{sel['ask_seq']}.mp3"],
                   "say": "That's a frozen model. Nobody told it to watch for that.",
                   "actions": [{"action": "play_to", "seq": sel["ask_seq"]},
                               {"action": "audio", "file": f"voice/ask_{sel['ask_seq']}.mp3"}]})
-    c += [{"name": "freeze", "say": "Let's freeze that decision and look inside.",
+    c += [{"name": "freeze", "say": f"The Profiler has to decide: call {pn}, or play on. Let's stop time and look inside.",
            "actions": [{"action": "freeze", "seq": sel["seq"]}]},
           {"name": "mind inspector", "say": f"Card math alone says {cm:.2f}." if cm is not None else "",
            "actions": [{"action": "inspect", "seq": sel["seq"]}]},
@@ -407,6 +469,24 @@ def stack(rdir: Path, run: str, w: dict, sel: dict, forge: dict | None) -> dict:
     }
 
 
+def memory_bundle(run: str, root: str, worlds: list[dict]) -> tuple[dict, str]:
+    """memory.json: from the raw-observation experiment (BLAB_MEMORY_RUN, default runs/mem01 if it has worlds),
+    else from this run (labelled 'engineered'). Also saved as runs/<that run>/memory.json (never overwrites
+    another run's results.json)."""
+    import os
+    mrun = os.environ.get("BLAB_MEMORY_RUN") or "mem01"
+    mdir = Path(root) / mrun
+    if mrun != run and mdir.exists() and any(mdir.rglob("events.jsonl")):
+        mw = A.load_worlds(mdir)
+        src = mrun
+    else:
+        mw, src = worlds, run
+    MJ = A._jsonable(A.memory_compare(mw, src))
+    MJ["source"] = f"runs/{src}"
+    (Path(root) / src / "memory.json").write_text(json.dumps(MJ, indent=1))
+    return MJ, f"runs/{src}"
+
+
 def pick_demo(run: str = "r01", out: str = "show/bundle", root: str = "runs") -> dict:
     rdir = Path(root) / run
     outd = Path(out)
@@ -462,9 +542,15 @@ def pick_demo(run: str = "r01", out: str = "show/bundle", root: str = "runs") ->
     D = dossier(w["dir"])
     (outd / "dossier.json").write_text(json.dumps(D))
     files["dossier.json"] = f"memory checkpoints g{min(D['games']):02d}–g{max(D['games']):02d} of {w['wid']}"
-    for f in ("ablation.json", "longcon.json", "results.json"):
+    for f in ("ablation.json", "longcon.json"):
         shutil.copyfile(rdir / f, outd / f)
         files[f] = f"`blab analyze --run {run}` output"
+    slim = {k: v for k, v in res.items() if k != "worlds"}           # per-world rows stay in runs/<run>/results.json
+    (outd / "results.json").write_text(json.dumps(slim, indent=1))
+    files["results.json"] = f"`blab analyze --run {run}` output (per-world rows omitted)"
+    MJ, mem_src = memory_bundle(run, root, worlds)
+    (outd / "memory.json").write_text(json.dumps(MJ, indent=1))
+    files["memory.json"] = f"'does memory help?' comparison from {mem_src} ({MJ.get('setting')} observations)"
     F, forge_src = forge_bundle(rdir, w["wid"])
     if F:
         (outd / "forge.json").write_text(json.dumps(F, indent=1))
@@ -488,7 +574,7 @@ def pick_demo(run: str = "r01", out: str = "show/bundle", root: str = "runs") ->
     pre = [x for x in D["games"] if x < g]
     disc = w["m"]["discovery_game"]
     dg = sorted({x for x in [min(4, max(pre or [0])), disc, (max(pre) if pre else None)] if x is not None and x in D["games"]})
-    (outd / "cues.json").write_text(json.dumps(cues(sel, dg, {}), indent=1))
+    (outd / "cues.json").write_text(json.dumps(cues(sel, dg, {}, events=w["events"]), indent=1))
     files["cues.json"] = "director script generated from the picked seqs (show/FLOW.md order)"
     (outd / "PROVENANCE.md").write_text(provenance_md(sel))
     print(f"pick-demo: world {w['wid']} (seed {w['seed']}), decision seq {seq} game {g}, exact={sinfo['exact']} → {outd}/")
@@ -517,6 +603,7 @@ def fill_devpost(run: str = "r01", template: str = "DEVPOST.md", out: str = "DEV
       {{claim_if:longcon_twist}}         the sentence only if `holds` is true, else nothing
       {{prov:world}}                     a field of show/bundle/reveal.json → provenance
       {{reveal:variants.1.result.p_final|2}}   any field of show/bundle/reveal.json (Surgery Reveal numbers)
+      {{mem:setting}} / {{memclaims:threshold}}  show/bundle/memory.json fields / its claim sentences as a list
     Anything that cannot be resolved becomes `[missing: …]` and is reported, so nothing is silently invented."""
     import re
     res = json.loads((Path(root) / run / "results.json").read_text())
@@ -537,6 +624,19 @@ def fill_devpost(run: str = "r01", template: str = "DEVPOST.md", out: str = "DEV
         spec = None
         if "|" in key:
             key, spec = key.split("|", 1)
+        if key.startswith("memclaims:"):
+            mj = Path(bundle) / "memory.json"
+            if mj.exists():
+                cl = json.loads(mj.read_text()).get("claims", {})
+                rule = key[10:] or "threshold"
+                lines = [c["text"] for k, c in cl.items() if k.endswith("|" + rule) and c.get("text")]
+                if lines:
+                    return "\n".join("- " + t for t in lines)
+        if key.startswith("mem:"):
+            mj = Path(bundle) / "memory.json"
+            v = _get(json.loads(mj.read_text()), key[4:]) if mj.exists() else None
+            if v is not None and not isinstance(v, (dict, list)):
+                return fmt(v, spec)
         if key.startswith("claim_if:"):
             c = res.get("claims", {}).get(key[9:])
             return c["text"] if c and c.get("holds") and c.get("text") else ""

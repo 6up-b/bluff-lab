@@ -19,8 +19,8 @@ from blab.events import read_events
 
 TABLES = {("control", "telltale"): "telltale", ("sleeper", "telltale"): "longcon",
           ("control", "control"): "falsealarm", ("control", "telltale_overt"): "telltale_overt"}
-AGENT_ORDER = ["counter", "bayes", "bayes_discount", "logreg_bow", "llm_episodic",
-               "profiler_amnesic", "profiler", "profiler_blind"]
+AGENT_ORDER = ["llm_nomem", "llm_episodic", "llm_dossier", "counter", "bayes", "bayes_discount", "logreg_bow",
+               "profiler_amnesic", "profiler", "profiler_plus", "profiler_blind"]
 ABL_ORDER = ["as_of:0", "as_of:4", "as_of:6", "as_of:8", "full", "minus:verbal_tell",
              "false_memory", "transplant:same_role", "transplant:other_role"]
 ABL_LABEL = {"as_of:0": "erased", "as_of:4": "as of g4", "as_of:6": "as of g6", "as_of:8": "as of g8",
@@ -205,6 +205,13 @@ def strategic(claim_ev: dict, hands: dict) -> tuple[bool, bool]:
     return had_match, bluff and had_match
 
 
+BUCKETS = [(1, 5), (6, 10), (11, 15), (16, 20)]
+
+
+def bucket(g: int) -> int:
+    return min(len(BUCKETS) - 1, max(0, (int(g) - 1) // 5))
+
+
 def world_metrics(w: dict) -> dict:
     evs = w["events"]
     ends = [e for e in evs if e["type"] == "game_end"]
@@ -220,6 +227,16 @@ def world_metrics(w: dict) -> dict:
         "win_rate_late": float(np.mean(late)) if late else None,
         "brier": float(np.mean(br)) if br else None, "n_brier": len(br),
     }
+    # learning curves: per game bucket (1–5, 6–10, 11–15, 16–20)
+    wb, bb = defaultdict(list), defaultdict(list)
+    for e in played:
+        wb[bucket(e["game"])].append(1.0 if e["payload"]["winner"] == "p1" else 0.0)
+    for d in rds:
+        if d["reveal"] is not None and d["ev"]["payload"].get("p_final") is not None:
+            bb[bucket(d["ev"]["game"])].append(
+                (d["ev"]["payload"]["p_final"] - (1.0 if d["reveal"]["payload"]["was_bluff"] else 0.0)) ** 2)
+    m["win_by_bucket"] = {b: float(np.mean(v)) for b, v in wb.items()}
+    m["brier_by_bucket"] = {b: float(np.mean(v)) for b, v in bb.items()}
     # discovery (telltale tables) and null-tell false discovery (falsealarm table: no opponent has a tell)
     tt = seat_with_role(w, "telltale") or seat_with_role(w, "telltale_overt")
     m["discovery_game"] = m["revealed_to_discovery"] = m["false_discovery"] = None
@@ -406,6 +423,8 @@ def aggregate(worlds: list[dict]) -> dict:
         keyed[(w["rule"], w["table"], w["label"])].append(w)
     for (r, t, a), ws in keyed.items():
         g = {k: boot(w["m"].get(k) for w in ws) for k in METRICS}
+        g["win_by_bucket"] = [boot(w["m"].get("win_by_bucket", {}).get(b) for w in ws) for b in range(len(BUCKETS))]
+        g["brier_by_bucket"] = [boot(w["m"].get("brier_by_bucket", {}).get(b) for w in ws) for b in range(len(BUCKETS))]
         g["discovered_frac"] = boot(1.0 if w["m"].get("discovery_game") is not None else 0.0 for w in ws) \
             if t.startswith("telltale") else None
         g["rtd_median"] = med(w["m"].get("rtd") for w in ws)
@@ -529,6 +548,66 @@ def longcon(worlds: list[dict], agents=("counter", "bayes", "profiler"), rule: s
         "lives_lost_to_sleeper": ll, "twist": twist,
         "estimate_note": "Estimate = 1 − mean q_used about the sleeper per game; counter has no memory (q = 0).",
     }
+
+
+# ------------------------------------------------------------------ "does memory help?" (memory.json)
+def setting_of(worlds: list[dict], run: str) -> str:
+    """'raw' (no engineered tell features in observations) vs 'engineered' (precomputed formal_register etc.)."""
+    for w in worlds:
+        prm = (w["seats"].get("p1", {}).get("params") or {})
+        for k in ("obs_mode", "features", "setting", "observation"):
+            if prm.get(k):
+                return str(prm[k])
+    return "raw" if run.startswith("mem") else "engineered"
+
+
+def memory_compare(worlds: list[dict], run: str, baseline: str | None = None) -> dict:
+    """Arms × tables × respond rules: per-arm metrics, paired-by-seed Δ vs the no-memory arm, learning curves."""
+    bw = base_worlds(worlds)
+    labels = {w["label"] for w in bw}
+    base = baseline or next((b for b in ("llm_nomem", "counter") if b in labels), None)
+    out = {"run": run, "setting": setting_of(bw, run), "baseline": base, "rules": {},
+           "buckets": [f"g{a}–{b}" for a, b in BUCKETS],
+           "headline": ("Same model, same prompt, same observation, different memory." if base == "llm_nomem"
+                        else "Memory vs no memory (the no-memory arm is the card counter, a different agent)."),
+           "note": ("same model, prompt and observation; only memory differs" if base == "llm_nomem"
+                    else "baseline is the no-memory card counter (no LLM no-memory arm in this run)")}
+    for r in sorted({w["rule"] for w in bw}):
+        R = {}
+        for t in sorted({w["table"] for w in bw if w["rule"] == r}) + ["all"]:
+            tw = [w for w in bw if w["rule"] == r and (t == "all" or w["table"] == t)]
+            arms = sorted({w["label"] for w in tw}, key=label_order)
+            T = {"arms": arms, "metrics": {}, "delta_vs_baseline": {}, "curves": {}}
+            for a in arms:
+                aw = [w for w in tw if w["label"] == a]
+                T["metrics"][a] = {m: boot(w["m"].get(m) for w in aw) for m in ("win_rate", "win_rate_late", "brier")}
+                T["metrics"][a]["n_worlds"] = len(aw)
+                T["curves"][a] = {
+                    "win_rate": [boot(w["m"].get("win_by_bucket", {}).get(b) for w in aw) for b in range(len(BUCKETS))],
+                    "brier": [boot(w["m"].get("brier_by_bucket", {}).get(b) for w in aw) for b in range(len(BUCKETS))]}
+                if base and a != base:
+                    bwl = [w for w in tw if w["label"] == base]
+                    T["delta_vs_baseline"][a] = {m: paired_delta(by_seed(aw, m), by_seed(bwl, m))
+                                                 for m in ("win_rate", "win_rate_late", "brier")}
+            R[t] = T
+        out["rules"][r] = R
+    # claims, generated from the data
+    cl = {}
+    for r, R in out["rules"].items():
+        for a, d in (R.get("all", {}).get("delta_vs_baseline") or {}).items():
+            for m, better in (("win_rate", "higher"), ("brier", "lower")):
+                x = d.get(m) or {}
+                if x.get("lo") is None:
+                    continue
+                sg = _sig(x)
+                pct_ = m.startswith("win")
+                verdict = ("better than" if sg == better else "worse than" if sg in ("lower", "higher") else
+                           "not detectably different from")
+                cl[f"{a}|{m}|{r}"] = {"holds": sg == better, "sign": sg, "delta": x,
+                                      "text": f"{a} is {verdict} {base} on {m.replace('_', ' ')}: {_ci(x, pct_)} "
+                                              f"({r} rule, {out['setting']} observations)."}
+    out["claims"] = cl
+    return out
 
 
 # ------------------------------------------------------------------ claims (text generated from data only)
@@ -734,7 +813,7 @@ def analyze(run: str = "r01", root: str | Path = "runs", worlds: list[dict] | No
     res = {
         "run": run, "generated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "n_worlds": len(base_worlds(worlds)), "n_branch_worlds": sum(1 for w in worlds if w["vkey"]),
-        "rules": rules, "primary_rule": primary, "metric_defs": METRIC_DEFS,
+        "rules": rules, "primary_rule": primary, "metric_defs": METRIC_DEFS, "setting": setting_of(worlds, run),
         "groups": groups, "deltas": deltas(worlds),
         "ablation_by_rule": {r: ablation(worlds, rule=r) for r in rules},
         "longcon_by_rule": {r: longcon(worlds, rule=r) for r in rules},

@@ -58,7 +58,13 @@ without evidence get weight 0.
 The SPEC's respond rule (challenge iff p > 0.5) challenges near coin flips. Under a rule that also uses the
 agent's remembered cost of playing on (`ev`), the comparison changes as shown above. We report both.
 
-**The strongest statistical baseline.** {{claim:vs_logreg_threshold}}
+**Does memory help?** {{mem:headline}} Setting: {{mem:setting}}
+observations (`{{mem:source}}`), baseline `{{mem:baseline}}`, {{mem:note}}.
+{{memclaims:threshold}}
+
+**The strongest statistical baseline (engineered-feature setting, r01).** In r01, observations included a
+precomputed `formal_register` feature, which hands every learner the tell's form. The comparison below is
+in that setting: {{claim:vs_logreg_threshold}}
 {{claim:false_discovery_threshold}}
 {{claim:false_discovery_lower_threshold}}
 Our honest positioning: a bag-of-words classifier can be the better *predictor*. The Profiler's memory is explicit,
