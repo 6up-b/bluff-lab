@@ -21,7 +21,7 @@ from blab import grid
 from blab.orchestrator import analyze as A
 
 OWNED = ["world.jsonl", "twin.jsonl", "reveal.json", "dossier.json", "ablation.json", "longcon.json",
-         "results.json", "forge.json", "cues.json", "PROVENANCE.md"]
+         "results.json", "forge.json", "stack.json", "cues.json", "PROVENANCE.md"]
 RULE_WORLD = ("profiler world on the telltale table (else longcon) whose verbal_tell discovery game is closest to "
               "the median discovery game over those worlds; ties broken by lowest seed")
 RULE_DECISION = ("first p1 respond decision (by seq) in games 10–14 on a formal_register claim where the logged "
@@ -275,6 +275,138 @@ def provenance_md(sel: dict) -> str:
     return "\n".join(L) + "\n"
 
 
+def forge_bundle(rdir: Path, wid: str) -> tuple[dict | None, str | None]:
+    """forge.json for the Show: the forge result for the picked world if one exists, else the run's forge.json.
+    Normalised to top-level forge_result fields + source/rationale; `network_blocked_verified` only when the
+    forge eval itself reported network BLOCKED."""
+    cands = []
+    if (rdir / "forge.json").exists():
+        cands.append(rdir / "forge.json")
+    if (rdir / "forge").exists():
+        cands += sorted((rdir / "forge").glob("*.json"))
+    docs = []
+    for p in cands:
+        try:
+            docs.append((p, json.loads(p.read_text())))
+        except Exception:
+            pass
+    if not docs:
+        return None, None
+    p, d = next(((p, d) for p, d in docs if d.get("world") == wid), docs[0])
+    fr = d.get("forge_result") or {}
+    out = {**{k: v for k, v in d.items() if k not in ("forge_result", "attempts", "dossier")}, **fr}
+    out["source"] = d.get("source") or d.get("module_source")
+    out["for_picked_world"] = d.get("world") == wid
+    net = fr.get("network") or (d.get("eval") or {}).get("network")
+    out["network_blocked_verified"] = str(net).upper() == "BLOCKED"
+    out["provider"] = next((a.get("provider") for a in d.get("attempts") or [] if a.get("provider")), None)
+    return out, str(p)
+
+
+def _scan_types(files: list[Path], types: tuple[str, ...]) -> list[dict]:
+    """Parse only event lines of the given types (fast substring prefilter)."""
+    keys = [f'"type":"{t}"' for t in types]
+    out = []
+    for f in files:
+        try:
+            with open(f) as fh:
+                for line in fh:
+                    if any(k in line for k in keys):
+                        out.append(json.loads(line))
+        except Exception:
+            pass
+    return out
+
+
+def stack(rdir: Path, run: str, w: dict, sel: dict, forge: dict | None) -> dict:
+    """Sponsor-stack facts for the Show's 'how it's built' scene, read only from run artifacts.
+    Never includes URLs, tokens or keys; ids and trace ids only. null = not available in the artifacts."""
+    import os
+    from collections import Counter
+    evfiles = sorted(rdir.rglob("events.jsonl"))
+    worlds_total = len(evfiles)
+    boxes = None
+    bj = Path("runs/boxes.json")
+    if bj.exists():
+        try:
+            boxes = [{"id": b.get("box_id"), "sandbox_id": b.get("sandbox_id"), "cpu": b.get("cpu"),
+                      "mem": b.get("mem")} for b in json.loads(bj.read_text()).get("boxes", [])]
+        except Exception:
+            boxes = None
+    per_box = None
+    placement = {}
+    if (rdir / "placement.json").exists():
+        try:
+            placement = json.loads((rdir / "placement.json").read_text())
+            per_box = dict(Counter((v or {}).get("box", "?") for v in placement.values()))
+        except Exception:
+            pass
+    spike = {}
+    if Path("runs/spike.json").exists():
+        try:
+            spike = {r["check"]: r["status"] for r in json.loads(Path("runs/spike.json").read_text()).get("rows", [])}
+        except Exception:
+            pass
+    evs = _scan_types(evfiles, ("reflect_result", "belief_superseded"))
+    rr = [e for e in evs if e["type"] == "reflect_result"]
+    rr_llm = [e for e in rr if (e["payload"].get("source") or "") not in ("stub", "timeout") and not e["payload"].get("error")]
+    sur = [e for e in rr if e["payload"].get("surreal_trace_id")]
+    bs = [e for e in evs if e["type"] == "belief_superseded" and e["payload"].get("about")]
+    sup = None
+    if bs:
+        e = next((x for x in bs if x["world"] == w["wid"]), bs[0])
+        same = [x for x in bs if x["world"] == e["world"] and x["payload"].get("about") == e["payload"]["about"]
+                and x["payload"].get("aspect") == e["payload"].get("aspect")]
+        sup = {"entity": f"agent/{e['world']}.{e['payload']['about']}", "key": e["payload"].get("aspect"),
+               "history_len_from_log": len(same) + 1, "reason": e["payload"].get("reason"), "world": e["world"]}
+    dec = w["events"][[x["seq"] for x in w["events"]].index(sel["seq"])] if sel.get("seq") else None
+    dtrace = ((dec or {}).get("payload") or {}).get("trace") or {}
+    surreal_pick = next((m.get("surreal", {}).get("fact_ref") or m.get("surreal", {}).get("trace_id")
+                         for m in ((dec or {}).get("payload") or {}).get("memory_used") or [] if m.get("surreal")), None)
+    arize_dec = _scan_types([w["dir"] / "events.jsonl"], ("decision",))
+    arize_ids = [((x["payload"].get("trace") or {}).get("arize_trace_id") or x.get("trace_id")) for x in arize_dec]
+    arize_ids = [a for a in arize_ids if a]
+    vman = None
+    for mf in [w["dir"] / "voice" / "manifest.json", *sorted(rdir.rglob("voice/manifest.json"))[:1]]:
+        if mf.exists():
+            try:
+                vm = json.loads(mf.read_text())
+                vman = {"voice_id": vm.get("voice_id"), "mp3s": len(vm.get("files") or vm.get("items") or []) or
+                        len(list(mf.parent.glob("*.mp3"))), "world": mf.parent.parent.name}
+            except Exception:
+                pass
+            break
+    if not placement:          # this run did not use Daytona boxes: don't attribute the current boxes to it
+        boxes = None
+    return {
+        "run": run,
+        "daytona": {"boxes": boxes, "worlds_total": worlds_total, "worlds_per_box": per_box,
+                    "picked_world_box": (placement.get(w["wid"]) or {}).get("box"),
+                    "forge_sandbox_id": (forge or {}).get("sandbox_id"),
+                    "forge_network": "blocked" if (forge or {}).get("network_blocked_verified") else
+                    ("blocked" if spike.get("D3") == "PASS" and forge else None),
+                    "spike": spike or None},
+        "claude": {"provider": next((e["payload"].get("backend") or e["payload"].get("provider") for e in rr_llm
+                                     if e["payload"].get("backend") or e["payload"].get("provider")), None)
+                   or (forge or {}).get("provider"),
+                   "model": next((e["payload"].get("model") for e in rr_llm if e["payload"].get("model")), None),
+                   "reflections": len(rr_llm), "reflections_total": len(rr),
+                   "proposed_hypotheses": sum(len(e["payload"].get("proposed") or []) for e in rr_llm),
+                   "sample_reflect_trace": next((e["payload"].get("llm_trace_id") for e in rr_llm
+                                                 if e["payload"].get("llm_trace_id")), None)},
+        "surrealdb": {"traces": len(sur), "sample_surreal_trace_id": sur[0]["payload"]["surreal_trace_id"] if sur else None,
+                      "supersessions_in_logs": len(bs), "supersession_example": sup},
+        "arize": {"project": os.environ.get("ARIZE_PROJECT_NAME") if os.environ.get("ARIZE_SPACE_ID") else None,
+                  "sample_arize_trace_id": (arize_ids or [None])[0], "decision_spans_in_picked_world": len(arize_ids),
+                  "sample_reflect_trace": next((e["payload"].get("llm_trace_id") for e in rr_llm
+                                                if e["payload"].get("llm_trace_id")), None)},
+        "elevenlabs": vman,
+        "picked_decision": {"world": w["wid"], "box": (placement.get(w["wid"]) or {}).get("box"), "seq": sel.get("seq"),
+                            "arize_trace_id": dtrace.get("arize_trace_id") or (dec or {}).get("trace_id"),
+                            "surreal_trace_id": dtrace.get("surreal_trace_id") or surreal_pick},
+    }
+
+
 def pick_demo(run: str = "r01", out: str = "show/bundle", root: str = "runs") -> dict:
     rdir = Path(root) / run
     outd = Path(out)
@@ -333,17 +465,19 @@ def pick_demo(run: str = "r01", out: str = "show/bundle", root: str = "runs") ->
     for f in ("ablation.json", "longcon.json", "results.json"):
         shutil.copyfile(rdir / f, outd / f)
         files[f] = f"`blab analyze --run {run}` output"
-    forge_src = next((p for p in [rdir / "forge.json", *sorted((rdir / "forge").glob("*.json"))] if p.exists()), None) \
-        if (rdir / "forge").exists() or (rdir / "forge.json").exists() else None
-    if forge_src:
-        shutil.copyfile(forge_src, outd / "forge.json")
-        files["forge.json"] = str(forge_src)
+    F, forge_src = forge_bundle(rdir, w["wid"])
+    if F:
+        (outd / "forge.json").write_text(json.dumps(F, indent=1))
+        files["forge.json"] = f"{forge_src} (normalised: forge_result fields + source)"
     vdir = w["dir"] / "voice"
     if vdir.exists():
         (outd / "voice").mkdir(exist_ok=True)
         for mp3 in vdir.glob("*.mp3"):
             shutil.copyfile(mp3, outd / "voice" / mp3.name)
         files["voice/"] = f"TTS of {w['wid']} ask events"
+    ST = stack(rdir, run, w, sel, F)
+    (outd / "stack.json").write_text(json.dumps(A._jsonable(ST), indent=1))
+    files["stack.json"] = "sponsor-stack facts from run artifacts (ids/trace ids only, no secrets)"
     sel["provenance"] = {"run": run, "world": w["wid"], "world_dir": str(w["dir"]), "seed": w["seed"], "table": w["table"],
                          "respond_rule": w["rule"], "reflection": w["reflection"],
                          "discovery_game": w["m"]["discovery_game"], "world_selection": winfo, "rule": RULE_WORLD,
