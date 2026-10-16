@@ -1,47 +1,15 @@
 {
- "world": "w0002",
- "seat": "p1",
- "memory_version": 29,
+ "policy_id": "forge:w0002.p1.v29",
+ "source_world": "r01/w0002",
+ "source_seat": "p1",
  "table": "telltale",
- "source_params": {
-  "respond_rule": "threshold",
-  "reflection": "claude"
- },
- "seeds": [
-  3001,
-  3002,
-  3003,
-  3004,
-  3005,
-  3006,
-  3007,
-  3008,
-  3009,
-  3010,
-  3011,
-  3012,
-  3013,
-  3014,
-  3015,
-  3016,
-  3017,
-  3018,
-  3019,
-  3020,
-  3021,
-  3022,
-  3023,
-  3024,
-  3025,
-  3026,
-  3027,
-  3028,
-  3029,
-  3030
- ],
- "games": 20,
- "generate_s": 33.2,
- "source": "import math\n\nPRIOR_W = 6.0\nTAGS = (\"laying down\", \"submit\", \"as stated\", \"as required\", \"are one\", \"these are one\")\n\n\ndef tag_hit(u):\n    u = (u or \"\").lower()\n    for t in TAGS:\n        if t in u:\n            return True\n    return False\n\n\ndef branch(f):\n    u = f.get(\"utterance\", \"\")\n    if tag_hit(u):\n        return \"tag\"\n    if f.get(\"formal_register\") and f.get(\"claim_count\") == 1:\n        return \"f1\"\n    return \"base\"\n\n\nPRIORS = {\"tag\": 0.80, \"f1\": 0.72, \"base\": 0.25}\n\n\ndef est_q(hist, br):\n    num = PRIORS[br] * PRIOR_W\n    den = PRIOR_W\n    for h in hist:\n        if h.get(\"by\") != \"p3\":\n            continue\n        f = h.get(\"features\") or {}\n        try:\n            if branch(f) != br:\n                continue\n        except Exception:\n            continue\n        p = h.get(\"p_cards\")\n        if p is None:\n            p = (f.get(\"card_math\") or {}).get(\"p_cards\", 0.0)\n        p = min(max(float(p), 0.0), 0.99)\n        b = 1.0 if h.get(\"was_bluff\") else 0.0\n        num += b - p\n        den += 1.0 - p\n    q = num / den if den > 0 else PRIORS[br]\n    return min(max(q, 0.0), 1.0)\n\n\ndef decide(obs):\n    legal = obs.get(\"legal_actions\") or []\n    hand = obs.get(\"my_hand\") or []\n    r = obs.get(\"table_rank\", \"K\")\n    if \"play\" not in legal or not hand:\n        return {\"type\": \"challenge\"}\n    m = [i for i, c in enumerate(hand) if c in (r, \"J\")]\n    pc = obs.get(\"pending_claim\")\n    if pc and \"challenge\" in legal:\n        try:\n            f = pc.get(\"features\") or {}\n            p = float((f.get(\"card_math\") or {}).get(\"p_cards\", 0.0))\n            if p >= 0.999:\n                return {\"type\": \"challenge\"}\n            q = est_q(obs.get(\"revealed_history\") or [], branch(f))\n            pb = p + (1.0 - p) * q\n            thr = 0.5\n            if not m:\n                thr = 0.36\n            elif len(m) >= len(hand) and len(hand) <= 3:\n                thr = 0.62\n            lv = obs.get(\"lives\") or {}\n            if lv.get(\"p1\", 3) <= 1:\n                thr += 0.05\n            if f.get(\"hand_size\", 5) == 0:\n                thr -= 0.1\n            if pb > thr:\n                return {\"type\": \"challenge\"}\n        except Exception:\n            pass\n    if m:\n        cards = m[:3]\n    else:\n        cards = [0]\n    n = len(cards)\n    return {\"type\": \"play\", \"cards\": cards, \"utterance\": str(n) + \" \" + r + (\"s\" if n > 1 else \"\") + \".\"}\n",
+ "source_memory_version": 29,
+ "source_reflection": "claude",
+ "respond_rule": "threshold",
+ "control": null,
+ "model": "us.anthropic.claude-opus-5-5",
+ "provider": "bedrock",
+ "effort": "medium",
  "rationale": "Challenge p3 when P(bluff)=p_cards+(1-p_cards)q exceeds a threshold; q comes from branch-specific priors (stock-tag phrases ~0.8, formal single-card ~0.72, else ~0.25) updated online from revealed p3 claims, so stale hypotheses wash out. Threshold drops when we'd be forced to bluff, rises when we can go out honestly. Play all matching cards (up to 3) with a neutral, uniform utterance; bluff single cards only when forced. p2 hypothesis is not actionable from seat p1.",
  "targets": [
   "h_w0002_p3_011 trigger: formal_register & claim_count==1",
@@ -49,25 +17,16 @@
   "p3 base rate q_mean 0.437 with online re-estimation",
   "self play-on loss rate informing challenge threshold"
  ],
+ "module_source": "import math\n\nPRIOR_W = 6.0\nTAGS = (\"laying down\", \"submit\", \"as stated\", \"as required\", \"are one\", \"these are one\")\n\n\ndef tag_hit(u):\n    u = (u or \"\").lower()\n    for t in TAGS:\n        if t in u:\n            return True\n    return False\n\n\ndef branch(f):\n    u = f.get(\"utterance\", \"\")\n    if tag_hit(u):\n        return \"tag\"\n    if f.get(\"formal_register\") and f.get(\"claim_count\") == 1:\n        return \"f1\"\n    return \"base\"\n\n\nPRIORS = {\"tag\": 0.80, \"f1\": 0.72, \"base\": 0.25}\n\n\ndef est_q(hist, br):\n    num = PRIORS[br] * PRIOR_W\n    den = PRIOR_W\n    for h in hist:\n        if h.get(\"by\") != \"p3\":\n            continue\n        f = h.get(\"features\") or {}\n        try:\n            if branch(f) != br:\n                continue\n        except Exception:\n            continue\n        p = h.get(\"p_cards\")\n        if p is None:\n            p = (f.get(\"card_math\") or {}).get(\"p_cards\", 0.0)\n        p = min(max(float(p), 0.0), 0.99)\n        b = 1.0 if h.get(\"was_bluff\") else 0.0\n        num += b - p\n        den += 1.0 - p\n    q = num / den if den > 0 else PRIORS[br]\n    return min(max(q, 0.0), 1.0)\n\n\ndef decide(obs):\n    legal = obs.get(\"legal_actions\") or []\n    hand = obs.get(\"my_hand\") or []\n    r = obs.get(\"table_rank\", \"K\")\n    if \"play\" not in legal or not hand:\n        return {\"type\": \"challenge\"}\n    m = [i for i, c in enumerate(hand) if c in (r, \"J\")]\n    pc = obs.get(\"pending_claim\")\n    if pc and \"challenge\" in legal:\n        try:\n            f = pc.get(\"features\") or {}\n            p = float((f.get(\"card_math\") or {}).get(\"p_cards\", 0.0))\n            if p >= 0.999:\n                return {\"type\": \"challenge\"}\n            q = est_q(obs.get(\"revealed_history\") or [], branch(f))\n            pb = p + (1.0 - p) * q\n            thr = 0.5\n            if not m:\n                thr = 0.36\n            elif len(m) >= len(hand) and len(hand) <= 3:\n                thr = 0.62\n            lv = obs.get(\"lives\") or {}\n            if lv.get(\"p1\", 3) <= 1:\n                thr += 0.05\n            if f.get(\"hand_size\", 5) == 0:\n                thr -= 0.1\n            if pb > thr:\n                return {\"type\": \"challenge\"}\n        except Exception:\n            pass\n    if m:\n        cards = m[:3]\n    else:\n        cards = [0]\n    n = len(cards)\n    return {\"type\": \"play\", \"cards\": cards, \"utterance\": str(n) + \" \" + r + (\"s\" if n > 1 else \"\") + \".\"}\n",
  "gate": {
   "ok": true,
   "reason": "ok"
  },
  "repair_attempted": false,
- "provider": "bedrock",
- "model": "us.anthropic.claude-opus-5-5",
- "eval_s": 50.8,
+ "sandbox_id": "c245666f-9201-4daf-8b2c-fde775b20d8b",
+ "network": "blocked",
+ "network_blocked_verified": true,
  "eval": {
-  "win_rate": 0.6033333333333334,
-  "ci": [
-   0.565,
-   0.6383333333333334
-  ],
-  "crashes": 0,
-  "timeouts": 0,
-  "illegal": 0,
-  "decisions": 8264,
-  "mean_ms": 0.9687511121452086,
   "games": 600,
   "seeds": [
    3001,
@@ -101,6 +60,16 @@
    3029,
    3030
   ],
+  "win_rate": 0.6033333333333334,
+  "ci": [
+   0.565,
+   0.6383333333333334
+  ],
+  "crashes": 0,
+  "timeouts": 0,
+  "illegal": 0,
+  "decisions": 8264,
+  "mean_ms": 0.9687511121452086,
   "per_seed": [
    0.6,
    0.75,
@@ -132,934 +101,128 @@
    0.6,
    0.45,
    0.6
-  ],
-  "network_probe": "BLOCKED",
-  "network": "BLOCKED"
+  ]
  },
- "compare_full": {
+ "compare": {
   "profiler": {
-   "agent": "profiler",
-   "params": {
-    "respond_rule": "threshold"
-   },
-   "eps": null,
    "win_rate": 0.3466666666666667,
    "ci": [
     0.315,
     0.37999999999999995
    ],
-   "games": 600,
-   "seeds": [
-    3001,
-    3002,
-    3003,
-    3004,
-    3005,
-    3006,
-    3007,
-    3008,
-    3009,
-    3010,
-    3011,
-    3012,
-    3013,
-    3014,
-    3015,
-    3016,
-    3017,
-    3018,
-    3019,
-    3020,
-    3021,
-    3022,
-    3023,
-    3024,
-    3025,
-    3026,
-    3027,
-    3028,
-    3029,
-    3030
-   ],
-   "per_seed": [
-    0.4,
-    0.45,
-    0.45,
-    0.35,
-    0.35,
-    0.45,
-    0.35,
-    0.4,
-    0.6,
-    0.25,
-    0.35,
-    0.4,
-    0.35,
-    0.25,
-    0.35,
-    0.45,
-    0.25,
-    0.3,
-    0.25,
-    0.2,
-    0.3,
-    0.45,
-    0.2,
-    0.35,
-    0.35,
-    0.35,
-    0.35,
-    0.15,
-    0.3,
-    0.4
-   ]
+   "respond_rule": "threshold",
+   "eps": null,
+   "reflection": "stub"
   },
   "profiler_eps0": {
-   "agent": "profiler",
-   "params": {
-    "respond_rule": "threshold"
-   },
-   "eps": 0.0,
    "win_rate": 0.35500000000000004,
    "ci": [
     0.3266666666666667,
     0.38166666666666665
    ],
-   "games": 600,
-   "seeds": [
-    3001,
-    3002,
-    3003,
-    3004,
-    3005,
-    3006,
-    3007,
-    3008,
-    3009,
-    3010,
-    3011,
-    3012,
-    3013,
-    3014,
-    3015,
-    3016,
-    3017,
-    3018,
-    3019,
-    3020,
-    3021,
-    3022,
-    3023,
-    3024,
-    3025,
-    3026,
-    3027,
-    3028,
-    3029,
-    3030
-   ],
-   "per_seed": [
-    0.2,
-    0.45,
-    0.25,
-    0.45,
-    0.45,
-    0.5,
-    0.35,
-    0.25,
-    0.3,
-    0.45,
-    0.4,
-    0.35,
-    0.25,
-    0.35,
-    0.3,
-    0.4,
-    0.4,
-    0.35,
-    0.3,
-    0.3,
-    0.4,
-    0.45,
-    0.3,
-    0.3,
-    0.35,
-    0.3,
-    0.35,
-    0.45,
-    0.3,
-    0.4
-   ]
+   "respond_rule": "threshold",
+   "eps": 0.0,
+   "reflection": "stub"
   },
   "profiler_ev": {
-   "agent": "profiler",
-   "params": {
-    "respond_rule": "ev"
-   },
-   "eps": null,
    "win_rate": 0.3516666666666667,
    "ci": [
     0.3082916666666666,
     0.3950000000000001
    ],
-   "games": 600,
-   "seeds": [
-    3001,
-    3002,
-    3003,
-    3004,
-    3005,
-    3006,
-    3007,
-    3008,
-    3009,
-    3010,
-    3011,
-    3012,
-    3013,
-    3014,
-    3015,
-    3016,
-    3017,
-    3018,
-    3019,
-    3020,
-    3021,
-    3022,
-    3023,
-    3024,
-    3025,
-    3026,
-    3027,
-    3028,
-    3029,
-    3030
-   ],
-   "per_seed": [
-    0.6,
-    0.3,
-    0.35,
-    0.4,
-    0.35,
-    0.45,
-    0.55,
-    0.25,
-    0.55,
-    0.2,
-    0.4,
-    0.5,
-    0.2,
-    0.3,
-    0.6,
-    0.3,
-    0.35,
-    0.5,
-    0.3,
-    0.1,
-    0.2,
-    0.2,
-    0.3,
-    0.35,
-    0.25,
-    0.4,
-    0.2,
-    0.3,
-    0.35,
-    0.45
-   ]
+   "respond_rule": "ev",
+   "eps": null,
+   "reflection": "stub"
   },
   "profiler_ev_eps0": {
-   "agent": "profiler",
-   "params": {
-    "respond_rule": "ev"
-   },
-   "eps": 0.0,
    "win_rate": 0.4033333333333333,
    "ci": [
     0.35666666666666674,
     0.4483333333333333
    ],
-   "games": 600,
-   "seeds": [
-    3001,
-    3002,
-    3003,
-    3004,
-    3005,
-    3006,
-    3007,
-    3008,
-    3009,
-    3010,
-    3011,
-    3012,
-    3013,
-    3014,
-    3015,
-    3016,
-    3017,
-    3018,
-    3019,
-    3020,
-    3021,
-    3022,
-    3023,
-    3024,
-    3025,
-    3026,
-    3027,
-    3028,
-    3029,
-    3030
-   ],
-   "per_seed": [
-    0.35,
-    0.5,
-    0.35,
-    0.35,
-    0.35,
-    0.3,
-    0.45,
-    0.3,
-    0.45,
-    0.35,
-    0.2,
-    0.55,
-    0.4,
-    0.25,
-    0.6,
-    0.75,
-    0.45,
-    0.45,
-    0.5,
-    0.2,
-    0.4,
-    0.45,
-    0.5,
-    0.5,
-    0.4,
-    0.2,
-    0.35,
-    0.55,
-    0.25,
-    0.4
-   ]
+   "respond_rule": "ev",
+   "eps": 0.0,
+   "reflection": "stub"
   },
   "logreg_bow": {
-   "agent": "logreg_bow",
-   "params": {
-    "respond_rule": "threshold"
-   },
-   "eps": null,
    "win_rate": 0.33999999999999997,
    "ci": [
     0.3083333333333334,
     0.3683333333333333
    ],
-   "games": 600,
-   "seeds": [
-    3001,
-    3002,
-    3003,
-    3004,
-    3005,
-    3006,
-    3007,
-    3008,
-    3009,
-    3010,
-    3011,
-    3012,
-    3013,
-    3014,
-    3015,
-    3016,
-    3017,
-    3018,
-    3019,
-    3020,
-    3021,
-    3022,
-    3023,
-    3024,
-    3025,
-    3026,
-    3027,
-    3028,
-    3029,
-    3030
-   ],
-   "per_seed": [
-    0.2,
-    0.3,
-    0.4,
-    0.3,
-    0.4,
-    0.35,
-    0.35,
-    0.35,
-    0.5,
-    0.35,
-    0.35,
-    0.3,
-    0.15,
-    0.3,
-    0.5,
-    0.4,
-    0.35,
-    0.35,
-    0.3,
-    0.35,
-    0.35,
-    0.4,
-    0.45,
-    0.25,
-    0.35,
-    0.15,
-    0.45,
-    0.35,
-    0.3,
-    0.3
-   ]
+   "respond_rule": "threshold",
+   "eps": null,
+   "reflection": "none"
   },
   "logreg_bow_eps0": {
-   "agent": "logreg_bow",
-   "params": {
-    "respond_rule": "threshold"
-   },
-   "eps": 0.0,
    "win_rate": 0.39333333333333337,
    "ci": [
     0.365,
     0.4200416666666669
    ],
-   "games": 600,
-   "seeds": [
-    3001,
-    3002,
-    3003,
-    3004,
-    3005,
-    3006,
-    3007,
-    3008,
-    3009,
-    3010,
-    3011,
-    3012,
-    3013,
-    3014,
-    3015,
-    3016,
-    3017,
-    3018,
-    3019,
-    3020,
-    3021,
-    3022,
-    3023,
-    3024,
-    3025,
-    3026,
-    3027,
-    3028,
-    3029,
-    3030
-   ],
-   "per_seed": [
-    0.45,
-    0.45,
-    0.45,
-    0.2,
-    0.3,
-    0.4,
-    0.4,
-    0.4,
-    0.35,
-    0.4,
-    0.3,
-    0.5,
-    0.45,
-    0.4,
-    0.35,
-    0.5,
-    0.35,
-    0.2,
-    0.35,
-    0.55,
-    0.45,
-    0.35,
-    0.4,
-    0.4,
-    0.5,
-    0.4,
-    0.4,
-    0.35,
-    0.35,
-    0.45
-   ]
+   "respond_rule": "threshold",
+   "eps": 0.0,
+   "reflection": "none"
   },
   "logreg_bow_ev": {
-   "agent": "logreg_bow",
-   "params": {
-    "respond_rule": "ev"
-   },
-   "eps": null,
    "win_rate": 0.39499999999999996,
    "ci": [
     0.3499583333333332,
     0.44000000000000006
    ],
-   "games": 600,
-   "seeds": [
-    3001,
-    3002,
-    3003,
-    3004,
-    3005,
-    3006,
-    3007,
-    3008,
-    3009,
-    3010,
-    3011,
-    3012,
-    3013,
-    3014,
-    3015,
-    3016,
-    3017,
-    3018,
-    3019,
-    3020,
-    3021,
-    3022,
-    3023,
-    3024,
-    3025,
-    3026,
-    3027,
-    3028,
-    3029,
-    3030
-   ],
-   "per_seed": [
-    0.15,
-    0.2,
-    0.35,
-    0.35,
-    0.7,
-    0.55,
-    0.4,
-    0.25,
-    0.4,
-    0.35,
-    0.45,
-    0.35,
-    0.45,
-    0.35,
-    0.5,
-    0.55,
-    0.35,
-    0.55,
-    0.35,
-    0.25,
-    0.2,
-    0.4,
-    0.6,
-    0.45,
-    0.55,
-    0.25,
-    0.35,
-    0.45,
-    0.4,
-    0.35
-   ]
+   "respond_rule": "ev",
+   "eps": null,
+   "reflection": "none"
   },
   "logreg_bow_ev_eps0": {
-   "agent": "logreg_bow",
-   "params": {
-    "respond_rule": "ev"
-   },
-   "eps": 0.0,
    "win_rate": 0.4683333333333334,
    "ci": [
     0.42,
     0.5166666666666667
    ],
-   "games": 600,
-   "seeds": [
-    3001,
-    3002,
-    3003,
-    3004,
-    3005,
-    3006,
-    3007,
-    3008,
-    3009,
-    3010,
-    3011,
-    3012,
-    3013,
-    3014,
-    3015,
-    3016,
-    3017,
-    3018,
-    3019,
-    3020,
-    3021,
-    3022,
-    3023,
-    3024,
-    3025,
-    3026,
-    3027,
-    3028,
-    3029,
-    3030
-   ],
-   "per_seed": [
-    0.45,
-    0.7,
-    0.6,
-    0.35,
-    0.75,
-    0.55,
-    0.55,
-    0.4,
-    0.45,
-    0.35,
-    0.4,
-    0.5,
-    0.25,
-    0.1,
-    0.45,
-    0.3,
-    0.55,
-    0.4,
-    0.5,
-    0.55,
-    0.55,
-    0.55,
-    0.4,
-    0.4,
-    0.75,
-    0.35,
-    0.55,
-    0.5,
-    0.4,
-    0.45
-   ]
+   "respond_rule": "ev",
+   "eps": 0.0,
+   "reflection": "none"
   },
   "counter": {
-   "agent": "counter",
-   "params": {
-    "respond_rule": "threshold"
-   },
-   "eps": null,
    "win_rate": 0.36000000000000004,
    "ci": [
     0.3233333333333333,
     0.39666666666666667
    ],
-   "games": 600,
-   "seeds": [
-    3001,
-    3002,
-    3003,
-    3004,
-    3005,
-    3006,
-    3007,
-    3008,
-    3009,
-    3010,
-    3011,
-    3012,
-    3013,
-    3014,
-    3015,
-    3016,
-    3017,
-    3018,
-    3019,
-    3020,
-    3021,
-    3022,
-    3023,
-    3024,
-    3025,
-    3026,
-    3027,
-    3028,
-    3029,
-    3030
-   ],
-   "per_seed": [
-    0.2,
-    0.1,
-    0.25,
-    0.4,
-    0.4,
-    0.4,
-    0.25,
-    0.4,
-    0.3,
-    0.35,
-    0.35,
-    0.4,
-    0.25,
-    0.4,
-    0.25,
-    0.35,
-    0.25,
-    0.4,
-    0.35,
-    0.45,
-    0.45,
-    0.3,
-    0.35,
-    0.45,
-    0.3,
-    0.5,
-    0.6,
-    0.55,
-    0.4,
-    0.4
-   ]
+   "respond_rule": "threshold",
+   "eps": null,
+   "reflection": "none"
   },
   "counter_eps0": {
-   "agent": "counter",
-   "params": {
-    "respond_rule": "threshold"
-   },
-   "eps": 0.0,
    "win_rate": 0.4583333333333333,
    "ci": [
     0.42500000000000004,
     0.4916666666666666
    ],
-   "games": 600,
-   "seeds": [
-    3001,
-    3002,
-    3003,
-    3004,
-    3005,
-    3006,
-    3007,
-    3008,
-    3009,
-    3010,
-    3011,
-    3012,
-    3013,
-    3014,
-    3015,
-    3016,
-    3017,
-    3018,
-    3019,
-    3020,
-    3021,
-    3022,
-    3023,
-    3024,
-    3025,
-    3026,
-    3027,
-    3028,
-    3029,
-    3030
-   ],
-   "per_seed": [
-    0.5,
-    0.55,
-    0.5,
-    0.35,
-    0.5,
-    0.45,
-    0.4,
-    0.4,
-    0.5,
-    0.4,
-    0.4,
-    0.4,
-    0.55,
-    0.35,
-    0.5,
-    0.5,
-    0.5,
-    0.25,
-    0.5,
-    0.55,
-    0.6,
-    0.5,
-    0.4,
-    0.5,
-    0.45,
-    0.3,
-    0.7,
-    0.5,
-    0.35,
-    0.4
-   ]
+   "respond_rule": "threshold",
+   "eps": 0.0,
+   "reflection": "none"
   },
   "counter_ev": {
-   "agent": "counter",
-   "params": {
-    "respond_rule": "ev"
-   },
-   "eps": null,
    "win_rate": 0.35,
    "ci": [
     0.3133333333333333,
     0.3883333333333334
    ],
-   "games": 600,
-   "seeds": [
-    3001,
-    3002,
-    3003,
-    3004,
-    3005,
-    3006,
-    3007,
-    3008,
-    3009,
-    3010,
-    3011,
-    3012,
-    3013,
-    3014,
-    3015,
-    3016,
-    3017,
-    3018,
-    3019,
-    3020,
-    3021,
-    3022,
-    3023,
-    3024,
-    3025,
-    3026,
-    3027,
-    3028,
-    3029,
-    3030
-   ],
-   "per_seed": [
-    0.25,
-    0.3,
-    0.4,
-    0.55,
-    0.3,
-    0.45,
-    0.15,
-    0.35,
-    0.55,
-    0.3,
-    0.25,
-    0.35,
-    0.5,
-    0.35,
-    0.4,
-    0.5,
-    0.25,
-    0.25,
-    0.45,
-    0.25,
-    0.2,
-    0.35,
-    0.4,
-    0.3,
-    0.3,
-    0.3,
-    0.4,
-    0.3,
-    0.25,
-    0.55
-   ]
+   "respond_rule": "ev",
+   "eps": null,
+   "reflection": "none"
   },
   "counter_ev_eps0": {
-   "agent": "counter",
-   "params": {
-    "respond_rule": "ev"
-   },
-   "eps": 0.0,
    "win_rate": 0.30666666666666664,
    "ci": [
     0.26999999999999996,
     0.3416666666666667
    ],
-   "games": 600,
-   "seeds": [
-    3001,
-    3002,
-    3003,
-    3004,
-    3005,
-    3006,
-    3007,
-    3008,
-    3009,
-    3010,
-    3011,
-    3012,
-    3013,
-    3014,
-    3015,
-    3016,
-    3017,
-    3018,
-    3019,
-    3020,
-    3021,
-    3022,
-    3023,
-    3024,
-    3025,
-    3026,
-    3027,
-    3028,
-    3029,
-    3030
-   ],
-   "per_seed": [
-    0.25,
-    0.2,
-    0.1,
-    0.35,
-    0.4,
-    0.35,
-    0.4,
-    0.2,
-    0.3,
-    0.4,
-    0.3,
-    0.15,
-    0.4,
-    0.35,
-    0.1,
-    0.3,
-    0.35,
-    0.25,
-    0.45,
-    0.4,
-    0.2,
-    0.2,
-    0.4,
-    0.35,
-    0.45,
-    0.35,
-    0.45,
-    0.35,
-    0.3,
-    0.15
-   ]
+   "respond_rule": "ev",
+   "eps": 0.0,
+   "reflection": "none"
   },
   "counter_module": {
    "win_rate": 0.4583333333333333,
@@ -1067,540 +230,319 @@
     0.42500000000000004,
     0.4916666666666666
    ],
-   "crashes": 0,
-   "timeouts": 0,
-   "illegal": 219,
-   "decisions": 11502,
-   "mean_ms": 0.27895197547448564,
-   "games": 600,
-   "seeds": [
-    3001,
-    3002,
-    3003,
-    3004,
-    3005,
-    3006,
-    3007,
-    3008,
-    3009,
-    3010,
-    3011,
-    3012,
-    3013,
-    3014,
-    3015,
-    3016,
-    3017,
-    3018,
-    3019,
-    3020,
-    3021,
-    3022,
-    3023,
-    3024,
-    3025,
-    3026,
-    3027,
-    3028,
-    3029,
-    3030
-   ],
-   "per_seed": [
-    0.5,
-    0.55,
-    0.5,
-    0.35,
-    0.5,
-    0.45,
-    0.4,
-    0.4,
-    0.5,
-    0.4,
-    0.4,
-    0.4,
-    0.55,
-    0.35,
-    0.5,
-    0.5,
-    0.5,
-    0.25,
-    0.5,
-    0.55,
-    0.6,
-    0.5,
-    0.4,
-    0.5,
-    0.45,
-    0.3,
-    0.7,
-    0.5,
-    0.35,
-    0.4
-   ],
-   "params": {},
-   "note": "the reference counter decide() given to Claude, same child harness"
-  }
- },
- "entry": {
-  "policy_id": "forge:w0002.p1.v29",
-  "source_world": "r01/w0002",
-  "source_seat": "p1",
-  "table": "telltale",
-  "source_memory_version": 29,
-  "source_reflection": "claude",
-  "respond_rule": "threshold",
-  "control": null,
-  "model": "us.anthropic.claude-opus-5-5",
-  "provider": "bedrock",
-  "effort": "medium",
-  "rationale": "Challenge p3 when P(bluff)=p_cards+(1-p_cards)q exceeds a threshold; q comes from branch-specific priors (stock-tag phrases ~0.8, formal single-card ~0.72, else ~0.25) updated online from revealed p3 claims, so stale hypotheses wash out. Threshold drops when we'd be forced to bluff, rises when we can go out honestly. Play all matching cards (up to 3) with a neutral, uniform utterance; bluff single cards only when forced. p2 hypothesis is not actionable from seat p1.",
-  "targets": [
-   "h_w0002_p3_011 trigger: formal_register & claim_count==1",
-   "h_w0002_p3_018 verbal_tell: formal verb/stock tag phrases",
-   "p3 base rate q_mean 0.437 with online re-estimation",
-   "self play-on loss rate informing challenge threshold"
-  ],
-  "module_source": "import math\n\nPRIOR_W = 6.0\nTAGS = (\"laying down\", \"submit\", \"as stated\", \"as required\", \"are one\", \"these are one\")\n\n\ndef tag_hit(u):\n    u = (u or \"\").lower()\n    for t in TAGS:\n        if t in u:\n            return True\n    return False\n\n\ndef branch(f):\n    u = f.get(\"utterance\", \"\")\n    if tag_hit(u):\n        return \"tag\"\n    if f.get(\"formal_register\") and f.get(\"claim_count\") == 1:\n        return \"f1\"\n    return \"base\"\n\n\nPRIORS = {\"tag\": 0.80, \"f1\": 0.72, \"base\": 0.25}\n\n\ndef est_q(hist, br):\n    num = PRIORS[br] * PRIOR_W\n    den = PRIOR_W\n    for h in hist:\n        if h.get(\"by\") != \"p3\":\n            continue\n        f = h.get(\"features\") or {}\n        try:\n            if branch(f) != br:\n                continue\n        except Exception:\n            continue\n        p = h.get(\"p_cards\")\n        if p is None:\n            p = (f.get(\"card_math\") or {}).get(\"p_cards\", 0.0)\n        p = min(max(float(p), 0.0), 0.99)\n        b = 1.0 if h.get(\"was_bluff\") else 0.0\n        num += b - p\n        den += 1.0 - p\n    q = num / den if den > 0 else PRIORS[br]\n    return min(max(q, 0.0), 1.0)\n\n\ndef decide(obs):\n    legal = obs.get(\"legal_actions\") or []\n    hand = obs.get(\"my_hand\") or []\n    r = obs.get(\"table_rank\", \"K\")\n    if \"play\" not in legal or not hand:\n        return {\"type\": \"challenge\"}\n    m = [i for i, c in enumerate(hand) if c in (r, \"J\")]\n    pc = obs.get(\"pending_claim\")\n    if pc and \"challenge\" in legal:\n        try:\n            f = pc.get(\"features\") or {}\n            p = float((f.get(\"card_math\") or {}).get(\"p_cards\", 0.0))\n            if p >= 0.999:\n                return {\"type\": \"challenge\"}\n            q = est_q(obs.get(\"revealed_history\") or [], branch(f))\n            pb = p + (1.0 - p) * q\n            thr = 0.5\n            if not m:\n                thr = 0.36\n            elif len(m) >= len(hand) and len(hand) <= 3:\n                thr = 0.62\n            lv = obs.get(\"lives\") or {}\n            if lv.get(\"p1\", 3) <= 1:\n                thr += 0.05\n            if f.get(\"hand_size\", 5) == 0:\n                thr -= 0.1\n            if pb > thr:\n                return {\"type\": \"challenge\"}\n        except Exception:\n            pass\n    if m:\n        cards = m[:3]\n    else:\n        cards = [0]\n    n = len(cards)\n    return {\"type\": \"play\", \"cards\": cards, \"utterance\": str(n) + \" \" + r + (\"s\" if n > 1 else \"\") + \".\"}\n",
-  "dossier": [
-   {
-    "id": "h_w0002_p3_011",
-    "about": "p3",
-    "aspect": "trigger",
-    "text": "Player 3 bluffs when playing a single card in formal register.",
-    "predicate": {
-     "all": [
-      {
-       "f": "formal_register",
-       "op": "==",
-       "v": true
-      },
-      {
-       "f": "claim_count",
-       "op": "==",
-       "v": 1
-      }
-     ]
-    },
-    "status": "confirmed",
-    "origin": "llm",
-    "created_game": 10,
-    "n_true": 17,
-    "n_false": 15,
-    "q_true": [
-     0.7541,
-     0.52,
-     0.92
-    ],
-    "q_false": [
-     0.1482,
-     0.0,
-     0.42
-    ],
-    "p_gap": 0.9965,
-    "evidence_count": 17
-   },
-   {
-    "id": "h_w0002_p2_017",
-    "about": "p2",
-    "aspect": "trigger",
-    "text": "Player 2 bluffs on single-card claims while keeping 2 or fewer cards.",
-    "predicate": {
-     "all": [
-      {
-       "f": "claim_count",
-       "op": "==",
-       "v": 1
-      },
-      {
-       "f": "hand_size",
-       "op": "<=",
-       "v": 2
-      }
-     ]
-    },
-    "status": "confirmed",
-    "origin": "llm",
-    "created_game": 16,
-    "n_true": 5,
-    "n_false": 11,
-    "q_true": [
-     0.7907,
-     0.32,
-     1.0
-    ],
-    "q_false": [
-     0.0724,
-     0.0,
-     0.26
-    ],
-    "p_gap": 0.9935,
-    "evidence_count": 5
-   },
-   {
-    "id": "h_w0002_p3_018",
-    "about": "p3",
-    "aspect": "verbal_tell",
-    "text": "Player 3 bluffs when the claim uses formal verbs like 'laying down', 'submit' or stock tags like 'as required'.",
-    "predicate": {
-     "f": "utterance",
-     "op": "regex",
-     "v": "(?i)(laying down|submit|as stated|as required|are one|these are one)"
-    },
-    "status": "confirmed",
-    "origin": "llm",
-    "created_game": 16,
-    "n_true": 5,
-    "n_false": 5,
-    "q_true": [
-     0.8373,
-     0.47000000000000003,
-     1.0
-    ],
-    "q_false": [
-     0.31,
-     0.01,
-     0.72
-    ],
-    "p_gap": 0.9455,
-    "evidence_count": 5
-   }
-  ],
-  "gate": {
-   "ok": true,
-   "reason": "ok"
+   "respond_rule": null,
+   "eps": 0.0,
+   "reflection": "none"
   },
-  "repair_attempted": false,
-  "sandbox_id": "c245666f-9201-4daf-8b2c-fde775b20d8b",
-  "network": "blocked",
-  "network_blocked_verified": true,
-  "eval": {
-   "games": 600,
-   "seeds": [
-    3001,
-    3002,
-    3003,
-    3004,
-    3005,
-    3006,
-    3007,
-    3008,
-    3009,
-    3010,
-    3011,
-    3012,
-    3013,
-    3014,
-    3015,
-    3016,
-    3017,
-    3018,
-    3019,
-    3020,
-    3021,
-    3022,
-    3023,
-    3024,
-    3025,
-    3026,
-    3027,
-    3028,
-    3029,
-    3030
+  "profiler_claude_r01": {
+   "win_rate": 0.25416666666666665,
+   "ci": [
+    0.2041666666666667,
+    0.3
    ],
+   "n_worlds": 12,
+   "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+   ],
+   "note": "real-Claude reflection worlds from the run itself (their own seeds, not the eval seeds)"
+  },
+  "paired_delta_vs_profiler": [
+   0.25666666666666665,
+   0.21,
+   0.3017083333333336
+  ],
+  "paired_delta_vs_profiler_eps0": [
+   0.24833333333333335,
+   0.20166666666666672,
+   0.29666666666666663
+  ],
+  "paired_delta_vs_profiler_ev": [
+   0.25166666666666665,
+   0.19,
+   0.3133333333333333
+  ],
+  "paired_delta_vs_profiler_ev_eps0": [
+   0.2,
+   0.13999999999999999,
+   0.25666666666666665
+  ],
+  "paired_delta_vs_logreg_bow": [
+   0.26333333333333336,
+   0.2116666666666667,
+   0.3166666666666666
+  ],
+  "paired_delta_vs_logreg_bow_eps0": [
+   0.21,
+   0.16000000000000003,
+   0.26
+  ],
+  "paired_delta_vs_logreg_bow_ev": [
+   0.20833333333333334,
+   0.15,
+   0.265
+  ],
+  "paired_delta_vs_logreg_bow_ev_eps0": [
+   0.13499999999999998,
+   0.07333333333333332,
+   0.1983333333333333
+  ],
+  "paired_delta_vs_counter": [
+   0.24333333333333332,
+   0.19,
+   0.29666666666666663
+  ],
+  "paired_delta_vs_counter_eps0": [
+   0.145,
+   0.09166666666666669,
+   0.1983333333333333
+  ],
+  "paired_delta_vs_counter_ev": [
+   0.2533333333333333,
+   0.20495833333333327,
+   0.30333333333333334
+  ],
+  "paired_delta_vs_counter_ev_eps0": [
+   0.2966666666666667,
+   0.2533333333333333,
+   0.34333333333333343
+  ],
+  "paired_delta_vs_counter_module": [
+   0.145,
+   0.09166666666666669,
+   0.1983333333333333
+  ],
+  "promotion_rule": "SPEC \u00a77.4: 95% bootstrap CI lower bound of paired \u0394(forge \u2212 profiler) over the same seeds > 0. `promoted` additionally requires it vs the greedy (\u03b5=0) profiler, since the forge module does not explore.",
+  "promoted_spec_rule_vs_profiler_eps0.1": true,
+  "simplified_rule_forge_ci_lo_gt_profiler_mean": true
+ },
+ "promoted": true,
+ "arize_trace_id": "815b85b609c5208706c24879295bef29",
+ "created": "2026-10-16T13:31:06-0400",
+ "registered_agent": {
+  "entity": "agent/forge.w0002.p1",
+  "derived_from": "w0002.p1@29",
+  "win_rate": 0.6033333333333334
+ },
+ "surreal": {
+  "ok": true,
+  "surreal_trace_id": null,
+  "error": null
+ },
+ "games": 600,
+ "win_rate": 0.6033333333333334,
+ "ci": [
+  0.565,
+  0.6383333333333334
+ ],
+ "crashes": 0,
+ "timeouts": 0,
+ "baseline_win_rate": 0.3466666666666667,
+ "source": "import math\n\nPRIOR_W = 6.0\nTAGS = (\"laying down\", \"submit\", \"as stated\", \"as required\", \"are one\", \"these are one\")\n\n\ndef tag_hit(u):\n    u = (u or \"\").lower()\n    for t in TAGS:\n        if t in u:\n            return True\n    return False\n\n\ndef branch(f):\n    u = f.get(\"utterance\", \"\")\n    if tag_hit(u):\n        return \"tag\"\n    if f.get(\"formal_register\") and f.get(\"claim_count\") == 1:\n        return \"f1\"\n    return \"base\"\n\n\nPRIORS = {\"tag\": 0.80, \"f1\": 0.72, \"base\": 0.25}\n\n\ndef est_q(hist, br):\n    num = PRIORS[br] * PRIOR_W\n    den = PRIOR_W\n    for h in hist:\n        if h.get(\"by\") != \"p3\":\n            continue\n        f = h.get(\"features\") or {}\n        try:\n            if branch(f) != br:\n                continue\n        except Exception:\n            continue\n        p = h.get(\"p_cards\")\n        if p is None:\n            p = (f.get(\"card_math\") or {}).get(\"p_cards\", 0.0)\n        p = min(max(float(p), 0.0), 0.99)\n        b = 1.0 if h.get(\"was_bluff\") else 0.0\n        num += b - p\n        den += 1.0 - p\n    q = num / den if den > 0 else PRIORS[br]\n    return min(max(q, 0.0), 1.0)\n\n\ndef decide(obs):\n    legal = obs.get(\"legal_actions\") or []\n    hand = obs.get(\"my_hand\") or []\n    r = obs.get(\"table_rank\", \"K\")\n    if \"play\" not in legal or not hand:\n        return {\"type\": \"challenge\"}\n    m = [i for i, c in enumerate(hand) if c in (r, \"J\")]\n    pc = obs.get(\"pending_claim\")\n    if pc and \"challenge\" in legal:\n        try:\n            f = pc.get(\"features\") or {}\n            p = float((f.get(\"card_math\") or {}).get(\"p_cards\", 0.0))\n            if p >= 0.999:\n                return {\"type\": \"challenge\"}\n            q = est_q(obs.get(\"revealed_history\") or [], branch(f))\n            pb = p + (1.0 - p) * q\n            thr = 0.5\n            if not m:\n                thr = 0.36\n            elif len(m) >= len(hand) and len(hand) <= 3:\n                thr = 0.62\n            lv = obs.get(\"lives\") or {}\n            if lv.get(\"p1\", 3) <= 1:\n                thr += 0.05\n            if f.get(\"hand_size\", 5) == 0:\n                thr -= 0.1\n            if pb > thr:\n                return {\"type\": \"challenge\"}\n        except Exception:\n            pass\n    if m:\n        cards = m[:3]\n    else:\n        cards = [0]\n    n = len(cards)\n    return {\"type\": \"play\", \"cards\": cards, \"utterance\": str(n) + \" \" + r + (\"s\" if n > 1 else \"\") + \".\"}\n",
+ "for_picked_world": true,
+ "selection_rule": "earliest-created non-control forge generated from the picked world's memory (chosen without looking at results)",
+ "all_runs": [
+  {
+   "policy_id": "forge:w0002.p1.v29",
+   "source_world": "w0002",
+   "table": "telltale",
+   "control": null,
+   "replicate": null,
    "win_rate": 0.6033333333333334,
    "ci": [
     0.565,
     0.6383333333333334
    ],
-   "crashes": 0,
-   "timeouts": 0,
-   "illegal": 0,
-   "decisions": 8264,
-   "mean_ms": 0.9687511121452086,
-   "per_seed": [
-    0.6,
-    0.75,
-    0.55,
-    0.6,
-    0.65,
-    0.55,
-    0.6,
-    0.75,
-    0.7,
-    0.65,
-    0.4,
-    0.5,
-    0.7,
-    0.65,
-    0.45,
-    0.55,
-    0.6,
-    0.8,
-    0.55,
-    0.55,
-    0.35,
-    0.6,
-    0.55,
-    0.75,
-    0.65,
-    0.7,
-    0.7,
-    0.6,
-    0.45,
-    0.6
-   ]
-  },
-  "compare": {
-   "profiler": {
-    "win_rate": 0.3466666666666667,
-    "ci": [
-     0.315,
-     0.37999999999999995
-    ],
-    "respond_rule": "threshold",
-    "eps": null,
-    "reflection": "stub"
-   },
-   "profiler_eps0": {
-    "win_rate": 0.35500000000000004,
-    "ci": [
-     0.3266666666666667,
-     0.38166666666666665
-    ],
-    "respond_rule": "threshold",
-    "eps": 0.0,
-    "reflection": "stub"
-   },
-   "profiler_ev": {
-    "win_rate": 0.3516666666666667,
-    "ci": [
-     0.3082916666666666,
-     0.3950000000000001
-    ],
-    "respond_rule": "ev",
-    "eps": null,
-    "reflection": "stub"
-   },
-   "profiler_ev_eps0": {
-    "win_rate": 0.4033333333333333,
-    "ci": [
-     0.35666666666666674,
-     0.4483333333333333
-    ],
-    "respond_rule": "ev",
-    "eps": 0.0,
-    "reflection": "stub"
-   },
-   "logreg_bow": {
-    "win_rate": 0.33999999999999997,
-    "ci": [
-     0.3083333333333334,
-     0.3683333333333333
-    ],
-    "respond_rule": "threshold",
-    "eps": null,
-    "reflection": "none"
-   },
-   "logreg_bow_eps0": {
-    "win_rate": 0.39333333333333337,
-    "ci": [
-     0.365,
-     0.4200416666666669
-    ],
-    "respond_rule": "threshold",
-    "eps": 0.0,
-    "reflection": "none"
-   },
-   "logreg_bow_ev": {
-    "win_rate": 0.39499999999999996,
-    "ci": [
-     0.3499583333333332,
-     0.44000000000000006
-    ],
-    "respond_rule": "ev",
-    "eps": null,
-    "reflection": "none"
-   },
-   "logreg_bow_ev_eps0": {
-    "win_rate": 0.4683333333333334,
-    "ci": [
-     0.42,
-     0.5166666666666667
-    ],
-    "respond_rule": "ev",
-    "eps": 0.0,
-    "reflection": "none"
-   },
-   "counter": {
-    "win_rate": 0.36000000000000004,
-    "ci": [
-     0.3233333333333333,
-     0.39666666666666667
-    ],
-    "respond_rule": "threshold",
-    "eps": null,
-    "reflection": "none"
-   },
-   "counter_eps0": {
-    "win_rate": 0.4583333333333333,
-    "ci": [
-     0.42500000000000004,
-     0.4916666666666666
-    ],
-    "respond_rule": "threshold",
-    "eps": 0.0,
-    "reflection": "none"
-   },
-   "counter_ev": {
-    "win_rate": 0.35,
-    "ci": [
-     0.3133333333333333,
-     0.3883333333333334
-    ],
-    "respond_rule": "ev",
-    "eps": null,
-    "reflection": "none"
-   },
-   "counter_ev_eps0": {
-    "win_rate": 0.30666666666666664,
-    "ci": [
-     0.26999999999999996,
-     0.3416666666666667
-    ],
-    "respond_rule": "ev",
-    "eps": 0.0,
-    "reflection": "none"
-   },
-   "counter_module": {
-    "win_rate": 0.4583333333333333,
-    "ci": [
-     0.42500000000000004,
-     0.4916666666666666
-    ],
-    "respond_rule": null,
-    "eps": 0.0,
-    "reflection": "none"
-   },
-   "profiler_claude_r01": {
-    "win_rate": 0.25416666666666665,
-    "ci": [
-     0.2041666666666667,
-     0.3
-    ],
-    "n_worlds": 12,
-    "seeds": [
-     1,
-     2,
-     3,
-     4,
-     5,
-     6,
-     7,
-     8,
-     9,
-     10,
-     11,
-     12
-    ],
-    "note": "real-Claude reflection worlds from the run itself (their own seeds, not the eval seeds)"
-   },
-   "paired_delta_vs_profiler": [
+   "games": 600,
+   "delta_vs_profiler": [
     0.25666666666666665,
     0.21,
     0.3017083333333336
    ],
-   "paired_delta_vs_profiler_eps0": [
-    0.24833333333333335,
-    0.20166666666666672,
-    0.29666666666666663
-   ],
-   "paired_delta_vs_profiler_ev": [
-    0.25166666666666665,
-    0.19,
-    0.3133333333333333
-   ],
-   "paired_delta_vs_profiler_ev_eps0": [
-    0.2,
-    0.13999999999999999,
-    0.25666666666666665
-   ],
-   "paired_delta_vs_logreg_bow": [
+   "delta_vs_logreg_bow": [
     0.26333333333333336,
     0.2116666666666667,
     0.3166666666666666
    ],
-   "paired_delta_vs_logreg_bow_eps0": [
-    0.21,
-    0.16000000000000003,
+   "promoted": true,
+   "sandbox_id": "c245666f-9201-4daf-8b2c-fde775b20d8b",
+   "shown": true
+  },
+  {
+   "policy_id": "forge:w0002.p1.v29.nomem",
+   "source_world": "w0002",
+   "table": "telltale",
+   "control": "empty_dossier",
+   "replicate": null,
+   "win_rate": 0.225,
+   "ci": [
+    0.19166666666666668,
     0.26
    ],
-   "paired_delta_vs_logreg_bow_ev": [
-    0.20833333333333334,
-    0.15,
-    0.265
-   ],
-   "paired_delta_vs_logreg_bow_ev_eps0": [
-    0.13499999999999998,
-    0.07333333333333332,
-    0.1983333333333333
-   ],
-   "paired_delta_vs_counter": [
-    0.24333333333333332,
-    0.19,
-    0.29666666666666663
-   ],
-   "paired_delta_vs_counter_eps0": [
-    0.145,
-    0.09166666666666669,
-    0.1983333333333333
-   ],
-   "paired_delta_vs_counter_ev": [
-    0.2533333333333333,
-    0.20495833333333327,
-    0.30333333333333334
-   ],
-   "paired_delta_vs_counter_ev_eps0": [
-    0.2966666666666667,
-    0.2533333333333333,
-    0.34333333333333343
-   ],
-   "paired_delta_vs_counter_module": [
-    0.145,
-    0.09166666666666669,
-    0.1983333333333333
-   ],
-   "promotion_rule": "SPEC \u00a77.4: 95% bootstrap CI lower bound of paired \u0394(forge \u2212 profiler) over the same seeds > 0. `promoted` additionally requires it vs the greedy (\u03b5=0) profiler, since the forge module does not explore.",
-   "promoted_spec_rule_vs_profiler_eps0.1": true,
-   "simplified_rule_forge_ci_lo_gt_profiler_mean": true
-  },
-  "promoted": true,
-  "arize_trace_id": "815b85b609c5208706c24879295bef29",
-  "created": "2026-10-16T13:31:06-0400",
-  "code": "5bec07c+dirty(blab/)",
-  "forge_result": {
-   "policy_id": "forge:w0002.p1.v29",
-   "sandbox_id": "c245666f-9201-4daf-8b2c-fde775b20d8b",
-   "gate": {
-    "ok": true,
-    "reason": "ok"
-   },
    "games": 600,
-   "win_rate": 0.6033333333333334,
-   "ci": [
-    0.565,
-    0.6383333333333334
+   "delta_vs_profiler": [
+    -0.12166666666666666,
+    -0.16499999999999998,
+    -0.07833333333333332
    ],
-   "crashes": 0,
-   "timeouts": 0,
-   "promoted": true,
-   "baseline_win_rate": 0.3466666666666667
+   "delta_vs_logreg_bow": [
+    -0.11499999999999999,
+    -0.14833333333333334,
+    -0.08166666666666665
+   ],
+   "promoted": false,
+   "sandbox_id": "b954f750-1e58-48f3-9530-9c4997dc51f7",
+   "shown": false
   },
-  "registered_agent": {
-   "entity": "agent/forge.w0002.p1",
-   "derived_from": "w0002.p1@29",
-   "win_rate": 0.6033333333333334
+  {
+   "policy_id": "forge:w0017.p1.v30",
+   "source_world": "w0017",
+   "table": "longcon",
+   "control": null,
+   "replicate": null,
+   "win_rate": 0.26666666666666666,
+   "ci": [
+    0.22833333333333333,
+    0.30499999999999994
+   ],
+   "games": 600,
+   "delta_vs_profiler": [
+    -0.11166666666666668,
+    -0.16333333333333336,
+    -0.05666666666666667
+   ],
+   "delta_vs_logreg_bow": [
+    -0.12000000000000002,
+    -0.1733333333333333,
+    -0.06166666666666669
+   ],
+   "promoted": false,
+   "sandbox_id": "7e4872b8-94bd-46d8-be1b-0a591ec2b275",
+   "shown": false
+  },
+  {
+   "policy_id": "forge:w0017.p1.v30.nomem",
+   "source_world": "w0017",
+   "table": "longcon",
+   "control": "empty_dossier",
+   "replicate": null,
+   "win_rate": 0.3933333333333333,
+   "ci": [
+    0.36833333333333335,
+    0.4183750000000002
+   ],
+   "games": 600,
+   "delta_vs_profiler": [
+    0.014999999999999994,
+    -0.03666666666666669,
+    0.07
+   ],
+   "delta_vs_logreg_bow": [
+    0.006666666666666662,
+    -0.03666666666666669,
+    0.05333333333333334
+   ],
+   "promoted": false,
+   "sandbox_id": "0ebf1ed3-b148-4a2e-8dae-a759d40c8bf1",
+   "shown": false
+  },
+  {
+   "policy_id": "forge:w0007.p1.v30",
+   "source_world": "w0007",
+   "table": "telltale",
+   "control": null,
+   "replicate": null,
+   "win_rate": 0.2816666666666667,
+   "ci": [
+    0.245,
+    0.32166666666666655
+   ],
+   "games": 600,
+   "delta_vs_profiler": [
+    -0.06499999999999999,
+    -0.10166666666666666,
+    -0.026666666666666648
+   ],
+   "delta_vs_logreg_bow": [
+    -0.05833333333333333,
+    -0.10337500000000001,
+    -0.006666666666666657
+   ],
+   "promoted": false,
+   "sandbox_id": "712c7b18-5eb5-4de2-8933-1208267085d1",
+   "shown": false
+  },
+  {
+   "policy_id": "forge:w0002.p1.v29.rep2",
+   "source_world": "w0002",
+   "table": "telltale",
+   "control": null,
+   "replicate": "rep2",
+   "win_rate": 0.5766666666666667,
+   "ci": [
+    0.535,
+    0.6166666666666667
+   ],
+   "games": 600,
+   "delta_vs_profiler": [
+    0.23,
+    0.17333333333333337,
+    0.2850000000000001
+   ],
+   "delta_vs_logreg_bow": [
+    0.2366666666666667,
+    0.18500000000000003,
+    0.28666666666666674
+   ],
+   "promoted": true,
+   "sandbox_id": "b66dfcce-3fde-46dd-8f7e-c4077fce8603",
+   "shown": false
+  },
+  {
+   "policy_id": "forge:w0002.p1.v29.rep3",
+   "source_world": "w0002",
+   "table": "telltale",
+   "control": null,
+   "replicate": "rep3",
+   "win_rate": 0.3516666666666667,
+   "ci": [
+    0.30333333333333334,
+    0.39999999999999986
+   ],
+   "games": 600,
+   "delta_vs_profiler": [
+    0.005000000000000008,
+    -0.048333333333333325,
+    0.06000000000000001
+   ],
+   "delta_vs_logreg_bow": [
+    0.01166666666666668,
+    -0.04166666666666666,
+    0.06333333333333335
+   ],
+   "promoted": false,
+   "sandbox_id": "6ecd280e-e3a0-467c-a9a5-d2e3e7b0c2fb",
+   "shown": false
   }
- },
- "for_picked_world": true,
- "network_blocked_verified": true
+ ],
+ "tally": {
+  "longcon": {
+   "tried": 1,
+   "promoted": 0
+  },
+  "telltale": {
+   "tried": 4,
+   "promoted": 2
+  }
+ }
 }

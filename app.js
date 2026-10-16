@@ -796,6 +796,10 @@ function renderForge() {
   if (wr !== undefined) rows.push(kv("Win rate, same seeds", `${pct(wr)}${ci ? ` <small>(${pct(ci[0])}–${pct(ci[1])})</small>` : ""}${base !== undefined ? ` vs Profiler ${pct(base)}` : ""}`));
   if (games !== undefined) rows.push(kv("Games, crashes, timeouts", [games, crashes, timeouts].map((v) => esc(v ?? "—")).join(", ")));
   if (promoted !== undefined) rows.push(kv("Promoted", promoted ? '<span class="honestword">yes</span>' : "no"));
+  // How many forges were tried: the shown one is picked by creation order, not by result.
+  if (F.tally) rows.push(kv("All forges tried", Object.entries(F.tally).map(([t, x]) => `${esc(x.promoted)} of ${esc(x.tried)} promoted <small>(${esc(t)})</small>`).join("<br>")));
+  const ctl = (F.all_runs || []).filter((r) => r.control && r.table === F.table);
+  if (ctl.length) rows.push(kv("Control: memory withheld", ctl.map((r) => pct(r.win_rate)).join(", ")));
   el.innerHTML = head + `<div class="forge"><pre>${esc(F.source || F.module_source || E.module_source || "")}</pre><div>${rows.join("")}</div></div>`;
   where(`Forge${pick(F.policy_id, E.policy_id, R.policy_id) ? `, ${esc(pick(F.policy_id, E.policy_id, R.policy_id))}` : ""}`);
 }
@@ -841,7 +845,7 @@ function renderStack(live) {
       `<b>${dash(c.reflections)}</b> real reflections, <b>${dash(c.proposed_hypotheses)}</b> beliefs proposed`],
     ["surreal", "SurrealDB", "Agent Memory", "Holds each belief about each opponent, with its history: what replaced what, valid from game to game. Dossiers are read as of a game.",
       `<b>${dash(sd.supersessions_in_logs)}</b> supersessions; e.g. <b>${dash(sd.supersession_example?.entity)}</b>`],
-    ["arize", "Arize AX", "traces and experiments", "A span for every decision and reflection, and experiments that compare agents on the same seeds.",
+    ["arize", "Arize AX", "traces", "A span for every decision and reflection, with the recorded numbers attached.",
       `project <b>${dash(az.project)}</b>, <b>${dash(az.decision_spans_in_picked_world)}</b> decision spans in this world`],
     ["daytona", "Daytona", "world boxes and forge sandbox", "Stateful boxes where many worlds play at once: events, checkpoints, live memory. AI-written strategy code runs in a separate network-blocked sandbox.",
       `<b>${dash(d.worlds_total)}</b> worlds on boxes ${boxes || "—"}${(() => { const f = d.forge_sandbox_id || B.forge?.sandbox_id || B.forge?.entry?.sandbox_id || B.forge?.entry?.forge_result?.sandbox_id; return f ? `; forge sandbox <b>${esc(String(f).slice(0, 8))}</b>` : ""; })()}`],
