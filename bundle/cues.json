@@ -129,7 +129,7 @@
  },
  {
   "name": "the ask (audio if voiced)",
-  "say": "Same frozen model all day. It proposed this suspicion itself, between games, from its own reveals.",
+  "say": "Same frozen model all day; no fine-tuning. Its memory, written between games and checked against reveals, says this player turns formal when bluffing.",
   "actions": [
    {
     "action": "play_to",

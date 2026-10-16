@@ -765,7 +765,7 @@
    "median_discovery": 9.0
   },
   "rule": "profiler world on the telltale table (else longcon) whose verbal_tell discovery game is closest to the median discovery game over those worlds; ties broken by lowest seed",
-  "built": "2026-10-16T18:31:01Z",
+  "built": "2026-10-16T18:35:28Z",
   "files": {
    "world.jsonl": "events of w0002",
    "twin.jsonl": "events of w0146 (bayes, same seed 2)",
